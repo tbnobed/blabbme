@@ -58,46 +58,27 @@ app.use((req, res, next) => {
   });
 
   // Production static file serving - NO VITE IMPORTS
-  // The built files should be in the same dist directory as the server
   const fs = await import("fs");
   const publicPath = path.join(__dirname, "public");
   
-  console.log(`Looking for frontend files at: ${publicPath}`);
-  console.log(`Server located at: ${__dirname}`);
-  
-  // List what's actually in the dist directory
-  try {
-    const distContents = fs.readdirSync(__dirname);
-    console.log(`Contents of dist directory: ${distContents.join(', ')}`);
-  } catch (err) {
-    console.log(`Error reading dist directory: ${err.message}`);
-  }
-  
-  // Check if public directory exists
   if (fs.existsSync(publicPath)) {
-    console.log(`✓ Public directory found at: ${publicPath}`);
-    const publicContents = fs.readdirSync(publicPath);
-    console.log(`Public directory contents: ${publicContents.join(', ')}`);
+    console.log(`✓ Serving frontend from: ${publicPath}`);
+    app.use(express.static(publicPath));
+    
+    // Catch-all handler for React Router
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(publicPath, "index.html"));
+    });
   } else {
-    console.log(`✗ Public directory not found at: ${publicPath}`);
-  }
-  
-  app.use(express.static(publicPath));
-  
-  // Catch-all handler for React Router
-  app.get("*", (req, res) => {
-    const indexPath = path.join(publicPath, "index.html");
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send(`
-        <h1>Frontend Build Issue</h1>
-        <p>Frontend files not found at: <code>${indexPath}</code></p>
-        <p>Server directory: <code>${__dirname}</code></p>
-        <p>Check Docker logs for directory contents</p>
+    console.log(`✗ Frontend files missing at: ${publicPath}`);
+    app.get("*", (req, res) => {
+      res.status(500).send(`
+        <h1>Build Error</h1>
+        <p>Frontend files not found. Please check Docker build logs.</p>
+        <p>Expected location: <code>${publicPath}</code></p>
       `);
-    }
-  });
+    });
+  }
 
   // ALWAYS serve the app on port 5000
   const port = 5000;

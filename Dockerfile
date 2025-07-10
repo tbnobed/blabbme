@@ -15,8 +15,17 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application with proper externals
-RUN npx vite build --outDir dist/public && node build-server.js
+# Build the frontend first
+RUN npx vite build --outDir dist/public
+
+# Verify frontend build
+RUN ls -la dist/public/ && echo "Frontend build contents:" && find dist/public -type f | head -10
+
+# Build the server
+RUN node build-server.js
+
+# Verify complete build
+RUN echo "Complete dist contents:" && ls -la dist/
 
 # Production stage
 FROM node:20-alpine AS production
