@@ -1,10 +1,12 @@
-import { users, rooms, participants, messages, type User, type InsertUser, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage } from "@shared/schema";
+import { admins, rooms, participants, messages, type Admin, type InsertAdmin, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, lt } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Admin methods
+  getAdmin(id: number): Promise<Admin | undefined>;
+  getAdminByUsername(username: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
   
   // Room methods
   getRoom(id: string): Promise<Room | undefined>;
@@ -28,42 +30,42 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
+  private admins: Map<number, Admin>;
   private rooms: Map<string, Room>;
   private participants: Map<string, Participant>;
   private messages: Map<number, Message>;
-  private currentUserId: number;
+  private currentAdminId: number;
   private currentParticipantId: number;
   private currentMessageId: number;
 
   constructor() {
-    this.users = new Map();
+    this.admins = new Map();
     this.rooms = new Map();
     this.participants = new Map();
     this.messages = new Map();
-    this.currentUserId = 1;
+    this.currentAdminId = 1;
     this.currentParticipantId = 1;
     this.currentMessageId = 1;
     
     // Create default admin user
-    this.createUser({ username: "admin", password: "admin123" });
+    this.createAdmin({ username: "admin", password: "admin123" });
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    return this.admins.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    return Array.from(this.admins.values()).find(
+      (admin) => admin.username === username,
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const id = this.currentAdminId++;
+    const admin: Admin = { ...insertAdmin, id, createdAt: new Date() };
+    this.admins.set(id, admin);
+    return admin;
   }
 
   async getRoom(id: string): Promise<Room | undefined> {
@@ -177,4 +179,123 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin || undefined;
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.username, username));
+    return admin || undefined;
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const [admin] = await db
+      .insert(admins)
+      .values(insertAdmin)
+      .returning();
+    return admin;
+  }
+
+  async getRoom(id: string): Promise<Room | undefined> {
+    const [room] = await db.select().from(rooms).where(eq(rooms.id, id));
+    return room || undefined;
+  }
+
+  async getAllActiveRooms(): Promise<Room[]> {
+    return await db.select().from(rooms).where(eq(rooms.isActive, true));
+  }
+
+  async createRoom(insertRoom: InsertRoom): Promise<Room> {
+    const roomData = {
+      ...insertRoom,
+      id: this.generateRoomId(),
+    };
+    const [room] = await db
+      .insert(rooms)
+      .values(roomData)
+      .returning();
+    return room;
+  }
+
+  async updateRoom(id: string, updates: Partial<Room>): Promise<Room | undefined> {
+    const [room] = await db
+      .update(rooms)
+      .set(updates)
+      .where(eq(rooms.id, id))
+      .returning();
+    return room || undefined;
+  }
+
+  async deleteRoom(id: string): Promise<boolean> {
+    // Delete participants first
+    await db.delete(participants).where(eq(participants.roomId, id));
+    // Delete messages
+    await db.delete(messages).where(eq(messages.roomId, id));
+    // Delete room
+    const result = await db.delete(rooms).where(eq(rooms.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getParticipantsByRoom(roomId: string): Promise<Participant[]> {
+    return await db.select().from(participants).where(eq(participants.roomId, roomId));
+  }
+
+  async addParticipant(insertParticipant: InsertParticipant): Promise<Participant> {
+    const [participant] = await db
+      .insert(participants)
+      .values(insertParticipant)
+      .returning();
+    return participant;
+  }
+
+  async removeParticipant(roomId: string, socketId: string): Promise<boolean> {
+    const result = await db
+      .delete(participants)
+      .where(and(eq(participants.roomId, roomId), eq(participants.socketId, socketId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async removeParticipantBySocket(socketId: string): Promise<boolean> {
+    const result = await db
+      .delete(participants)
+      .where(eq(participants.socketId, socketId));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getMessagesByRoom(roomId: string, limit: number = 50): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.roomId, roomId))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
+  }
+
+  async addMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
+    return message;
+  }
+
+  async cleanupExpiredRooms(): Promise<void> {
+    const now = new Date();
+    const expiredRooms = await db
+      .select({ id: rooms.id })
+      .from(rooms)
+      .where(and(eq(rooms.isActive, true), lt(rooms.expiresAt, now)));
+    
+    for (const room of expiredRooms) {
+      await this.deleteRoom(room.id);
+    }
+  }
+
+  private generateRoomId(): string {
+    return Math.random().toString(36).substring(2, 8);
+  }
+}
+
+export const storage = new DatabaseStorage();

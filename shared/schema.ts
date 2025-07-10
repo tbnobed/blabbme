@@ -2,10 +2,11 @@ import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
+export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const rooms = pgTable("rooms", {
@@ -35,7 +36,7 @@ export const messages = pgTable("messages", {
   isFiltered: boolean("is_filtered").default(false),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
+export const insertAdminSchema = createInsertSchema(admins).pick({
   username: true,
   password: true,
 });
@@ -58,8 +59,8 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   isFiltered: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type Room = typeof rooms.$inferSelect;
 export type InsertParticipant = z.infer<typeof insertParticipantSchema>;

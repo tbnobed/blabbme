@@ -26,10 +26,11 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: Basic authentication without persistent sessions
 
 ### Data Storage Solutions
-- **Database**: PostgreSQL with Drizzle ORM
-- **Schema Management**: Drizzle Kit for migrations and schema management
-- **Fallback Storage**: In-memory storage implementation for development
-- **Database Provider**: Neon Database for production PostgreSQL hosting
+- **Database**: PostgreSQL with Drizzle ORM (Active)
+- **Schema Management**: Direct SQL table creation for simplicity
+- **Persistent Storage**: DatabaseStorage implementation using PostgreSQL
+- **Admin Authentication**: Secure credential storage in admins table
+- **Chat History**: All messages saved to database for admin access
 
 ## Key Components
 
