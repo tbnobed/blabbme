@@ -265,12 +265,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessagesByRoom(roomId: string, limit: number = 50): Promise<Message[]> {
-    return await db
+    // Get the most recent messages but return them in chronological order
+    const recentMessages = await db
       .select()
       .from(messages)
       .where(eq(messages.roomId, roomId))
       .orderBy(desc(messages.timestamp))
       .limit(limit);
+    
+    // Reverse to get chronological order (oldest first)
+    return recentMessages.reverse();
   }
 
   async addMessage(insertMessage: InsertMessage): Promise<Message> {
