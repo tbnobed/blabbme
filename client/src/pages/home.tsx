@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MessageCircle, Plus, Users, Zap, Shield, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import logoPath from "@assets/logo1_1752172738003.png";
 
 export default function Home() {
@@ -14,11 +15,32 @@ export default function Home() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [roomInput, setRoomInput] = useState("");
   const [nickname, setNickname] = useState("");
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const { toast } = useToast();
 
-  const createNewRoom = () => {
-    const roomId = Math.random().toString(36).substring(2, 8);
-    setLocation(`/room/${roomId}`);
+  const createNewRoom = async () => {
+    setIsCreatingRoom(true);
+    try {
+      const response = await apiRequest("POST", "/api/rooms", {
+        name: "Quick Chat Room",
+        maxParticipants: 10,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+        createdBy: "anonymous",
+      });
+
+      if (response.ok) {
+        const room = await response.json();
+        setLocation(`/room/${room.id}`);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create room. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
   const joinExistingRoom = (e: React.FormEvent) => {
@@ -94,10 +116,11 @@ export default function Home() {
               <Button
                 size="lg"
                 onClick={createNewRoom}
+                disabled={isCreatingRoom}
                 className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 <Plus className="mr-2 h-5 w-5" />
-                Start New Chat
+                {isCreatingRoom ? "Creating Room..." : "Start New Chat"}
               </Button>
               <Button
                 size="lg"
