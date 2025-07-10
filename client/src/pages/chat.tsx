@@ -21,7 +21,7 @@ export default function Chat({ params }: ChatPageProps) {
   
   console.log("Chat page loaded with roomId:", roomId);
   
-  const { sessionId, session, updateSession } = useSession();
+  const { sessionId, session, updateSession, isLoading } = useSession();
   
   const handleSessionRestore = (data: any) => {
     console.log('Session restore data received:', data);
@@ -34,6 +34,16 @@ export default function Chat({ params }: ChatPageProps) {
       updateSession(roomId, data.nickname);
     }
   };
+  
+  // Check if we should show nickname modal based on session state
+  useEffect(() => {
+    if (!isLoading && session && session.roomId === roomId && session.nickname) {
+      // User has an existing session for this room, skip nickname modal
+      setNickname(session.nickname);
+      setShowNicknameModal(false);
+      console.log('Found existing session for room:', roomId, 'nickname:', session.nickname);
+    }
+  }, [session, roomId, isLoading]);
   
   const { socket } = useSocket({ 
     sessionId, 
@@ -92,7 +102,19 @@ export default function Chat({ params }: ChatPageProps) {
     setLocation("/");
   };
 
-  console.log("showNicknameModal:", showNicknameModal, "socket:", !!socket, "nickname:", nickname);
+  console.log("showNicknameModal:", showNicknameModal, "socket:", !!socket, "nickname:", nickname, "isLoading:", isLoading);
+
+  // Show loading while session is being checked
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showNicknameModal) {
     return (
