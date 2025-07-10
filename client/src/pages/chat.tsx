@@ -24,6 +24,7 @@ export default function Chat({ params }: ChatPageProps) {
   const { sessionId, session, updateSession } = useSession();
   
   const handleSessionRestore = (data: any) => {
+    console.log('Session restore data received:', data);
     if (data.room && data.room.id === roomId && data.nickname) {
       console.log('Session restored for room:', data.room.id, 'nickname:', data.nickname);
       setNickname(data.nickname);
@@ -64,6 +65,11 @@ export default function Chat({ params }: ChatPageProps) {
       updateSession(roomId, nickname);
     }
   }, [socket, nickname, roomId, sessionId, sessionRestored]);
+
+  // Reset sessionRestored when changing rooms
+  useEffect(() => {
+    setSessionRestored(false);
+  }, [roomId]);
 
   const handleNicknameSubmit = (e: React.FormEvent) => {
     e.preventDefault();

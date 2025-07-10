@@ -58,6 +58,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
         switch (data.type) {
           case 'room-joined':
+          case 'session-restored':
+            console.log('Room data received:', data.type, data);
             setRoom(data.room);
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
