@@ -63,7 +63,8 @@ docker compose version
 
 3. **Create proxy network (if it doesn't exist):**
    ```bash
-   docker network create proxy_network 2>/dev/null || true
+   # Check if proxy_network exists, create if needed
+   docker network ls | grep proxy_network || docker network create proxy_network
    ```
 
 4. **Deploy the application:**
@@ -75,7 +76,8 @@ docker compose version
    docker compose ps
    
    # Monitor logs
-   docker compose logs -f
+   docker compose logs -f app
+   docker compose logs -f postgres
    ```
 
 5. **Configure Nginx Proxy Manager:**
