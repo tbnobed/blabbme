@@ -1,0 +1,47 @@
+[+] Building 30.1s (15/19)
+ => [internal] load local bake definitions                                                                                                                                              0.0s
+ => => reading from stdin 366B                                                                                                                                                          0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                    0.0s
+ => => transferring dockerfile: 1.51kB                                                                                                                                                  0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                       0.5s
+ => [internal] load .dockerignore                                                                                                                                                       0.0s
+ => => transferring context: 340B                                                                                                                                                       0.0s
+ => [internal] load build context                                                                                                                                                       0.0s
+ => => transferring context: 23.71kB                                                                                                                                                    0.0s
+ => [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                         0.0s
+ => CACHED [builder 2/7] WORKDIR /app                                                                                                                                                   0.0s
+ => [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                            2.4s
+ => [builder 3/7] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                                 6.0s
+ => [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                                     1.1s
+ => [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                           0.9s
+ => [builder 4/7] COPY package*.json ./                                                                                                                                                 0.0s
+ => [builder 5/7] RUN npm ci                                                                                                                                                           22.7s
+ => [builder 6/7] COPY . .                                                                                                                                                              0.1s
+ => ERROR [builder 7/7] RUN npm run build:client && node build-server.js                                                                                                                0.5s
+------
+ > [builder 7/7] RUN npm run build:client && node build-server.js:
+0.468 npm error Missing script: "build:client"
+0.468 npm error
+0.468 npm error To see a list of scripts, run:
+0.468 npm error   npm run
+0.472 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-07-10T21_45_48_684Z-debug-0.log
+------
+Dockerfile:19
+
+--------------------
+
+  17 |
+
+  18 |     # Build the application with proper externals
+
+  19 | >>> RUN npm run build:client && node build-server.js
+
+  20 |
+
+  21 |     # Production stage
+
+--------------------
+
+failed to solve: process "/bin/sh -c npm run build:client && node build-server.js" did not complete successfully: exit code: 1
+
+obtv-admin@dev-blabb:~/blabbme$

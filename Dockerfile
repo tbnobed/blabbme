@@ -16,7 +16,7 @@ RUN npm ci
 COPY . .
 
 # Build the application with proper externals
-RUN npm run build:client && node build-server.js
+RUN vite build --outDir dist/public && node build-server.js
 
 # Production stage
 FROM node:20-alpine AS production

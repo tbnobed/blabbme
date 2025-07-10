@@ -63,13 +63,13 @@ docker compose version
 
 3. **Deploy the application:**
    ```bash
-   # Build and start services
+   # Build and start services (this may take a few minutes on first run)
    docker compose up -d --build
    
    # Check service status
    docker compose ps
    
-   # Monitor logs
+   # Monitor logs to ensure successful startup
    docker compose logs -f app
    docker compose logs -f postgres
    ```
