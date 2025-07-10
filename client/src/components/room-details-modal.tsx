@@ -1,0 +1,141 @@
+import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserX } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface RoomDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  room: {
+    id: string;
+    name?: string;
+  };
+}
+
+export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsModalProps) {
+  const { toast } = useToast();
+
+  const { data: roomDetails, isLoading } = useQuery({
+    queryKey: ["/api/rooms", room.id],
+    enabled: isOpen && !!room.id,
+  });
+
+  const kickUser = async (participant: any) => {
+    // In a real implementation, this would call an API to kick the user
+    toast({
+      title: "User kicked",
+      description: `${participant.nickname} has been removed from the room`,
+    });
+  };
+
+  const getInitial = (name: string) => {
+    return name.charAt(0).toUpperCase();
+  };
+
+  const formatTime = (timestamp: Date | string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatRelativeTime = (timestamp: Date | string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      return `${diffInMinutes} minutes ago`;
+    }
+    return `${diffInHours} hours ago`;
+  };
+
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>
+            Room Details: {roomDetails?.name || room.id}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Participants List */}
+          <div>
+            <h4 className="text-lg font-medium text-gray-900 mb-4">
+              Participants ({roomDetails?.participants?.length || 0})
+            </h4>
+            <ScrollArea className="h-64">
+              <div className="space-y-2">
+                {roomDetails?.participants?.map((participant: any) => (
+                  <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
+                          {getInitial(participant.nickname)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{participant.nickname}</p>
+                        <p className="text-xs text-gray-500">
+                          Joined {formatRelativeTime(participant.joinedAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => kickUser(participant)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <UserX className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )) || (
+                  <div className="text-center py-8 text-gray-500">
+                    No participants in this room
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Live Chat Feed */}
+          <div>
+            <h4 className="text-lg font-medium text-gray-900 mb-4">Live Chat</h4>
+            <ScrollArea className="h-64 bg-gray-50 p-3 rounded-lg">
+              <div className="space-y-2">
+                {roomDetails?.messages?.map((message: any) => (
+                  <div key={message.id} className="text-sm">
+                    <span className="font-medium text-gray-900">{message.nickname}:</span>
+                    <span className="text-gray-700 ml-1">{message.content}</span>
+                    <span className="text-xs text-gray-500 ml-2">
+                      {formatTime(message.timestamp)}
+                    </span>
+                  </div>
+                )) || (
+                  <div className="text-center py-8 text-gray-500">
+                    No messages in this room yet
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
