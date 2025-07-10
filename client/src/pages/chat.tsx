@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useSocket } from "@/hooks/use-socket";
 import ChatInterface from "@/components/chat-interface";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
 
 interface ChatPageProps {
   params: {
