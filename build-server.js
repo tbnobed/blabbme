@@ -11,6 +11,19 @@ const externals = [
   'pg-native',  // Always external
   'vite',       // Development only
   'tsx',        // Development only
+  // Babel packages that cause bundling issues
+  '@babel/preset-typescript',
+  '@babel/core',
+  '@babel/preset-env',
+  '@babel/preset-react',
+  '@babel/plugin-transform-runtime',
+  // Additional development dependencies
+  'typescript',
+  'tailwindcss',
+  'autoprefixer',
+  'postcss',
+  'esbuild',
+  'rollup'
 ];
 
 build({

@@ -1,0 +1,185 @@
+obtv-admin@dev-blabb:~/blabbme$ ./rebuild-docker.sh
+=== Complete Docker Rebuild Script ===
+This will clear all Docker cache and rebuild from scratch
+
+1. Stopping all containers...
+2. Removing old containers and images...
+Deleted build cache objects:
+ftkw52wwx321gvvnfcb6wjnq2
+z83hzm9grsk5wqoz9l8hmh34y
+1x1ydvawolqr8soett5ww1shb
+tt5sdkcczmkno1x7xhvqz44c0
+khks56k95iaf1lyu10w8iuq3h
+uxvh6d0s3s498tobez58l8stj
+0garo19kel4pl55s28ed6l5ze
+ng82d5wyx717vrr5qxilzplgb
+blvf1ub3sopa9iefypvzwrx0p
+gjpug7tei2pkuhi8jrx64lrk6
+had3qz59vj0ibzq9bzyqa8ezh
+19yyusfjvl92i39gf9issgp8x
+qz9dqsrz5zpjm8ucl75uf9zjy
+pxv1ohjzu233929mn755huop3
+lsvlz8orja5p4enhyib7e59g3
+
+Total reclaimed space: 719.7MB
+3. Removing project-specific images...
+No blabbme images found
+4. Verifying critical files...
+5. Current Docker build command:
+19:RUN npx vite build --outDir dist/public && node build-server.js
+6. Building with no cache (this may take several minutes)...
+[+] Building 49.3s (15/19)
+ => [internal] load local bake definitions                                                                                                                                              0.0s
+ => => reading from stdin 366B                                                                                                                                                          0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                    0.0s
+ => => transferring dockerfile: 1.52kB                                                                                                                                                  0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                       1.0s
+ => [internal] load .dockerignore                                                                                                                                                       0.0s
+ => => transferring context: 340B                                                                                                                                                       0.0s
+ => [internal] load build context                                                                                                                                                       0.1s
+ => => transferring context: 1.78MB                                                                                                                                                     0.0s
+ => [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                         4.4s
+ => => resolve docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                                 0.0s
+ => => sha256:fe07684b16b82247c3539ed86a65ff37a76138ec25d380bd80c869a1a4c73236 3.80MB / 3.80MB                                                                                          0.3s
+ => => sha256:0c54b794b00440f2499cd0df810d1b53ecb69afe190c885956e1e8ff92fec01d 42.99MB / 42.99MB                                                                                        1.7s
+ => => sha256:a54eeddfc49c9ef8588e38ee29e59a0e7ad1c5967d3d001f253aed0cb11d56a4 1.26MB / 1.26MB                                                                                          0.4s
+ => => sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244 7.67kB / 7.67kB                                                                                          0.0s
+ => => sha256:9d015b82e81e8107ef0d341a8ef2d6ca4a6bc6f3b6659bd5869316eef3779761 1.72kB / 1.72kB                                                                                          0.0s
+ => => sha256:da9722576d07f63c233c15985fb5109ec5ab65eb5cede4bb7fcd4e212d194613 6.42kB / 6.42kB                                                                                          0.0s
+ => => extracting sha256:fe07684b16b82247c3539ed86a65ff37a76138ec25d380bd80c869a1a4c73236                                                                                               0.2s
+ => => sha256:b7f182da327e7013ff937fdf2ce36f3deb5e723dcfccc5fdbdbc708fe03a7698 446B / 446B                                                                                              0.4s
+ => => extracting sha256:0c54b794b00440f2499cd0df810d1b53ecb69afe190c885956e1e8ff92fec01d                                                                                               2.3s
+ => => extracting sha256:a54eeddfc49c9ef8588e38ee29e59a0e7ad1c5967d3d001f253aed0cb11d56a4                                                                                               0.1s
+ => => extracting sha256:b7f182da327e7013ff937fdf2ce36f3deb5e723dcfccc5fdbdbc708fe03a7698                                                                                               0.0s
+ => [builder 2/7] WORKDIR /app                                                                                                                                                          1.4s
+ => [builder 3/7] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                                 6.2s
+ => [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                            2.3s
+ => [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                                     1.0s
+ => [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                           0.8s
+ => [builder 4/7] COPY package*.json ./                                                                                                                                                 0.0s
+ => [builder 5/7] RUN npm ci                                                                                                                                                           24.9s
+ => [builder 6/7] COPY . .                                                                                                                                                              0.1s
+ => ERROR [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js                                                                                                11.2s
+------
+ > [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js:
+1.387 vite v5.4.19 building for production...
+1.494 transforming...
+2.120 Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+2.120   npx update-browserslist-db@latest
+2.120   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+10.24 ? 1719 modules transformed.
+10.73 rendering chunks...
+10.75 computing gzip size...
+10.77 dist/public/index.html                   1.09 kB ¦ gzip:   0.53 kB
+10.77 dist/public/assets/index-BcLsLjgz.css   60.67 kB ¦ gzip:  10.78 kB
+10.77 dist/public/assets/index-XJZhKRKy.js   349.52 kB ¦ gzip: 109.57 kB
+10.77 ? built in 9.33s
+11.05 ? [ERROR] Could not resolve "@babel/preset-typescript/package.json"
+11.05
+11.05     node_modules/@babel/core/lib/config/files/module-types.js:151:40:
+11.05       151 ¦ ...t packageJson = require("@babel/preset-typescript/package.json");
+11.05           ?                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+11.05
+11.05   You can mark the path "@babel/preset-typescript/package.json" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+11.05
+------
+Dockerfile:19
+
+--------------------
+
+  17 |
+
+  18 |     # Build the application with proper externals
+
+  19 | >>> RUN npx vite build --outDir dist/public && node build-server.js
+
+  20 |
+
+  21 |     # Production stage
+
+--------------------
+
+failed to solve: process "/bin/sh -c npx vite build --outDir dist/public && node build-server.js" did not complete successfully: exit code: 1
+
+7. Starting services...
+[+] Running 12/12
+ ? postgres Pulled                                                                                                                                                                      8.0s
+   ? fe07684b16b8 Already exists                                                                                                                                                        0.0s
+   ? 2777460b63f4 Pull complete                                                                                                                                                         0.4s
+   ? 642e176e7683 Pull complete                                                                                                                                                         0.4s
+   ? b4dcca6808e5 Pull complete                                                                                                                                                         0.4s
+   ? 77b69ff8bb36 Pull complete                                                                                                                                                         0.7s
+   ? 45886f8a09ca Pull complete                                                                                                                                                         6.6s
+   ? 331cba96f288 Pull complete                                                                                                                                                         6.6s
+   ? 6380a3c9c68c Pull complete                                                                                                                                                         6.7s
+   ? f2ee91c57ab1 Pull complete                                                                                                                                                         6.7s
+   ? 8e7dfe758b13 Pull complete                                                                                                                                                         6.7s
+   ? 639ffb3d4c66 Pull complete                                                                                                                                                         6.7s
+[+] Building 12.5s (15/19)
+ => [internal] load local bake definitions                                                                                                                                              0.0s
+ => => reading from stdin 342B                                                                                                                                                          0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                    0.0s
+ => => transferring dockerfile: 1.52kB                                                                                                                                                  0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                       0.3s
+ => [internal] load .dockerignore                                                                                                                                                       0.0s
+ => => transferring context: 340B                                                                                                                                                       0.0s
+ => [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                         0.0s
+ => [internal] load build context                                                                                                                                                       0.0s
+ => => transferring context: 5.77kB                                                                                                                                                     0.0s
+ => CACHED [builder 2/7] WORKDIR /app                                                                                                                                                   0.0s
+ => CACHED [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                     0.0s
+ => CACHED [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                              0.0s
+ => CACHED [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                    0.0s
+ => CACHED [builder 3/7] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                          0.0s
+ => CACHED [builder 4/7] COPY package*.json ./                                                                                                                                          0.0s
+ => CACHED [builder 5/7] RUN npm ci                                                                                                                                                     0.0s
+ => CACHED [builder 6/7] COPY . .                                                                                                                                                       0.0s
+ => ERROR [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js                                                                                                12.1s
+------
+ > [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js:
+1.404 vite v5.4.19 building for production...
+1.516 transforming...
+2.172 Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+2.172   npx update-browserslist-db@latest
+2.172   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+10.23 ? 1719 modules transformed.
+10.68 rendering chunks...
+10.70 computing gzip size...
+10.72 dist/public/index.html                   1.09 kB ¦ gzip:   0.53 kB
+10.72 dist/public/assets/index-BcLsLjgz.css   60.67 kB ¦ gzip:  10.78 kB
+10.72 dist/public/assets/index-XJZhKRKy.js   349.52 kB ¦ gzip: 109.57 kB
+10.72 ? built in 9.26s
+10.96 ? [ERROR] Could not resolve "@babel/preset-typescript/package.json"
+10.96
+10.96     node_modules/@babel/core/lib/config/files/module-types.js:151:40:
+10.96       151 ¦ ...t packageJson = require("@babel/preset-typescript/package.json");
+10.96           ?                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+10.96
+10.96   You can mark the path "@babel/preset-typescript/package.json" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+10.96
+------
+Dockerfile:19
+
+--------------------
+
+  17 |
+
+  18 |     # Build the application with proper externals
+
+  19 | >>> RUN npx vite build --outDir dist/public && node build-server.js
+
+  20 |
+
+  21 |     # Production stage
+
+--------------------
+
+failed to solve: process "/bin/sh -c npx vite build --outDir dist/public && node build-server.js" did not complete successfully: exit code: 1
+
+8. Checking status...
+NAME      IMAGE     COMMAND   SERVICE   CREATED   STATUS    PORTS
+
+=== Build complete! ===
+Monitor logs with: docker compose logs -f app
+Check status with: docker compose ps
+obtv-admin@dev-blabb:~/blabbme$
