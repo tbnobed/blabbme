@@ -58,12 +58,35 @@ app.use((req, res, next) => {
   });
 
   // Production static file serving - NO VITE IMPORTS
-  const publicPath = path.join(__dirname, "public");
+  // Try multiple possible paths for the built frontend files
+  const possiblePaths = [
+    path.join(__dirname, "public"),           // Standard path
+    path.join(__dirname, "../dist/public"),  // Relative to project root
+    "/app/dist/public"                       // Absolute Docker path
+  ];
+  
+  let publicPath = possiblePaths[0];
+  
+  // Find the correct path where index.html exists
+  const fs = await import("fs");
+  for (const testPath of possiblePaths) {
+    if (fs.existsSync(path.join(testPath, "index.html"))) {
+      publicPath = testPath;
+      console.log(`✓ Using frontend files from: ${publicPath}`);
+      break;
+    }
+  }
+  
   app.use(express.static(publicPath));
   
   // Catch-all handler for React Router
   app.get("*", (req, res) => {
-    res.sendFile(path.join(publicPath, "index.html"));
+    const indexPath = path.join(publicPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send(`Frontend files not found. Looking for: ${indexPath}`);
+    }
   });
 
   // ALWAYS serve the app on port 5000
