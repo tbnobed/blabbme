@@ -140,15 +140,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   wss.on('connection', (ws: WebSocket) => {
+    console.log('WebSocket connection established');
     socketData.set(ws, {});
 
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
+        console.log('Received WebSocket message:', message);
         const socketInfo = socketData.get(ws);
 
         switch (message.type) {
           case 'join-room':
+            console.log('Handling join-room for:', message.roomId, message.nickname);
             await handleJoinRoom(ws, message, wss);
             break;
           case 'send-message':
@@ -159,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
         }
       } catch (error) {
+        console.error('WebSocket message error:', error);
         ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
       }
     });
@@ -171,9 +175,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   async function handleJoinRoom(ws: WebSocket, message: any, wss: WebSocketServer) {
     const { roomId, nickname } = message;
+    console.log('JOIN ROOM: Looking for room:', roomId);
     
     const room = await storage.getRoom(roomId);
+    console.log('JOIN ROOM: Found room:', room);
+    
     if (!room || !room.isActive) {
+      console.log('JOIN ROOM: Room not found or not active');
       ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
       return;
     }
