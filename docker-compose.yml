@@ -77,5 +77,5 @@ networks:
       config:
         - subnet: 172.20.0.0/16
   proxy_network:
-    external: true
+    driver: bridge
     name: proxy_network

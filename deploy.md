@@ -61,13 +61,7 @@ docker compose version
    APP_PORT=5000
    ```
 
-3. **Create proxy network (if it doesn't exist):**
-   ```bash
-   # Check if proxy_network exists, create if needed
-   docker network ls | grep proxy_network || docker network create proxy_network
-   ```
-
-4. **Deploy the application:**
+3. **Deploy the application:**
    ```bash
    # Build and start services
    docker compose up -d --build
@@ -80,7 +74,7 @@ docker compose version
    docker compose logs -f postgres
    ```
 
-5. **Configure Nginx Proxy Manager:**
+4. **Configure Nginx Proxy Manager:**
    - Add new proxy host in NPM interface
    - Domain: your-domain.com
    - Forward Hostname/IP: blabbme-app-1 (or your server IP)
