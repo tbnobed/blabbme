@@ -23,23 +23,36 @@ export function useSession() {
       
       // First try to get existing session
       try {
-        const response = await apiRequest('/api/session/current');
-        const data = await response.json();
-        setSessionId(data.sessionId);
-        setSession(data.session);
-        setIsLoading(false);
-        return;
+        const response = await fetch('/api/session/current', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setSessionId(data.sessionId);
+          setSession(data.session);
+          setIsLoading(false);
+          return;
+        }
       } catch (error) {
         // No existing session, create new one
       }
       
       // Create new session
-      const response = await apiRequest('/api/session/create', {
+      const response = await fetch('/api/session/create', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       });
-      const data = await response.json();
-      setSessionId(data.sessionId);
-      setSession(data.session);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSessionId(data.sessionId);
+        setSession(data.session);
+      } else {
+        console.error('Failed to create session:', response.statusText);
+      }
     } catch (error) {
       console.error('Failed to initialize session:', error);
     } finally {
@@ -61,8 +74,9 @@ export function useSession() {
 
   const clearSession = async () => {
     try {
-      await apiRequest('/api/session/current', {
+      await fetch('/api/session/current', {
         method: 'DELETE',
+        credentials: 'include',
       });
       setSessionId(null);
       setSession(null);
