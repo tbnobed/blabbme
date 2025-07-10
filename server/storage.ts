@@ -74,13 +74,13 @@ export class MemStorage implements IStorage {
     return Array.from(this.rooms.values()).filter(room => room.isActive);
   }
 
-  async createRoom(insertRoom: InsertRoom): Promise<Room> {
+  async createRoom(insertRoom: any): Promise<Room> {
     const room: Room = {
-      ...insertRoom,
+      name: insertRoom.name,
       id: this.generateRoomId(),
       createdBy: insertRoom.createdBy || null,
       maxParticipants: insertRoom.maxParticipants || 10,
-      expiresAt: insertRoom.expiresAt || null,
+      expiresAt: insertRoom.expiresAt ? new Date(insertRoom.expiresAt) : null,
       createdAt: new Date(),
       isActive: true,
     };

@@ -24,7 +24,7 @@ export default function Home() {
       const response = await apiRequest("POST", "/api/rooms", {
         name: "Quick Chat Room",
         maxParticipants: 10,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
         createdBy: "anonymous",
       });
 

@@ -40,10 +40,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertRoomSchema = createInsertSchema(rooms).omit({
-  id: true,
-  createdAt: true,
-  isActive: true,
+export const insertRoomSchema = z.object({
+  name: z.string(),
+  createdBy: z.string().nullable().optional(),
+  maxParticipants: z.number().optional(),
+  expiresAt: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
 });
 
 export const insertParticipantSchema = createInsertSchema(participants).omit({
