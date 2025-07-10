@@ -36,10 +36,4 @@ build({
   external: externals,
   sourcemap: false,
   minify: false,
-  banner: {
-    js: `
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-    `.trim()
-  }
 }).catch(() => process.exit(1));

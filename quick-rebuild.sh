@@ -13,7 +13,7 @@ echo "2. Removing app container..."
 docker compose rm -f app
 
 # Rebuild just the app
-echo "3. Rebuilding app with fixed build-server.js..."
+echo "3. Rebuilding app with no-banner build-server.js..."
 docker compose build --no-cache app
 
 # Start the app
