@@ -14,7 +14,8 @@ const filter = new Filter();
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  skip: (req) => req.headers['x-forwarded-for'] === undefined, // Skip validation for local requests
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Rate limiting for messages (per socket)
@@ -273,14 +274,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (session.roomId && session.nickname) {
         const room = await storage.getRoom(session.roomId);
         if (room && room.isActive) {
+          // Add back to participants if not already there
           const participants = await storage.getParticipantsByRoom(session.roomId);
+          const existingParticipant = participants.find(p => p.nickname === session.nickname);
+          
+          if (!existingParticipant) {
+            // Add participant back to the room
+            await storage.addParticipant({
+              roomId: session.roomId,
+              nickname: session.nickname,
+              socketId: generateSocketId(ws),
+            });
+            
+            // Notify room about reconnected participant
+            broadcastToRoom(wss, session.roomId, {
+              type: 'user-joined',
+              nickname: session.nickname,
+              participantCount: participants.length + 1,
+            });
+          }
+          
           const messages = await storage.getMessagesByRoom(session.roomId);
+          const updatedParticipants = await storage.getParticipantsByRoom(session.roomId);
           
           ws.send(JSON.stringify({
             type: 'session-restored',
             room,
             messages,
-            participants,
+            participants: updatedParticipants,
             nickname: session.nickname,
           }));
           return;
@@ -293,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   async function handleJoinRoom(ws: WebSocket, message: any, wss: WebSocketServer) {
     const { roomId, nickname, sessionId } = message;
-    console.log('JOIN ROOM: Looking for room:', roomId);
+    console.log('JOIN ROOM: Looking for room:', roomId, 'with nickname:', nickname, 'sessionId:', sessionId);
     
     const room = await storage.getRoom(roomId);
     console.log('JOIN ROOM: Found room:', room);
@@ -304,14 +325,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
 
+    // Check if this is a session restoration (user already in room)
+    const socketInfo = socketData.get(ws);
+    if (socketInfo?.roomId === roomId && socketInfo?.nickname === nickname) {
+      console.log('JOIN ROOM: User already in room via session restoration, skipping duplicate join');
+      return;
+    }
+
     // Check room capacity
     const participants = await storage.getParticipantsByRoom(roomId);
-    if (room.maxParticipants && participants.length >= room.maxParticipants) {
+    
+    // Check if user is already in the room (prevent duplicates)
+    const existingParticipant = participants.find(p => p.nickname === nickname);
+    if (existingParticipant) {
+      // Update existing participant's socket ID
+      console.log('JOIN ROOM: Updating existing participant socket ID');
+      await storage.removeParticipant(roomId, existingParticipant.socketId);
+    } else if (room.maxParticipants && participants.length >= room.maxParticipants) {
       ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
       return;
     }
 
-    // Add participant
+    // Add participant (or re-add with new socket ID)
     const participant = await storage.addParticipant({
       roomId,
       nickname,
@@ -328,20 +363,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.lastActivity = new Date();
     }
 
-    // Notify room about new participant
-    broadcastToRoom(wss, roomId, {
-      type: 'user-joined',
-      nickname,
-      participantCount: participants.length + 1,
-    });
+    // Only notify if this is a new participant (not a reconnection)
+    if (!existingParticipant) {
+      // Notify room about new participant
+      broadcastToRoom(wss, roomId, {
+        type: 'user-joined',
+        nickname,
+        participantCount: participants.length + 1,
+      });
+    }
 
     // Send room info to user
     const messages = await storage.getMessagesByRoom(roomId);
+    const updatedParticipants = await storage.getParticipantsByRoom(roomId);
     ws.send(JSON.stringify({
       type: 'room-joined',
       room,
       messages,
-      participants: [...participants, participant],
+      participants: updatedParticipants,
     }));
   }
 

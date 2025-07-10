@@ -25,10 +25,12 @@ export default function Chat({ params }: ChatPageProps) {
   
   const handleSessionRestore = (data: any) => {
     if (data.room && data.room.id === roomId && data.nickname) {
+      console.log('Session restored for room:', data.room.id, 'nickname:', data.nickname);
       setNickname(data.nickname);
       setShowNicknameModal(false);
       setSessionRestored(true);
-      console.log('Session restored:', data);
+      // Update session to ensure consistency
+      updateSession(roomId, data.nickname);
     }
   };
   
@@ -48,7 +50,8 @@ export default function Chat({ params }: ChatPageProps) {
   }, []);
 
   useEffect(() => {
-    if (socket && nickname && roomId && !sessionRestored) {
+    // Only join room if we have all required data and haven't been restored from session
+    if (socket && nickname && roomId && !sessionRestored && sessionId) {
       console.log('Sending join-room message:', { roomId, nickname, sessionId });
       socket.send(JSON.stringify({
         type: 'join-room',
