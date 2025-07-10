@@ -6,7 +6,7 @@ export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
 });
 
 export const rooms = pgTable("rooms", {
@@ -14,8 +14,8 @@ export const rooms = pgTable("rooms", {
   name: text("name").notNull(),
   createdBy: text("created_by"),
   maxParticipants: integer("max_participants").default(10),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at", { mode: "date" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
   isActive: boolean("is_active").default(true),
 });
 
@@ -24,7 +24,7 @@ export const participants = pgTable("participants", {
   roomId: text("room_id").notNull(),
   nickname: text("nickname").notNull(),
   socketId: text("socket_id").notNull(),
-  joinedAt: timestamp("joined_at").defaultNow(),
+  joinedAt: timestamp("joined_at", { mode: "date" }).defaultNow(),
 });
 
 export const messages = pgTable("messages", {
@@ -32,7 +32,7 @@ export const messages = pgTable("messages", {
   roomId: text("room_id").notNull(),
   nickname: text("nickname").notNull(),
   content: text("content").notNull(),
-  timestamp: timestamp("timestamp").defaultNow(),
+  timestamp: timestamp("timestamp", { mode: "date" }).defaultNow(),
   isFiltered: boolean("is_filtered").default(false),
 });
 
