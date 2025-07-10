@@ -59,41 +59,49 @@ export default function Chat({ params }: ChatPageProps) {
     setLocation("/");
   };
 
+  console.log("showNicknameModal:", showNicknameModal, "socket:", !!socket, "nickname:", nickname);
+
   if (showNicknameModal) {
     return (
-      <Dialog open={showNicknameModal} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Enter Your Nickname</DialogTitle>
-          </DialogHeader>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="text-white h-8 w-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Join Room</h2>
+            <p className="text-gray-600">Room ID: {roomId}</p>
+          </div>
+          
           <form onSubmit={handleNicknameSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="nickname">Choose a nickname</Label>
-              <Input
+              <label htmlFor="nickname" className="block text-sm font-medium mb-2 text-gray-700">Choose your nickname</label>
+              <input
                 id="nickname"
                 type="text"
-                placeholder="Your nickname"
+                placeholder="Enter your nickname"
                 maxLength={20}
                 value={tempNickname}
                 onChange={(e) => setTempNickname(e.target.value)}
                 autoFocus
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
-            <div className="flex space-x-2">
-              <Button type="submit" className="flex-1">
-                Join Room
-              </Button>
-              <Button
+            <div className="flex space-x-3">
+              <button type="submit" className="flex-1 bg-primary text-white py-3 px-4 rounded-md hover:bg-primary/90 font-medium">
+                Join Chat
+              </button>
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => setLocation("/")}
+                className="py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
               >
                 Cancel
-              </Button>
+              </button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     );
   }
 
