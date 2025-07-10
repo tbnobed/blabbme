@@ -15,8 +15,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with proper externals
+RUN npm run build:client && node build-server.js
 
 # Production stage
 FROM node:20-alpine AS production
@@ -30,12 +30,12 @@ RUN apk add --no-cache dumb-init postgresql-client curl
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S appuser -u 1001 -G nodejs
 
-# Copy built application and production dependencies from builder stage
+# Copy built application from builder stage
 COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs && chown -R appuser:nodejs /app
