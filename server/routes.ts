@@ -164,7 +164,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No session found" });
       }
       
-      const session = userSessions.get(sessionId);
+      let session = userSessions.get(sessionId);
+      
+      // If session not in memory, try to restore from database
+      if (!session) {
+        const allRooms = await storage.getAllActiveRooms();
+        for (const room of allRooms) {
+          const participants = await storage.getParticipantsByRoom(room.id);
+          const existingParticipant = participants.find(p => p.socketId.includes(sessionId));
+          
+          if (existingParticipant) {
+            // Recreate session from participant data
+            session = {
+              sessionId,
+              roomId: room.id,
+              nickname: existingParticipant.nickname,
+              lastActivity: new Date(),
+            };
+            userSessions.set(sessionId, session);
+            console.log('API session restoration: Restored session from database');
+            break;
+          }
+        }
+      }
+      
       if (!session) {
         return res.status(404).json({ message: "Session expired" });
       }
@@ -269,8 +292,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function handleInitSession(ws: WebSocket, message: any) {
     const { sessionId } = message;
     
-    if (sessionId && userSessions.has(sessionId)) {
-      const session = userSessions.get(sessionId)!;
+    // Check both in-memory sessions and database participants
+    let session = sessionId ? userSessions.get(sessionId) : null;
+    
+    // If no in-memory session, try to restore from database participants
+    if (!session && sessionId) {
+      // Look for any active participant with this session ID
+      const allRooms = await storage.getAllActiveRooms();
+      for (const room of allRooms) {
+        const participants = await storage.getParticipantsByRoom(room.id);
+        const existingParticipant = participants.find(p => p.socketId.includes(sessionId));
+        
+        if (existingParticipant) {
+          // Recreate session from participant data
+          session = {
+            sessionId,
+            roomId: room.id,
+            nickname: existingParticipant.nickname,
+            lastActivity: new Date(),
+          };
+          userSessions.set(sessionId, session);
+          console.log('Session restoration: Restored session from database participant');
+          break;
+        }
+      }
+    }
+    
+    if (session) {
       socketData.set(ws, { 
         sessionId,
         roomId: session.roomId,
@@ -293,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.addParticipant({
               roomId: session.roomId,
               nickname: session.nickname,
-              socketId: generateSocketId(ws),
+              socketId: generateSocketId(ws, sessionId),
             });
             console.log('Session restoration: Re-added participant to room');
           } else {
@@ -302,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.addParticipant({
               roomId: session.roomId,
               nickname: session.nickname,
-              socketId: generateSocketId(ws),
+              socketId: generateSocketId(ws, sessionId),
             });
             console.log('Session restoration: Updated participant socket ID');
           }
@@ -363,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const participant = await storage.addParticipant({
       roomId,
       nickname,
-      socketId: generateSocketId(ws),
+      socketId: generateSocketId(ws, sessionId),
     });
 
     // Update socket and session data
@@ -487,8 +535,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  function generateSocketId(ws: WebSocket): string {
-    return `socket_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  function generateSocketId(ws: WebSocket, sessionId?: string): string {
+    const wsData = socketData.get(ws);
+    const id = sessionId || wsData?.sessionId || `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `socket_${id}`;
   }
 
   return httpServer;
