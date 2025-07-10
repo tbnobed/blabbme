@@ -8,14 +8,17 @@ export function useSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
+    console.log("Connecting to WebSocket:", wsUrl);
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
+      console.log("WebSocket connected successfully");
       setIsConnected(true);
       setSocket(ws);
     };
     
     ws.onclose = () => {
+      console.log("WebSocket disconnected");
       setIsConnected(false);
       setSocket(null);
     };
@@ -25,7 +28,12 @@ export function useSocket() {
       setIsConnected(false);
     };
 
+    ws.onmessage = (event) => {
+      console.log("WebSocket message received:", event.data);
+    };
+
     return () => {
+      console.log("Closing WebSocket connection");
       ws.close();
     };
   }, []);

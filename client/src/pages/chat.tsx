@@ -33,6 +33,7 @@ export default function Chat({ params }: ChatPageProps) {
 
   useEffect(() => {
     if (socket && nickname && roomId) {
+      console.log('Sending join-room message:', { roomId, nickname });
       socket.send(JSON.stringify({
         type: 'join-room',
         roomId,
