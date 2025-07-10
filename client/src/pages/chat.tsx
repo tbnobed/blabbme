@@ -75,7 +75,11 @@ export default function Chat({ params }: ChatPageProps) {
 
   const handleLeaveRoom = () => {
     if (socket) {
-      socket.send(JSON.stringify({ type: 'leave-room' }));
+      // Send explicit leave message
+      socket.send(JSON.stringify({ 
+        type: 'leave-room',
+        explicit: true  // Mark as explicit user action
+      }));
     }
     // Clear session room info when explicitly leaving
     updateSession();

@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await handleSendMessage(ws, message, wss);
             break;
           case 'leave-room':
-            await handleLeaveRoom(ws, wss);
+            await handleLeaveRoom(ws, wss, message.explicit || false);
             break;
         }
       } catch (error) {
@@ -251,7 +251,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('close', async () => {
-      await handleLeaveRoom(ws, wss);
+      const socketInfo = socketData.get(ws);
+      
+      // Only remove participant if this is not a session that will be restored
+      if (socketInfo?.roomId && socketInfo?.sessionId && userSessions.has(socketInfo.sessionId)) {
+        console.log('WebSocket closed but session exists, keeping participant in room');
+        // Don't remove participant - session restoration will handle reconnection
+      } else {
+        // No session or explicit disconnect - remove participant
+        await handleLeaveRoom(ws, wss, false);
+      }
+      
       socketData.delete(ws);
     });
   });
@@ -274,9 +284,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (session.roomId && session.nickname) {
         const room = await storage.getRoom(session.roomId);
         if (room && room.isActive) {
-          // Add back to participants if not already there
+          // Check if participant is still in the room
           const participants = await storage.getParticipantsByRoom(session.roomId);
-          const existingParticipant = participants.find(p => p.nickname === session.nickname);
+          let existingParticipant = participants.find(p => p.nickname === session.nickname);
           
           if (!existingParticipant) {
             // Add participant back to the room
@@ -285,13 +295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               nickname: session.nickname,
               socketId: generateSocketId(ws),
             });
-            
-            // Notify room about reconnected participant
-            broadcastToRoom(wss, session.roomId, {
-              type: 'user-joined',
+            console.log('Session restoration: Re-added participant to room');
+          } else {
+            // Update existing participant's socket ID for reconnection
+            await storage.removeParticipant(session.roomId, existingParticipant.socketId);
+            await storage.addParticipant({
+              roomId: session.roomId,
               nickname: session.nickname,
-              participantCount: participants.length + 1,
+              socketId: generateSocketId(ws),
             });
+            console.log('Session restoration: Updated participant socket ID');
           }
           
           const messages = await storage.getMessagesByRoom(session.roomId);
@@ -437,28 +450,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  async function handleLeaveRoom(ws: WebSocket, wss: WebSocketServer) {
+  async function handleLeaveRoom(ws: WebSocket, wss: WebSocketServer, isExplicit: boolean = false) {
     const socketInfo = socketData.get(ws);
     if (!socketInfo?.roomId) return;
 
     const socketId = generateSocketId(ws);
     await storage.removeParticipantBySocket(socketId);
 
-    // Clear session room data when explicitly leaving
-    if (socketInfo.sessionId && userSessions.has(socketInfo.sessionId)) {
+    // Only clear session and broadcast if this was an explicit leave (not a disconnection/refresh)
+    if (isExplicit && socketInfo.sessionId && userSessions.has(socketInfo.sessionId)) {
       const session = userSessions.get(socketInfo.sessionId)!;
       session.roomId = undefined;
       session.nickname = undefined;
       session.lastActivity = new Date();
-    }
 
-    // Notify room about participant leaving
-    const participants = await storage.getParticipantsByRoom(socketInfo.roomId);
-    broadcastToRoom(wss, socketInfo.roomId, {
-      type: 'user-left',
-      nickname: socketInfo.nickname,
-      participantCount: participants.length,
-    });
+      // Notify room about participant leaving only for explicit leaves
+      const participants = await storage.getParticipantsByRoom(socketInfo.roomId);
+      broadcastToRoom(wss, socketInfo.roomId, {
+        type: 'user-left',
+        nickname: socketInfo.nickname,
+        participantCount: participants.length,
+      });
+    }
 
     socketData.set(ws, { sessionId: socketInfo.sessionId });
   }
