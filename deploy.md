@@ -63,8 +63,11 @@ docker compose version
 
 3. **Deploy the application:**
    ```bash
+   # Clear Docker build cache to ensure fresh build
+   docker system prune --all --force
+   
    # Build and start services (this may take a few minutes on first run)
-   docker compose up -d --build
+   docker compose up -d --build --no-cache
    
    # Check service status
    docker compose ps
