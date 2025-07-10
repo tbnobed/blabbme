@@ -58,23 +58,28 @@ app.use((req, res, next) => {
   });
 
   // Production static file serving - NO VITE IMPORTS
-  // Try multiple possible paths for the built frontend files
-  const possiblePaths = [
-    path.join(__dirname, "public"),           // Standard path
-    path.join(__dirname, "../dist/public"),  // Relative to project root
-    "/app/dist/public"                       // Absolute Docker path
-  ];
-  
-  let publicPath = possiblePaths[0];
-  
-  // Find the correct path where index.html exists
+  // The built files should be in the same dist directory as the server
   const fs = await import("fs");
-  for (const testPath of possiblePaths) {
-    if (fs.existsSync(path.join(testPath, "index.html"))) {
-      publicPath = testPath;
-      console.log(`✓ Using frontend files from: ${publicPath}`);
-      break;
-    }
+  const publicPath = path.join(__dirname, "public");
+  
+  console.log(`Looking for frontend files at: ${publicPath}`);
+  console.log(`Server located at: ${__dirname}`);
+  
+  // List what's actually in the dist directory
+  try {
+    const distContents = fs.readdirSync(__dirname);
+    console.log(`Contents of dist directory: ${distContents.join(', ')}`);
+  } catch (err) {
+    console.log(`Error reading dist directory: ${err.message}`);
+  }
+  
+  // Check if public directory exists
+  if (fs.existsSync(publicPath)) {
+    console.log(`✓ Public directory found at: ${publicPath}`);
+    const publicContents = fs.readdirSync(publicPath);
+    console.log(`Public directory contents: ${publicContents.join(', ')}`);
+  } else {
+    console.log(`✗ Public directory not found at: ${publicPath}`);
   }
   
   app.use(express.static(publicPath));
@@ -85,7 +90,12 @@ app.use((req, res, next) => {
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send(`Frontend files not found. Looking for: ${indexPath}`);
+      res.status(404).send(`
+        <h1>Frontend Build Issue</h1>
+        <p>Frontend files not found at: <code>${indexPath}</code></p>
+        <p>Server directory: <code>${__dirname}</code></p>
+        <p>Check Docker logs for directory contents</p>
+      `);
     }
   });
 
