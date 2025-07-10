@@ -69,8 +69,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/rooms", async (req, res) => {
     try {
       console.log("Creating room with data:", req.body);
-      // Temporarily skip validation for testing
-      const room = await storage.createRoom(req.body);
+      
+      // Validate the room data using the schema
+      const validatedData = insertRoomSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
+      
+      const room = await storage.createRoom(validatedData);
       console.log("Created room:", room);
       res.json(room);
     } catch (error) {
