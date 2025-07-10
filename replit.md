@@ -33,11 +33,11 @@ Preferred communication style: Simple, everyday language.
 - **Chat History**: All messages saved to database for admin access
 
 ## Production Deployment Status
-- **Docker Deployment**: Successfully deployed to Ubuntu servers (July 2025)
+- **Docker Deployment**: In progress - containers build successfully but server crashes
 - **Database**: PostgreSQL container fully operational with all tables and admin user
-- **Production Server**: Custom vite-production.ts eliminates development dependencies
-- **Build System**: Multi-stage Docker build with esbuild server bundling
-- **Network**: Nginx Proxy Manager integration ready
+- **Production Server**: Still failing with vite import errors despite multiple fixes
+- **Build System**: Multi-stage Docker build working, but esbuild bundling issues persist
+- **Network**: Nginx Proxy Manager integration pending server startup
 
 ## Key Components
 

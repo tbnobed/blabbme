@@ -27,7 +27,7 @@ const externals = [
 ];
 
 build({
-  entryPoints: ['server/index.ts'],
+  entryPoints: ['server/index-production.ts'],
   bundle: true,
   platform: 'node',
   target: 'node18',
