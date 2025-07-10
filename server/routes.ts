@@ -23,9 +23,18 @@ const messageLimiter = new Map<string, { count: number; resetTime: number }>();
 interface SocketData {
   roomId?: string;
   nickname?: string;
+  sessionId?: string;
+}
+
+interface UserSession {
+  sessionId: string;
+  roomId?: string;
+  nickname?: string;
+  lastActivity: Date;
 }
 
 const socketData = new Map<WebSocket, SocketData>();
+const userSessions = new Map<string, UserSession>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", apiLimiter);
@@ -123,6 +132,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Session management endpoints
+  app.post("/api/session/create", async (req, res) => {
+    try {
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const session: UserSession = {
+        sessionId,
+        lastActivity: new Date(),
+      };
+      
+      userSessions.set(sessionId, session);
+      
+      res.cookie('chat_session', sessionId, {
+        httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax'
+      });
+      
+      res.json({ sessionId, session });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  app.get("/api/session/current", async (req, res) => {
+    try {
+      const sessionId = req.cookies.chat_session;
+      if (!sessionId) {
+        return res.status(404).json({ message: "No session found" });
+      }
+      
+      const session = userSessions.get(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session expired" });
+      }
+      
+      // Update last activity
+      session.lastActivity = new Date();
+      
+      res.json({ sessionId, session });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get session" });
+    }
+  });
+
+  app.delete("/api/session/current", async (req, res) => {
+    try {
+      const sessionId = req.cookies.chat_session;
+      if (sessionId) {
+        userSessions.delete(sessionId);
+      }
+      
+      res.clearCookie('chat_session');
+      res.json({ message: "Session cleared" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear session" });
+    }
+  });
+
   // QR Code generation
   app.get("/api/rooms/:id/qr", async (req, res) => {
     try {
@@ -161,6 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const socketInfo = socketData.get(ws);
 
         switch (message.type) {
+          case 'init-session':
+            await handleInitSession(ws, message);
+            break;
           case 'join-room':
             console.log('Handling join-room for:', message.roomId, message.nickname);
             await handleJoinRoom(ws, message, wss);
@@ -184,8 +255,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  async function handleInitSession(ws: WebSocket, message: any) {
+    const { sessionId } = message;
+    
+    if (sessionId && userSessions.has(sessionId)) {
+      const session = userSessions.get(sessionId)!;
+      socketData.set(ws, { 
+        sessionId,
+        roomId: session.roomId,
+        nickname: session.nickname 
+      });
+      
+      // Update session activity
+      session.lastActivity = new Date();
+      
+      // If user was in a room, reconnect them
+      if (session.roomId && session.nickname) {
+        const room = await storage.getRoom(session.roomId);
+        if (room && room.isActive) {
+          const participants = await storage.getParticipantsByRoom(session.roomId);
+          const messages = await storage.getMessagesByRoom(session.roomId);
+          
+          ws.send(JSON.stringify({
+            type: 'session-restored',
+            room,
+            messages,
+            participants,
+            nickname: session.nickname,
+          }));
+          return;
+        }
+      }
+    }
+    
+    ws.send(JSON.stringify({ type: 'session-initialized', sessionId }));
+  }
+
   async function handleJoinRoom(ws: WebSocket, message: any, wss: WebSocketServer) {
-    const { roomId, nickname } = message;
+    const { roomId, nickname, sessionId } = message;
     console.log('JOIN ROOM: Looking for room:', roomId);
     
     const room = await storage.getRoom(roomId);
@@ -211,7 +318,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socketId: generateSocketId(ws),
     });
 
-    socketData.set(ws, { roomId, nickname });
+    // Update socket and session data
+    socketData.set(ws, { roomId, nickname, sessionId });
+    
+    if (sessionId && userSessions.has(sessionId)) {
+      const session = userSessions.get(sessionId)!;
+      session.roomId = roomId;
+      session.nickname = nickname;
+      session.lastActivity = new Date();
+    }
 
     // Notify room about new participant
     broadcastToRoom(wss, roomId, {
@@ -290,6 +405,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const socketId = generateSocketId(ws);
     await storage.removeParticipantBySocket(socketId);
 
+    // Clear session room data when explicitly leaving
+    if (socketInfo.sessionId && userSessions.has(socketInfo.sessionId)) {
+      const session = userSessions.get(socketInfo.sessionId)!;
+      session.roomId = undefined;
+      session.nickname = undefined;
+      session.lastActivity = new Date();
+    }
+
     // Notify room about participant leaving
     const participants = await storage.getParticipantsByRoom(socketInfo.roomId);
     broadcastToRoom(wss, socketInfo.roomId, {
@@ -298,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       participantCount: participants.length,
     });
 
-    socketData.set(ws, {});
+    socketData.set(ws, { sessionId: socketInfo.sessionId });
   }
 
   function broadcastToRoom(wss: WebSocketServer, roomId: string, data: any) {

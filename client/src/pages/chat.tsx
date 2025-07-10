@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useSocket } from "@/hooks/use-socket";
+import { useSession } from "@/hooks/use-session";
 import ChatInterface from "@/components/chat-interface";
 import { MessageCircle } from "lucide-react";
 
@@ -16,10 +17,25 @@ export default function Chat({ params }: ChatPageProps) {
   const [nickname, setNickname] = useState("");
   const [tempNickname, setTempNickname] = useState("");
   const [showNicknameModal, setShowNicknameModal] = useState(true);
+  const [sessionRestored, setSessionRestored] = useState(false);
   
   console.log("Chat page loaded with roomId:", roomId);
   
-  const socket = useSocket();
+  const { sessionId, session, updateSession } = useSession();
+  
+  const handleSessionRestore = (data: any) => {
+    if (data.room && data.room.id === roomId && data.nickname) {
+      setNickname(data.nickname);
+      setShowNicknameModal(false);
+      setSessionRestored(true);
+      console.log('Session restored:', data);
+    }
+  };
+  
+  const { socket } = useSocket({ 
+    sessionId, 
+    onSessionRestore: handleSessionRestore 
+  });
 
   useEffect(() => {
     // Check if nickname is provided in URL params
@@ -32,15 +48,19 @@ export default function Chat({ params }: ChatPageProps) {
   }, []);
 
   useEffect(() => {
-    if (socket && nickname && roomId) {
-      console.log('Sending join-room message:', { roomId, nickname });
+    if (socket && nickname && roomId && !sessionRestored) {
+      console.log('Sending join-room message:', { roomId, nickname, sessionId });
       socket.send(JSON.stringify({
         type: 'join-room',
         roomId,
         nickname,
+        sessionId,
       }));
+      
+      // Update session with room info
+      updateSession(roomId, nickname);
     }
-  }, [socket, nickname, roomId]);
+  }, [socket, nickname, roomId, sessionId, sessionRestored]);
 
   const handleNicknameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +74,8 @@ export default function Chat({ params }: ChatPageProps) {
     if (socket) {
       socket.send(JSON.stringify({ type: 'leave-room' }));
     }
+    // Clear session room info when explicitly leaving
+    updateSession();
     setLocation("/");
   };
 
