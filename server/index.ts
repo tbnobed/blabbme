@@ -59,7 +59,7 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite");
     await setupVite(app, server);
   } else {
-    const { serveStatic } = await import("./vite");
+    const { serveStatic } = await import("./vite-production");
     serveStatic(app);
   }
 
