@@ -15,17 +15,20 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the frontend first
-RUN npx vite build --outDir dist/public
+# Build the frontend using vite config defaults
+RUN npx vite build
 
-# Verify frontend build
-RUN ls -la dist/public/ && echo "Frontend build contents:" && find dist/public -type f | head -10
+# Debug: Check what actually got built
+RUN echo "=== Debug: Checking build output ===" && \
+    ls -la dist/ && \
+    echo "=== Looking for any built files ===" && \
+    find . -name "*.html" -o -name "*.js" -o -name "*.css" | grep -v node_modules | head -10
 
 # Build the server
 RUN node build-server.js
 
 # Verify complete build
-RUN echo "Complete dist contents:" && ls -la dist/
+RUN echo "=== Final dist contents ===" && ls -la dist/
 
 # Production stage
 FROM node:20-alpine AS production

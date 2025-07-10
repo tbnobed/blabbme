@@ -1,0 +1,126 @@
+obtv-admin@dev-blabb:~/blabbme$ ./debug-rebuild.sh
+=== Debug Rebuild - Inspect File Structure ===
+[+] Running 4/4
+ ? Container blabbme-app-1          Removed                                                                                                                                                 0.6s
+ ? Container blabbme-postgres-1     Removed                                                                                                                                                 0.3s
+ ? Network blabbme_blabbme_network  Removed                                                                                                                                                 0.3s
+ ? Network proxy_network            Removed                                                                                                                                                 0.5s
+Untagged: blabbme-app:latest
+Deleted: sha256:626f2d8e55a3e231200b6a3721d364a64a4289614ead674a92d7423c214ac47f
+[+] Building 114.2s (21/21) FINISHED
+ => [internal] load local bake definitions                                                                                                                                                  0.0s
+ => => reading from stdin 366B                                                                                                                                                              0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                        0.0s
+ => => transferring dockerfile: 1.52kB                                                                                                                                                      0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                           0.6s
+ => [internal] load .dockerignore                                                                                                                                                           0.0s
+ => => transferring context: 340B                                                                                                                                                           0.0s
+ => [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                             0.0s
+ => [internal] load build context                                                                                                                                                           0.0s
+ => => transferring context: 11.13kB                                                                                                                                                        0.0s
+ => CACHED [builder 2/7] WORKDIR /app                                                                                                                                                       0.0s
+ => [builder 3/7] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                                     6.9s
+ => [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                                2.4s
+ => [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                                         0.8s
+ => [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                               0.7s
+ => [builder 4/7] COPY package*.json ./                                                                                                                                                     0.0s
+ => [builder 5/7] RUN npm ci                                                                                                                                                               25.8s
+ => [builder 6/7] COPY . .                                                                                                                                                                  0.1s
+ => [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js                                                                                                          11.1s
+ => [production 6/9] COPY --from=builder --chown=appuser:nodejs /app/dist ./dist                                                                                                            0.1s
+ => [production 7/9] COPY --from=builder --chown=appuser:nodejs /app/package*.json ./                                                                                                       0.7s
+ => [production 8/9] RUN npm ci --only=production --ignore-scripts && npm cache clean --force                                                                                              20.0s
+ => [production 9/9] RUN mkdir -p /app/logs && chown -R appuser:nodejs /app                                                                                                                40.6s
+ => exporting to image                                                                                                                                                                      5.8s
+ => => exporting layers                                                                                                                                                                     5.8s
+ => => writing image sha256:f0a4b6098ccdd97980c6b5f1e0e309d4ceedcb337a1ed484349c2daa818631a9                                                                                                0.0s
+ => => naming to docker.io/library/blabbme-app                                                                                                                                              0.0s
+ => resolving provenance for metadata file                                                                                                                                                  0.0s
+[+] Building 1/1
+ ? app  Built                                                                                                                                                                               0.0s
+[+] Running 4/4
+ ? Network blabbme_blabbme_network  Created                                                                                                                                                 0.1s
+ ? Network proxy_network            Created                                                                                                                                                 0.1s
+ ? Container blabbme-postgres-1     Healthy                                                                                                                                                 5.9s
+ ? Container blabbme-app-1          Started                                                                                                                                                 6.0s
+
+Containers started. Waiting 5 seconds for startup...
+
+=== Server logs should show directory contents ===
+app-1  | Looking for frontend files at: /app/dist/public
+app-1  | Server located at: /app/dist
+app-1  | Contents of dist directory: index.js
+app-1  | ? Public directory not found at: /app/dist/public
+app-1  | Production server running on port 5000
+obtv-admin@dev-blabb:~/blabbme$ git pull https://github.com/tbnobed/blabbme.git
+remote: Enumerating objects: 10, done.
+remote: Counting objects: 100% (10/10), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 6 (delta 4), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (6/6), 1.37 KiB | 701.00 KiB/s, done.
+From https://github.com/tbnobed/blabbme
+ * branch            HEAD       -> FETCH_HEAD
+Updating 0feb1bc..cfa0411
+Fast-forward
+ Dockerfile                 | 13 +++++++++++--
+ final-fix-rebuild.sh       | 24 ++++++++++++++++++++++++
+ server/index-production.ts | 49 +++++++++++++++----------------------------------
+ 3 files changed, 50 insertions(+), 36 deletions(-)
+ create mode 100644 final-fix-rebuild.sh
+obtv-admin@dev-blabb:~/blabbme$ chmod +x final-fix-rebuild.sh
+obtv-admin@dev-blabb:~/blabbme$ ./final-fix-rebuild.sh
+=== Final Fix - Frontend Build Process ===
+[+] Running 4/4
+ ? Container blabbme-app-1          Removed                                                                                                                                                 0.5s
+ ? Container blabbme-postgres-1     Removed                                                                                                                                                 0.3s
+ ? Network blabbme_blabbme_network  Removed                                                                                                                                                 0.6s
+ ? Network proxy_network            Removed                                                                                                                                                 0.3s
+Untagged: blabbme-app:latest
+Deleted: sha256:f0a4b6098ccdd97980c6b5f1e0e309d4ceedcb337a1ed484349c2daa818631a9
+Building with frontend verification...
+[+] Building 42.3s (16/22)
+ => [internal] load local bake definitions                                                                                                                                                  0.0s
+ => => reading from stdin 366B                                                                                                                                                              0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                        0.0s
+ => => transferring dockerfile: 1.72kB                                                                                                                                                      0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                           0.6s
+ => [internal] load .dockerignore                                                                                                                                                           0.0s
+ => => transferring context: 340B                                                                                                                                                           0.0s
+ => [builder  1/10] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                           0.0s
+ => [internal] load build context                                                                                                                                                           0.0s
+ => => transferring context: 10.46kB                                                                                                                                                        0.0s
+ => CACHED [builder  2/10] WORKDIR /app                                                                                                                                                     0.0s
+ => [builder  3/10] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                                   6.1s
+ => [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                                2.4s
+ => [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                                         0.9s
+ => [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                               0.7s
+ => [builder  4/10] COPY package*.json ./                                                                                                                                                   0.0s
+ => [builder  5/10] RUN npm ci                                                                                                                                                             24.7s
+ => [builder  6/10] COPY . .                                                                                                                                                                0.1s
+ => [builder  7/10] RUN npx vite build --outDir dist/public                                                                                                                                10.3s
+ => ERROR [builder  8/10] RUN ls -la dist/public/ && echo "Frontend build contents:" && find dist/public -type f | head -10                                                                 0.3s
+------
+ > [builder  8/10] RUN ls -la dist/public/ && echo "Frontend build contents:" && find dist/public -type f | head -10:
+0.264 ls: dist/public/: No such file or directory
+------
+Dockerfile:22
+
+--------------------
+
+  20 |
+
+  21 |     # Verify frontend build
+
+  22 | >>> RUN ls -la dist/public/ && echo "Frontend build contents:" && find dist/public -type f | head -10
+
+  23 |
+
+  24 |     # Build the server
+
+--------------------
+
+failed to solve: process "/bin/sh -c ls -la dist/public/ && echo \"Frontend build contents:\" && find dist/public -type f | head -10" did not complete successfully: exit code: 1
+
+[+] Building 0.7s (13/22)
+ => [internal] load local bake definitions                                                                                                                                                  0.0s
+ => => reading
