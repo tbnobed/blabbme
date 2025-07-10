@@ -70,11 +70,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating room with data:", req.body);
       
-      // Validate the room data using the schema
-      const validatedData = insertRoomSchema.parse(req.body);
-      console.log("Validated data:", validatedData);
+      // Manually handle the date conversion to avoid Zod transform issues
+      const roomData = {
+        name: req.body.name,
+        createdBy: req.body.createdBy || null,
+        maxParticipants: req.body.maxParticipants || 10,
+        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null,
+      };
       
-      const room = await storage.createRoom(validatedData);
+      console.log("Processed room data:", roomData);
+      console.log("expiresAt type:", typeof roomData.expiresAt, roomData.expiresAt);
+      
+      const room = await storage.createRoom(roomData);
       console.log("Created room:", room);
       res.json(room);
     } catch (error) {
