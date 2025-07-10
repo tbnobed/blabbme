@@ -1,0 +1,327 @@
+obtv-admin@dev-blabb:~/blabbme$ git pull https://github.com/tbnobed/blabbme.git
+remote: Enumerating objects: 12, done.
+remote: Counting objects: 100% (12/12), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 8 (delta 4), reused 8 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 4.14 KiB | 1.03 MiB/s, done.
+From https://github.com/tbnobed/blabbme
+ * branch            HEAD       -> FETCH_HEAD
+Updating af51c80..11651a9
+Fast-forward
+ ...btv-admin-dev-blabb-blabbme-docker-compose-logs-f-app-1-node-internal-modules-esm-reso-1752186123643_1752186123643.txt | 237 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ production-rebuild.sh                                                                                                     |  52 ++++++++++++++
+ server/index.ts                                                                                                           |   2 +-
+ server/vite-production.ts                                                                                                 |  30 ++++++++
+ 4 files changed, 320 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted-obtv-admin-dev-blabb-blabbme-docker-compose-logs-f-app-1-node-internal-modules-esm-reso-1752186123643_1752186123643.txt
+ create mode 100644 production-rebuild.sh
+ create mode 100644 server/vite-production.ts
+obtv-admin@dev-blabb:~/blabbme$ ./final-rebuild.sh^C
+obtv-admin@dev-blabb:~/blabbme$ ^C
+obtv-admin@dev-blabb:~/blabbme$ ^C
+obtv-admin@dev-blabb:~/blabbme$ ^C
+obtv-admin@dev-blabb:~/blabbme$ # Upload the new server/vite-production.ts and updated server/index.ts files, then:
+obtv-admin@dev-blabb:~/blabbme$ chmod +x production-rebuild.sh
+obtv-admin@dev-blabb:~/blabbme$ ./production-rebuild.sh
+=== Production Rebuild - No Vite Dependencies ===
+Using production-only static file server
+
+1. Stopping all containers...
+[+] Running 4/4
+ ? Container blabbme-app-1          Removed                                                                                                                                                 0.0s
+ ? Container blabbme-postgres-1     Removed                                                                                                                                                 0.2s
+ ? Network blabbme_blabbme_network  Removed                                                                                                                                                 0.3s
+ ? Network proxy_network            Removed                                                                                                                                                 0.6s
+2. Removing all project images...
+Untagged: blabbme-app:latest
+Deleted: sha256:505b99a210f609277a4f3a72be4825a7e8269b77ecb47be2ed5197e46b4b4057
+3. Clearing Docker build cache...
+ID                                              RECLAIMABLE     SIZE            LAST ACCESSED
+m606avm9w3nidacxaanyi8odb*                      true            2.108MB         6 minutes ago
+z7rxgapv419pug3cqokfyfv56                       true    204.3MB         2 minutes ago
+n2ue510cdgf2ibsau96wma2d3*                      true    2.108MB         12 minutes ago
+zfx0zy2psp32iuuj2sh3mcoqz*                      true    1.483kB         2 minutes ago
+rp37fqt2h66do05s2rhfoc0sv                       true    204.3MB         12 minutes ago
+03e4jbgzk85s3r1ktr791v23e*                      true    2.109MB         2 minutes ago
+af2p9mrr0kdi2m0uqiyg088ra*                      true    2.108MB         17 minutes ago
+j24kkc1vuikn0y80ckizycix1                       true    204.3MB         6 minutes ago
+lzyqkcb3r31e56zqp5xmv585h                       true    204.3MB         17 minutes ago
+qoj7ngck6y63wywxj2fy1cywf*                      true    298B            2 minutes ago
+vifuoypyllbzwq2e7nzransqw                       true    202.5MB         17 minutes ago
+9ncjq1gtmoa47w6ibn01kfgtb                       true    202.5MB         2 minutes ago
+p1rmw3qddmeuyl0z4wgc6502w                       true    1.801MB         12 minutes ago
+jcs3992bmnu9a01lxkopyoujo*                      true    1.788MB         2 minutes ago
+qfxrxi1zxvltia64o9b9yrkbt                       true    1.815MB         7 minutes ago
+kmvg6kmktytleyjpytw1p9wmn                       true    202.5MB         12 minutes ago
+lsjx8ji0c4kpg0620pi05usla                       true    1.788MB         17 minutes ago
+jo257wmy9489jq9o1ixwk5m98                       true    202.5MB         7 minutes ago
+k0bc1q7pnf1ky0zaqbvch7l9k                       true    1.83MB          2 minutes ago
+uky0jd1olfffs2u4uld7wdo56                       true    427.1MB         12 minutes ago
+imf3gef5ysaf1ey7zxurak2pk                       true    352.7kB         7 minutes ago
+ikl4iehh8pxms5n64we517rhf                       true    427.1MB         17 minutes ago
+prs9h8k0pxfviw7aqk3akrhle                       true    427.1MB         7 minutes ago
+vmlu6je1ju3bb6obdzjbn19hl                       true    352.7kB         2 minutes ago
+3kurmuxgxmor028wsxd4j5r0d                       true    352.7kB         12 minutes ago
+59rjcsx3klxbk8vpoe35gnui5                       true    352.7kB         17 minutes ago
+z889nev0onmfft2m9kbbfurns                       true    427.1MB         2 minutes ago
+cerrumhohmh3gv8u90gp3e4xc                       true    352.7kB         12 minutes ago
+mifvetfourh2u0k6s1rz619iu                       true    1.694MB         2 minutes ago
+m85e889d7poq4r8v12xc5unlv                       true    352.7kB         7 minutes ago
+ni55gh4hnfxnybhyexasf8x7i                       true    1.693MB         7 minutes ago
+oxty3684vjedfldipwnhxf9hs                       true    1.693MB         17 minutes ago
+ueaomdy9mwlfolsgak3gp18gt                       true    352.7kB         17 minutes ago
+hslxjn0x5qa9lfvcg6zcx8ggp                       true    1.693MB         12 minutes ago
+zf5p8h58klldhjsqe9nilaxia                       true    352.7kB         2 minutes ago
+txngdmz7obz08xgu691wdvre7                       true    3.447kB         17 minutes ago
+a9y3rpy85kv5o4fhgkhef0fc7                       true    279.2MB         17 minutes ago
+xbkak2hxt3mtgdqo66qt0m0qj                       true    279.2MB         7 minutes ago
+r0tp83ktqqphgzwd55b9xxq08                       true    3.447kB         2 minutes ago
+xuw2jjx8kli9drp9yv1z6wwtl                       true    279.2MB         2 minutes ago
+c4tuunipwhadmq5d9savz8o2m                       true    3.447kB         7 minutes ago
+w5f0qmj3burlp3uhrp37r395i                       true    3.447kB         12 minutes ago
+wctorjbanu8zjo369vf7rew6k                       true    279.2MB         12 minutes ago
+j994b3d7q5tgew4wvh1di9p6v                       true    1.115kB         17 minutes ago
+jhzin7vpd9nkx6ir4jro9yfug                       true    1.115kB         7 minutes ago
+5t0q5d0vkkhd6h38tx7grfnrs                       true    1.115kB         12 minutes ago
+hmtnac2sxxknu4zjnfx81d1t7                       true    1.115kB         2 minutes ago
+8qh9pig0jtnlci6f0dhwtkmgj                       true    9.612MB         2 minutes ago
+wioj6uqlgw756ypyxmul4a10g                       true    9.612MB         12 minutes ago
+m7lob5ic4q7xtvf67n46rqakh                       true    9.612MB         7 minutes ago
+u0ecak7v2xuqb8741d5p2us0a                       true    9.612MB         17 minutes ago
+tocxlji874pf38rifzal7ye1s                       true    0B              2 minutes ago
+gknmla64eih8xgevp2pmwpqyc                       true    0B              17 minutes ago
+mhqbtbg6lgez4ymnhqjrvkcxf                       true    0B              19 minutes ago
+qweoyj17ce9db13kbturnqizi                       true    0B              19 minutes ago
+ulhv9pj7lt619tunh143rrsrq                       true    0B              19 minutes ago
+Total:  4.518GB
+4. Verifying production files...
+  - server/vite-production.ts: ?
+  - build-server.js: ?
+  - Dockerfile: ?
+5. Building fresh containers...
+[+] Building 112.2s (21/21) FINISHED
+ => [internal] load local bake definitions                                                                                                                                                  0.0s
+ => => reading from stdin 366B                                                                                                                                                              0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                        0.0s
+ => => transferring dockerfile: 1.52kB                                                                                                                                                      0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine                                                                                                                           0.9s
+ => [internal] load .dockerignore                                                                                                                                                           0.0s
+ => => transferring context: 340B                                                                                                                                                           0.0s
+ => [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                             0.1s
+ => => resolve docker.io/library/node:20-alpine@sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244                                                                     0.0s
+ => => sha256:9d015b82e81e8107ef0d341a8ef2d6ca4a6bc6f3b6659bd5869316eef3779761 1.72kB / 1.72kB                                                                                              0.0s
+ => => sha256:da9722576d07f63c233c15985fb5109ec5ab65eb5cede4bb7fcd4e212d194613 6.42kB / 6.42kB                                                                                              0.0s
+ => => sha256:fa316946c0cb1f041fe46dda150f3085b71168555e5706ec0c7466a5bae12244 7.67kB / 7.67kB                                                                                              0.0s
+ => [internal] load build context                                                                                                                                                           0.4s
+ => => transferring context: 1.86MB                                                                                                                                                         0.1s
+ => [builder 2/7] WORKDIR /app                                                                                                                                                              0.5s
+ => [builder 3/7] RUN apk add --no-cache python3 make g++ linux-headers                                                                                                                     6.8s
+ => [production 3/9] RUN apk add --no-cache dumb-init postgresql-client curl                                                                                                                2.5s
+ => [production 4/9] RUN addgroup -g 1001 -S nodejs                                                                                                                                         0.8s
+ => [production 5/9] RUN adduser -S appuser -u 1001 -G nodejs                                                                                                                               0.9s
+ => [builder 4/7] COPY package*.json ./                                                                                                                                                     0.0s
+ => [builder 5/7] RUN npm ci                                                                                                                                                               25.8s
+ => [builder 6/7] COPY . .                                                                                                                                                                  0.1s
+ => [builder 7/7] RUN npx vite build --outDir dist/public && node build-server.js                                                                                                          11.6s
+ => [production 6/9] COPY --from=builder --chown=appuser:nodejs /app/dist ./dist                                                                                                            0.1s
+ => [production 7/9] COPY --from=builder --chown=appuser:nodejs /app/package*.json ./                                                                                                       0.6s
+ => [production 8/9] RUN npm ci --only=production --ignore-scripts && npm cache clean --force                                                                                              20.4s
+ => [production 9/9] RUN mkdir -p /app/logs && chown -R appuser:nodejs /app                                                                                                                37.4s
+ => exporting to image                                                                                                                                                                      6.0s
+ => => exporting layers                                                                                                                                                                     6.0s
+ => => writing image sha256:1a9b24e3a28755ba7e9c44b86317a1093194298b6aae3eee8b6a2dda23e57e92                                                                                                0.0s
+ => => naming to docker.io/library/blabbme-app                                                                                                                                              0.0s
+ => resolving provenance for metadata file                                                                                                                                                  0.0s
+[+] Building 1/1
+ ? app  Built                                                                                                                                                                               0.0s
+6. Starting services...
+[+] Running 4/4
+ ? Network blabbme_blabbme_network  Created                                                                                                                                                 0.1s
+ ? Network proxy_network            Created                                                                                                                                                 0.1s
+ ? Container blabbme-postgres-1     Healthy                                                                                                                                                 5.9s
+ ? Container blabbme-app-1          Started                                                                                                                                                 6.0s
+7. Monitoring startup...
+NAME                 IMAGE                COMMAND                  SERVICE    CREATED          STATUS                                     PORTS
+blabbme-app-1        blabbme-app          "dumb-init -- node d…"   app        11 seconds ago   Up Less than a second (health: starting)   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+blabbme-postgres-1   postgres:15-alpine   "docker-entrypoint.s…"   postgres   11 seconds ago   Up 11 seconds (healthy)                    5432/tcp
+
+=== Production build complete! ===
+
+Database status:
+        ?column?
+------------------------
+ Admin user exists: YES
+(1 row)
+
+
+Application status:
+Monitor logs: docker compose logs -f app
+If successful, your app will be at: http://localhost:5000
+
+For Nginx Proxy Manager:
+- Forward to: blabbme-app-1:5000 (or localhost:5000)
+- Enable WebSocket support
+- Add SSL certificate
+obtv-admin@dev-blabb:~/blabbme$ docker compose logs -f
+postgres-1  |
+postgres-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1  |
+postgres-1  | 2025-07-10 22:26:05.633 UTC [1] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-07-10 22:26:05.634 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2025-07-10 22:26:05.634 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2025-07-10 22:26:05.638 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-07-10 22:26:05.643 UTC [29] LOG:  database system was shut down at 2025-07-10 22:23:59 UTC
+postgres-1  | 2025-07-10 22:26:05.653 UTC [1] LOG:  database system is ready to accept connections
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1       | node:internal/modules/esm/resolve:873
+app-1       |   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+app-1       |         ^
+app-1       |
+app-1       | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+app-1       |     at packageResolve (node:internal/modules/esm/resolve:873:9)
+app-1       |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+app-1       |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+app-1       |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+app-1       |     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+app-1       |     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+app-1       |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+app-1       |     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+app-1       |   code: 'ERR_MODULE_NOT_FOUND'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3

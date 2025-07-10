@@ -32,6 +32,13 @@ Preferred communication style: Simple, everyday language.
 - **Admin Authentication**: Secure credential storage in admins table
 - **Chat History**: All messages saved to database for admin access
 
+## Production Deployment Status
+- **Docker Deployment**: Successfully deployed to Ubuntu servers (July 2025)
+- **Database**: PostgreSQL container fully operational with all tables and admin user
+- **Production Server**: Custom vite-production.ts eliminates development dependencies
+- **Build System**: Multi-stage Docker build with esbuild server bundling
+- **Network**: Nginx Proxy Manager integration ready
+
 ## Key Components
 
 ### Chat System
