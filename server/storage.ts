@@ -211,6 +211,7 @@ export class DatabaseStorage implements IStorage {
     const roomData = {
       ...insertRoom,
       id: this.generateRoomId(),
+      expiresAt: insertRoom.expiresAt ? new Date(insertRoom.expiresAt) : null,
     };
     const [room] = await db
       .insert(rooms)
