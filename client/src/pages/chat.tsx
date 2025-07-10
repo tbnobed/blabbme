@@ -20,6 +20,8 @@ export default function Chat({ params }: ChatPageProps) {
   const [tempNickname, setTempNickname] = useState("");
   const [showNicknameModal, setShowNicknameModal] = useState(true);
   
+  console.log("Chat page loaded with roomId:", roomId);
+  
   const socket = useSocket();
 
   useEffect(() => {

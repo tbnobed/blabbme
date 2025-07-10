@@ -30,7 +30,15 @@ export default function Home() {
 
       if (response.ok) {
         const room = await response.json();
+        console.log("Room created, navigating to:", `/room/${room.id}`);
         setLocation(`/room/${room.id}`);
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to create room",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
