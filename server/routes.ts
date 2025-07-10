@@ -318,6 +318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
+    console.log('handleInitSession: sessionId:', sessionId, 'session found:', !!session);
+    
     if (session) {
       socketData.set(ws, { 
         sessionId,
@@ -358,13 +360,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const messages = await storage.getMessagesByRoom(session.roomId);
           const updatedParticipants = await storage.getParticipantsByRoom(session.roomId);
           
-          ws.send(JSON.stringify({
+          const restorationData = {
             type: 'session-restored',
             room,
             messages,
             participants: updatedParticipants,
             nickname: session.nickname,
-          }));
+          };
+          
+          console.log('Sending session-restored message to client, room:', session.roomId, 'nickname:', session.nickname);
+          ws.send(JSON.stringify(restorationData));
           return;
         }
       }
