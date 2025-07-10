@@ -107,6 +107,7 @@ export default function Chat({ params }: ChatPageProps) {
     <ChatInterface
       roomId={roomId}
       nickname={nickname}
+      socket={socket}
       onLeaveRoom={handleLeaveRoom}
     />
   );

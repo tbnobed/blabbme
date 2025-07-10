@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, Share, LogOut, Send } from "lucide-react";
-import { useSocket } from "@/hooks/use-socket";
 import { useToast } from "@/hooks/use-toast";
 import QRModal from "./qr-modal";
 
@@ -32,10 +31,11 @@ interface Room {
 interface ChatInterfaceProps {
   roomId: string;
   nickname: string;
+  socket: WebSocket | null;
   onLeaveRoom: () => void;
 }
 
-export default function ChatInterface({ roomId, nickname, onLeaveRoom }: ChatInterfaceProps) {
+export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [room, setRoom] = useState<Room | null>(null);
@@ -43,7 +43,6 @@ export default function ChatInterface({ roomId, nickname, onLeaveRoom }: ChatInt
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const socket = useSocket();
   const { toast } = useToast();
 
   const scrollToBottom = () => {
