@@ -2,9 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserX } from "lucide-react";
+import { UserX, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface RoomDetailsModalProps {
   isOpen: boolean;
@@ -21,6 +22,11 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
 
   const { data: roomDetails, isLoading } = useQuery({
     queryKey: ["/api/rooms", room.id],
+    enabled: isOpen && !!room.id,
+  });
+
+  const { data: bannedUsers, isLoading: isLoadingBans } = useQuery({
+    queryKey: ["/api/rooms", room.id, "bans"],
     enabled: isOpen && !!room.id,
   });
 
@@ -59,8 +65,47 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
     },
   });
 
+  const unbanUserMutation = useMutation({
+    mutationFn: async (nickname: string) => {
+      const response = await fetch(`/api/rooms/${room.id}/bans/${nickname}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to unban user: ${response.status} ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, nickname) => {
+      toast({
+        title: "User unbanned",
+        description: `${nickname} has been unbanned from the room`,
+      });
+      // Refresh banned users list
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id, "bans"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to unban user",
+        variant: "destructive",
+      });
+      console.error("Failed to unban user:", error);
+    },
+  });
+
   const kickUser = (participant: any) => {
     kickUserMutation.mutate(participant);
+  };
+
+  const unbanUser = (nickname: string) => {
+    unbanUserMutation.mutate(nickname);
   };
 
   const getInitial = (name: string) => {
@@ -105,12 +150,17 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Participants List */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">
+        <Tabs defaultValue="participants" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="participants">
               Participants ({roomDetails?.participants?.length || 0})
-            </h4>
+            </TabsTrigger>
+            <TabsTrigger value="banned">
+              Banned Users ({bannedUsers?.length || 0})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="participants">
             <ScrollArea className="h-64">
               <div className="space-y-2">
                 {roomDetails?.participants?.map((participant: any) => (
@@ -145,29 +195,72 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
                 )}
               </div>
             </ScrollArea>
-          </div>
-
-          {/* Live Chat Feed */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Live Chat</h4>
-            <ScrollArea className="h-64 bg-gray-50 p-3 rounded-lg">
+          </TabsContent>
+          
+          <TabsContent value="banned">
+            <ScrollArea className="h-64">
               <div className="space-y-2">
-                {roomDetails?.messages?.map((message: any) => (
-                  <div key={message.id} className="text-sm">
-                    <span className="font-medium text-gray-900">{message.nickname}:</span>
-                    <span className="text-gray-700 ml-1">{message.content}</span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {formatTime(message.timestamp)}
-                    </span>
+                {bannedUsers?.map((ban: any) => (
+                  <div key={ban.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
+                          {getInitial(ban.nickname)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{ban.nickname}</p>
+                        <p className="text-xs text-gray-500">
+                          Banned {formatRelativeTime(ban.bannedAt)} • 
+                          Expires {formatRelativeTime(ban.expiresAt)}
+                        </p>
+                        {ban.reason && (
+                          <p className="text-xs text-red-600">
+                            Reason: {ban.reason}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => unbanUser(ban.nickname)}
+                      disabled={unbanUserMutation.isPending}
+                      className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                    >
+                      <UserCheck className="h-4 w-4" />
+                    </Button>
                   </div>
                 )) || (
                   <div className="text-center py-8 text-gray-500">
-                    No messages in this room yet
+                    No banned users in this room
                   </div>
                 )}
               </div>
             </ScrollArea>
-          </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Live Chat Feed */}
+        <div className="mt-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Live Chat</h4>
+          <ScrollArea className="h-48 bg-gray-50 p-3 rounded-lg">
+            <div className="space-y-2">
+              {roomDetails?.messages?.map((message: any) => (
+                <div key={message.id} className="text-sm">
+                  <span className="font-medium text-gray-900">{message.nickname}:</span>
+                  <span className="text-gray-700 ml-1">{message.content}</span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {formatTime(message.timestamp)}
+                  </span>
+                </div>
+              )) || (
+                <div className="text-center py-8 text-gray-500">
+                  No messages in this room yet
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </DialogContent>
     </Dialog>

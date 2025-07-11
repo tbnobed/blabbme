@@ -357,6 +357,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unban user from room (admin only)
+  app.delete("/api/rooms/:roomId/bans/:nickname", async (req, res) => {
+    try {
+      const { roomId, nickname } = req.params;
+      
+      const unbanned = await storage.unbanUser(roomId, nickname);
+      
+      if (unbanned) {
+        res.json({ message: "User unbanned successfully" });
+      } else {
+        res.status(404).json({ message: "No active ban found for this user" });
+      }
+    } catch (error) {
+      console.error("Error unbanning user:", error);
+      res.status(500).json({ message: "Failed to unban user" });
+    }
+  });
+
+  // Get banned users for a room (admin only)
+  app.get("/api/rooms/:roomId/bans", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      
+      const bannedUsers = await storage.getBannedUsers(roomId);
+      res.json(bannedUsers);
+    } catch (error) {
+      console.error("Error fetching banned users:", error);
+      res.status(500).json({ message: "Failed to fetch banned users" });
+    }
+  });
+
   // QR Code generation
   app.get("/api/rooms/:id/qr", async (req, res) => {
     try {

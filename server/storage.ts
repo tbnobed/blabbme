@@ -28,6 +28,8 @@ export interface IStorage {
   // Ban methods
   banUser(ban: InsertBannedUser): Promise<BannedUser>;
   isUserBanned(roomId: string, sessionId: string, nickname: string): Promise<boolean>;
+  unbanUser(roomId: string, nickname: string): Promise<boolean>;
+  getBannedUsers(roomId: string): Promise<BannedUser[]>;
   cleanupExpiredBans(): Promise<void>;
   
   // Cleanup methods
@@ -197,6 +199,23 @@ export class MemStorage implements IStorage {
     );
     
     return activeBans.length > 0;
+  }
+
+  async unbanUser(roomId: string, nickname: string): Promise<boolean> {
+    const bansToRemove = Array.from(this.bannedUsers.entries())
+      .filter(([_, ban]) => ban.roomId === roomId && ban.nickname === nickname);
+    
+    for (const [id, _] of bansToRemove) {
+      this.bannedUsers.delete(id);
+    }
+    
+    return bansToRemove.length > 0;
+  }
+
+  async getBannedUsers(roomId: string): Promise<BannedUser[]> {
+    const now = new Date();
+    return Array.from(this.bannedUsers.values())
+      .filter(ban => ban.roomId === roomId && ban.expiresAt > now);
   }
 
   async cleanupExpiredBans(): Promise<void> {
@@ -378,6 +397,34 @@ export class DatabaseStorage implements IStorage {
     );
     
     return matchingBans.length > 0;
+  }
+
+  async unbanUser(roomId: string, nickname: string): Promise<boolean> {
+    const result = await db
+      .delete(bannedUsers)
+      .where(
+        and(
+          eq(bannedUsers.roomId, roomId),
+          eq(bannedUsers.nickname, nickname)
+        )
+      );
+    
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getBannedUsers(roomId: string): Promise<BannedUser[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(bannedUsers)
+      .where(
+        and(
+          eq(bannedUsers.roomId, roomId),
+          // Only active bans (not expired)
+          // We use gt because we want expiresAt > now
+        )
+      )
+      .then(bans => bans.filter(ban => ban.expiresAt > now));
   }
 
   async cleanupExpiredBans(): Promise<void> {
