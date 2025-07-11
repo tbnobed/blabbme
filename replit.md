@@ -1,139 +1,108 @@
-# blabb.me - Anonymous Chat Application
+# Blabb.me - Anonymous Chat Application
 
 ## Overview
 
-This is a real-time anonymous chat application built with React, Express, and WebSockets. Users can create or join temporary chat rooms without requiring any signup. The application features QR code sharing for easy room access, content moderation, and an admin dashboard for room management.
+Blabb.me is a real-time anonymous chat application that allows users to create temporary chat rooms without registration. Users can join rooms via QR codes, participate in group conversations, and administrators can moderate content. The application features a modern web interface built with React and a Node.js backend with WebSocket support for real-time messaging.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Content Moderation & Auto-Ban System Implementation (July 11, 2025)
-- **Auto-Ban System**: Users automatically banned for 10 minutes after 3 warnings in 24-hour period
-- **Progressive Warning System**: Shows "Warning 1/3", "Warning 2/3", then auto-ban on 3rd violation
-- **Real-time Ban Notifications**: Room-wide notifications when users get automatically banned
-- **Database Warning Tracking**: Complete warning history with original/filtered content and timestamps
-- **Enhanced Admin Dashboard**: Real-time warnings statistics showing total and daily counts
-- **UTC Timezone Handling**: Fixed timezone issues for accurate "today" warning counts
-- **Cache Prevention**: Admin stats refresh every 2 seconds with no-cache headers
-
-## Previous Session Management Improvements
-- Extended session timeout from immediate expiration to 2 hours of inactivity
-- Added WebSocket keep-alive mechanism with 30-second server pings and 25-second client heartbeats
-- Improved reconnection logic with exponential backoff (up to 10 attempts)
-- Enhanced session restoration from database when WebSocket reconnects
-- Extended session cookies from 24 hours to 7 days
-- Added automatic session cleanup to prevent memory leaks
-
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React with TypeScript
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack Query for server state management
-- **UI Components**: shadcn/ui component library built on Radix UI
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **Build Tool**: Vite for development and bundling
+- **Framework**: React with TypeScript using Vite for development and building
+- **Styling**: Tailwind CSS with shadcn/ui component library for consistent design
+- **State Management**: TanStack React Query for server state management
+- **Routing**: Wouter for lightweight client-side routing
+- **Real-time Communication**: Native WebSocket API for chat functionality
 
 ### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Real-time Communication**: WebSocket Server for live chat functionality
-- **Rate Limiting**: Express rate limiting for API endpoints and message throttling
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **Real-time**: WebSocket Server (ws library) for chat messaging
+- **Session Management**: Cookie-based sessions with express rate limiting
 - **Content Moderation**: Bad-words filter for message content
-- **Session Management**: Basic authentication without persistent sessions
 
-### Data Storage Solutions
-- **Database**: PostgreSQL with Drizzle ORM (Active)
-- **Schema Management**: Direct SQL table creation for simplicity
-- **Persistent Storage**: DatabaseStorage implementation using PostgreSQL
-- **Admin Authentication**: Secure credential storage in admins table
-- **Chat History**: All messages saved to database for admin access
-
-## Production Deployment Status
-- **Docker Deployment**: Fully operational with self-contained setup and migration support
-- **Database**: PostgreSQL container with automatic schema initialization and migration handling
-- **Production Server**: Enhanced entrypoint script with automatic migration detection and execution
-- **Build System**: Multi-stage Docker build with migration files and comprehensive documentation
-- **Network**: Complete Nginx Proxy Manager integration guide with WebSocket support
-- **Admin Authentication**: Automatic admin user creation (admin/admin123) on fresh deployments
-- **Migration System**: Automatic detection and application of database schema updates for existing installations
-- **Deployment Guide**: Complete `deploy.md` with troubleshooting, monitoring, and maintenance procedures
+### Database Strategy
+- **ORM**: Drizzle ORM for type-safe database operations
+- **Dual Database Support**: 
+  - Neon PostgreSQL (serverless) for Replit deployment
+  - Standard PostgreSQL for Docker/local development
+- **Schema**: Shared schema definition for consistent data models across environments
 
 ## Key Components
 
-### Chat System
-- **Real-time Messaging**: WebSocket-based communication for instant messaging
-- **Room Management**: Temporary rooms with configurable expiration times
-- **Participant Tracking**: Real-time participant count and nickname management
-- **Content Filtering**: Automatic profanity filtering with bad-words library
+### Core Entities
+- **Rooms**: Temporary chat spaces with configurable participant limits and expiration times
+- **Participants**: Session-based user management without persistent accounts
+- **Messages**: Real-time chat messages with content filtering
+- **Admins**: Administrative users for content moderation
+- **Banned Users**: Temporary bans with expiration for moderation
+- **Warnings**: Content moderation tracking system
 
-### User Interface
-- **Responsive Design**: Mobile-first approach using Tailwind CSS
-- **Component Library**: Comprehensive UI components from shadcn/ui
-- **Accessibility**: ARIA-compliant components from Radix UI
-- **Dark Mode**: CSS variable-based theming support
+### Authentication & Authorization
+- **Session-Based**: Stateless sessions using generated session IDs
+- **Admin Authentication**: Username/password authentication for administrators
+- **Rate Limiting**: Multiple rate limiting strategies for different endpoints
 
-### Admin Features
-- **Authentication**: Simple username/password authentication
-- **Room Monitoring**: Real-time room statistics and participant management
-- **Room Creation**: Admin ability to create rooms with custom settings
-- **QR Code Generation**: Server-side QR code generation for room sharing
-
-### Content Moderation
-- **Profanity Filter**: Automatic message filtering using bad-words library
-- **Rate Limiting**: Per-IP and per-socket message rate limiting
-- **Room Expiration**: Automatic cleanup of expired rooms
+### Real-time Features
+- **WebSocket Management**: Per-connection state tracking with room association
+- **Message Broadcasting**: Real-time message distribution to room participants
+- **Presence Tracking**: Live participant count and status updates
+- **Auto-cleanup**: Automatic removal of expired rooms and banned users
 
 ## Data Flow
 
-1. **Room Creation**: User creates room → Server generates unique room ID → Room stored in database
-2. **Room Joining**: User enters room code/URL → WebSocket connection established → User added to participants
-3. **Message Flow**: User sends message → Content filtered → Broadcasted to all room participants → Stored in database
-4. **Real-time Updates**: Participant joins/leaves → WebSocket broadcasts updates → UI updates participant count
+1. **Room Creation**: Users create rooms with optional parameters (name, max participants, expiration)
+2. **Session Management**: Automatic session creation and management via cookies
+3. **Room Joining**: Users join rooms via room ID, WebSocket connection established
+4. **Message Flow**: Messages sent via WebSocket, filtered for content, broadcast to room participants
+5. **Moderation Flow**: Admins can kick users, creating temporary bans with expiration
+6. **QR Code Generation**: Server-side QR code generation for easy room sharing
 
 ## External Dependencies
 
-### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connectivity
-- **drizzle-orm**: Type-safe database ORM
-- **ws**: WebSocket server implementation
-- **bad-words**: Content moderation library
-- **qrcode**: QR code generation
-- **express-rate-limit**: API rate limiting
-
-### UI Dependencies
-- **@radix-ui/***: Accessible UI primitives
-- **@tanstack/react-query**: Server state management
-- **tailwindcss**: Utility-first CSS framework
-- **wouter**: Lightweight React router
+### Production Dependencies
+- **@neondatabase/serverless**: Neon database client for serverless PostgreSQL
+- **@radix-ui/***: Component library foundation for UI elements
+- **@tanstack/react-query**: Server state management and caching
+- **drizzle-orm**: Type-safe ORM for database operations
+- **express**: Web framework for API and static file serving
+- **ws**: WebSocket library for real-time communication
+- **bad-words**: Content filtering library
+- **qrcode**: QR code generation for room sharing
 
 ### Development Dependencies
 - **vite**: Build tool and development server
-- **typescript**: Type safety
-- **tsx**: TypeScript execution for development
+- **typescript**: Type checking and compilation
+- **tailwindcss**: Utility-first CSS framework
+- **esbuild**: Fast JavaScript bundler for production builds
 
 ## Deployment Strategy
 
-### Build Process
-- **Frontend**: Vite builds React app to `dist/public`
-- **Backend**: ESBuild bundles Node.js server to `dist/index.js`
-- **Database**: Drizzle migrations stored in `migrations/` directory
+### Development Environment
+- **Replit**: Primary development platform using Neon serverless PostgreSQL
+- **Vite Dev Server**: Hot module replacement and development middleware
+- **Environment Variables**: `DATABASE_URL` for database connection
 
-### Environment Configuration
-- **Development**: Uses tsx for hot reloading
-- **Production**: Compiled JavaScript with NODE_ENV=production
-- **Database**: Requires DATABASE_URL environment variable
+### Production Environment
+- **Docker**: Multi-stage containerized deployment
+- **Build Process**: 
+  1. Vite builds frontend to `dist/public`
+  2. esbuild bundles server code to `dist/index.js`
+  3. Production image serves static files and API
+- **Database**: Standard PostgreSQL in Docker container with initialization scripts
+- **Static File Serving**: Express serves built frontend assets
 
-### Hosting Requirements
-- **Node.js**: Runtime environment for Express server
-- **PostgreSQL**: Database for persistent storage
-- **WebSocket Support**: For real-time chat functionality
-- **Static File Serving**: For React frontend assets
+### Build Configuration
+- **Frontend**: Vite with React plugin, path aliases for clean imports
+- **Backend**: esbuild with external dependencies, ES module output
+- **Database Migrations**: Drizzle Kit for schema management and migrations
 
-### Key Features
-- **No Signup Required**: Anonymous chat access
-- **QR Code Sharing**: Easy room access via mobile devices
-- **Temporary Rooms**: Automatic expiration and cleanup
-- **Content Moderation**: Built-in profanity filtering
-- **Admin Dashboard**: Room management and monitoring
-- **Mobile Responsive**: Works across all device sizes
+### Environment Considerations
+The application adapts its database client based on the environment:
+- Replit/Cloud: Uses Neon serverless with WebSocket configuration
+- Docker/Local: Uses standard node-postgres with connection pooling
+
+This dual approach allows seamless development in Replit while supporting traditional deployment environments.
