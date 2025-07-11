@@ -38,7 +38,8 @@ services:
       args:
         VITE_SHOW_HERO_DESCRIPTION: ${VITE_SHOW_HERO_DESCRIPTION:-true}
         VITE_SHOW_FEATURES_SECTION: ${VITE_SHOW_FEATURES_SECTION:-true}
-        VITE_SHOW_START_BUTTON: ${VITE_SHOW_START_BUTTON:-true}
+        VITE_SHOW_START_NEW_CHAT_BUTTON: ${VITE_SHOW_START_NEW_CHAT_BUTTON:-true}
+        VITE_SHOW_JOIN_CHAT_BUTTON: ${VITE_SHOW_JOIN_CHAT_BUTTON:-true}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://blabbme_user:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/blabbme_db

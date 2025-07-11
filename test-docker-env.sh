@@ -28,7 +28,8 @@ POSTGRES_PASSWORD=test_password_123
 SESSION_SECRET=test_session_secret_very_long_random_string_here
 VITE_SHOW_HERO_DESCRIPTION=false
 VITE_SHOW_FEATURES_SECTION=false
-VITE_SHOW_START_BUTTON=false
+VITE_SHOW_START_NEW_CHAT_BUTTON=false
+VITE_SHOW_JOIN_CHAT_BUTTON=false
 EOF
 
 echo "✓ Created .env.test with all features disabled"
@@ -39,6 +40,11 @@ echo "2. Rebuild containers: docker-compose down && docker-compose build --no-ca
 echo "3. Start containers: docker-compose up"
 echo "4. Visit the site - you should see a minimal landing page with no buttons or features"
 echo
+echo "=== Testing individual button controls ==="
+echo "You can now control each button separately:"
+echo "- VITE_SHOW_START_NEW_CHAT_BUTTON=false  (hides 'Start New Chat' button)"
+echo "- VITE_SHOW_JOIN_CHAT_BUTTON=false       (hides 'Join Existing Chat' button)"
+echo
 echo "To restore normal functionality:"
 echo "1. Copy .env.example to .env: cp .env.example .env"
 echo "2. Rebuild and restart as above"
@@ -47,7 +53,8 @@ echo "=== Current Docker build configuration ==="
 echo "Build args will be passed from your .env file:"
 echo "- VITE_SHOW_HERO_DESCRIPTION: ${VITE_SHOW_HERO_DESCRIPTION:-true}"
 echo "- VITE_SHOW_FEATURES_SECTION: ${VITE_SHOW_FEATURES_SECTION:-true}"  
-echo "- VITE_SHOW_START_BUTTON: ${VITE_SHOW_START_BUTTON:-true}"
+echo "- VITE_SHOW_START_NEW_CHAT_BUTTON: ${VITE_SHOW_START_NEW_CHAT_BUTTON:-true}"
+echo "- VITE_SHOW_JOIN_CHAT_BUTTON: ${VITE_SHOW_JOIN_CHAT_BUTTON:-true}"
 echo
 echo "=== Important Notes ==="
 echo "• Environment variables are embedded during Docker BUILD time, not runtime"

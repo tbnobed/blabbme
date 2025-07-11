@@ -21,7 +21,8 @@ export default function Home() {
   // Environment variables for controlling landing page sections
   const showHeroDescription = import.meta.env.VITE_SHOW_HERO_DESCRIPTION !== 'false';
   const showFeaturesSection = import.meta.env.VITE_SHOW_FEATURES_SECTION !== 'false';
-  const showStartButton = import.meta.env.VITE_SHOW_START_BUTTON !== 'false';
+  const showStartNewChatButton = import.meta.env.VITE_SHOW_START_NEW_CHAT_BUTTON !== 'false';
+  const showJoinChatButton = import.meta.env.VITE_SHOW_JOIN_CHAT_BUTTON !== 'false';
 
   const createNewRoom = async () => {
     setIsCreatingRoom(true);
@@ -113,25 +114,29 @@ export default function Home() {
             )}
 
             {/* Main Action Buttons */}
-            {showStartButton && (
+            {(showStartNewChatButton || showJoinChatButton) && (
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-                <Button
-                  size="lg"
-                  onClick={createNewRoom}
-                  disabled={isCreatingRoom}
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  <Plus className="mr-2 h-5 w-5" />
-                  {isCreatingRoom ? "Creating Room..." : "Start New Chat"}
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={() => setShowJoinModal(true)}
-                  className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  <Users className="mr-2 h-5 w-5" />
-                  Join Existing Chat
-                </Button>
+                {showStartNewChatButton && (
+                  <Button
+                    size="lg"
+                    onClick={createNewRoom}
+                    disabled={isCreatingRoom}
+                    className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    {isCreatingRoom ? "Creating Room..." : "Start New Chat"}
+                  </Button>
+                )}
+                {showJoinChatButton && (
+                  <Button
+                    size="lg"
+                    onClick={() => setShowJoinModal(true)}
+                    className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    <Users className="mr-2 h-5 w-5" />
+                    Join Existing Chat
+                  </Button>
+                )}
               </div>
             )}
 
