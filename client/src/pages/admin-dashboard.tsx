@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Shield, MessageCircle, Users, Mail, AlertTriangle, Plus, Eye, QrCode, Trash2, LogOut } from "lucide-react";
@@ -23,6 +24,7 @@ export default function AdminDashboard() {
     name: "",
     maxParticipants: 10,
     expiresAt: "",
+    neverExpires: false,
   });
   const { toast } = useToast();
 
@@ -36,7 +38,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       setShowCreateRoom(false);
-      setNewRoom({ name: "", maxParticipants: 10, expiresAt: "" });
+      setNewRoom({ name: "", maxParticipants: 10, expiresAt: "", neverExpires: false });
       toast({
         title: "Room created",
         description: "New chat room has been created successfully",
@@ -75,7 +77,9 @@ export default function AdminDashboard() {
     const roomData = {
       name: newRoom.name,
       maxParticipants: newRoom.maxParticipants,
-      expiresAt: newRoom.expiresAt ? new Date(newRoom.expiresAt) : new Date(Date.now() + 30 * 60 * 1000), // Default 30 minutes
+      expiresAt: newRoom.neverExpires 
+        ? null 
+        : (newRoom.expiresAt ? new Date(newRoom.expiresAt) : new Date(Date.now() + 30 * 60 * 1000)), // Default 30 minutes if not never expires
       createdBy: "admin",
     };
 
@@ -331,7 +335,22 @@ export default function AdminDashboard() {
                 type="datetime-local"
                 value={newRoom.expiresAt}
                 onChange={(e) => setNewRoom({ ...newRoom, expiresAt: e.target.value })}
+                disabled={newRoom.neverExpires}
               />
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                  id="never-expires"
+                  checked={newRoom.neverExpires}
+                  onCheckedChange={(checked) => setNewRoom({ 
+                    ...newRoom, 
+                    neverExpires: !!checked, 
+                    expiresAt: checked ? "" : newRoom.expiresAt 
+                  })}
+                />
+                <Label htmlFor="never-expires" className="text-sm font-normal">
+                  Never Expires
+                </Label>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={createRoomMutation.isPending}>
               {createRoomMutation.isPending ? "Creating..." : "Create Room"}
