@@ -102,7 +102,44 @@ async function setupDatabase() {
         await pool.query(migrationSql);
         console.log('Migration completed successfully!');
       } else {
-        console.log('Warnings table exists, no migration needed');
+        console.log('Warnings table exists, checking banned_users table schema...');
+        
+        // Check if banned_at column exists in banned_users table
+        const bannedAtResult = await pool.query(\`
+          SELECT column_name FROM information_schema.columns 
+          WHERE table_name = 'banned_users' AND column_name = 'banned_at'
+        \`);
+        
+        if (bannedAtResult.rows.length === 0) {
+          console.log('banned_at column missing, running schema fix migration...');
+          const fixSchemaSql = \`
+            -- Add missing banned_at column
+            ALTER TABLE banned_users ADD COLUMN IF NOT EXISTS banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+            
+            -- Update existing rows if they have created_at
+            DO \$\$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'banned_users' AND column_name = 'created_at'
+                ) THEN
+                    UPDATE banned_users SET banned_at = created_at WHERE banned_at IS NULL;
+                    ALTER TABLE banned_users DROP COLUMN created_at;
+                END IF;
+            END \$\$;
+            
+            -- Fix reason column default
+            ALTER TABLE banned_users ALTER COLUMN reason SET DEFAULT 'kicked_by_admin';
+            
+            -- Add missing index
+            CREATE INDEX IF NOT EXISTS idx_banned_users_banned_at ON banned_users(banned_at);
+          \`;
+          
+          await pool.query(fixSchemaSql);
+          console.log('Schema fix migration completed!');
+        } else {
+          console.log('banned_at column exists, no schema fix needed');
+        }
       }
       
       // Ensure admin user exists with correct password

@@ -1,0 +1,95 @@
+obtv-admin@dev-blabb:~/blabbme$ docker compose logs -f
+app-1       | === Blabb.me Application Startup ===
+app-1       | Waiting for PostgreSQL to be ready...
+app-1       | PostgreSQL is ready!
+app-1       | Setting up database schema...
+app-1       | Database already initialized
+postgres-1  |
+postgres-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1  |
+postgres-1  | 2025-07-11 08:06:21.250 UTC [1] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-07-11 08:06:21.250 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2025-07-11 08:06:21.250 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+app-1       | Warnings table exists, no migration needed
+app-1       | Admin user verified/updated
+app-1       | Starting application...
+app-1       | ? Serving frontend from: /app/dist/public
+app-1       | Production server running on port 5000
+app-1       | GET /api/rooms 200 in 114ms :: [{"id":"c9fdac","name":"TBN Engineers","createdB…
+postgres-1  | 2025-07-11 08:06:21.254 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-07-11 08:06:21.260 UTC [29] LOG:  database system was shut down at 2025-07-11 08:04:48 UTC
+postgres-1  | 2025-07-11 08:06:21.270 UTC [1] LOG:  database system is ready to accept connections
+postgres-1  | 2025-07-11 08:06:30.672 UTC [42] ERROR:  column "banned_at" does not exist at character 51
+postgres-1  | 2025-07-11 08:06:30.672 UTC [42] STATEMENT:  select "id", "room_id", "session_id", "nickname", "banned_at", "expires_at", "reason" from "banned_users" where "banned_users"."room_id" = $1
+postgres-1  | 2025-07-11 08:06:38.688 UTC [51] ERROR:  column "banned_at" does not exist at character 51
+postgres-1  | 2025-07-11 08:06:38.688 UTC [51] STATEMENT:  select "id", "room_id", "session_id", "nickname", "banned_at", "expires_at", "reason" from "banned_users" where "banned_users"."room_id" = $1
+app-1       | GET /api/admin/stats 200 in 25ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | WebSocket connection established
+app-1       | Received WebSocket message: { type: 'init-session', sessionId: 'session_1752220905987_3enrfkr' }
+app-1       | Received WebSocket message: {
+app-1       |   type: 'join-room',
+app-1       |   roomId: 'vw2l14',
+app-1       |   nickname: 'Obed1',
+app-1       |   sessionId: 'session_1752220905987_3enrfkr'
+app-1       | }
+app-1       | Handling join-room for: vw2l14 Obed1
+app-1       | JOIN ROOM: Looking for room: vw2l14 with nickname: Obed1 sessionId: session_1752220905987_3enrfkr
+app-1       | JOIN ROOM: Found room: {
+app-1       |   id: 'vw2l14',
+app-1       |   name: 'Quick Chat Room',
+app-1       |   createdBy: 'anonymous',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: 2025-07-11T08:31:44.834Z,
+app-1       |   createdAt: 2025-07-11T08:01:45.953Z,
+app-1       |   isActive: true
+app-1       | }
+app-1       | Checking ban status for: {
+app-1       |   roomId: 'vw2l14',
+app-1       |   sessionId: 'session_1752220905987_3enrfkr',
+app-1       |   nickname: 'Obed1'
+app-1       | }
+app-1       | handleInitSession: sessionId: session_1752220905987_3enrfkr session found: false
+app-1       | WebSocket message error: error: column "banned_at" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.isUserBanned (file:///app/dist/index.js:219:24)
+app-1       |     at async handleJoinRoom (file:///app/dist/index.js:854:24)
+app-1       |     at async WebSocket.<anonymous> (file:///app/dist/index.js:736:13) {
+app-1       |   length: 109,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '51',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | GET /api/admin/stats 200 in 11ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/health 200 in 17ms
+app-1       | GET /api/admin/stats 200 in 10ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/rooms 304 in 26ms :: [{"id":"c9fdac","name":"TBN Engineers","createdBy…
+app-1       | GET /api/session/current 404 in 8ms :: {"message":"Session expired"}
+app-1       | WebSocket connection established
+app-1       | POST /api/session/create 200 in 4ms :: {"sessionId":"session_1752221195064_zlav…
+app-1       | WebSocket connection established
+app-1       | Received WebSocket message: { type: 'init-session', sessionId: 'session_1752221195064_zlavo35' }
+app-1       | handleInitSession: sessionId: session_1752221195064_zlavo35 session found: true
+app-1       | GET /api/admin/stats 200 in 15ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/admin/stats 200 in 13ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | Received WebSocket message: {
+app-1       |   type: 'join-room',
+app-1       |   roomId: 'vw2l14',
+app-1       |   nickname: 'Obed1',
+app-1       |   sessionId: 'session_1752221195064_zlavo35'
+app-1       | }
+app-1       | Handling join-room for: vw2l14 Obed1
