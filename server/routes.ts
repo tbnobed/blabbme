@@ -10,10 +10,18 @@ import { Filter } from "bad-words";
 
 const filter = new Filter();
 
-// Rate limiting for API routes
+// Rate limiting for API routes - more lenient for normal usage
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // Increased from 100 to 1000 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Special rate limiter for session and room endpoints (even more lenient)
+const sessionLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 500, // 500 requests per 5 minutes for sessions/rooms
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -38,7 +46,12 @@ const socketData = new Map<WebSocket, SocketData>();
 const userSessions = new Map<string, UserSession>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply general rate limiting to all API routes
   app.use("/api", apiLimiter);
+  
+  // Apply more lenient rate limiting to session and room endpoints
+  app.use("/api/session", sessionLimiter);
+  app.use("/api/rooms", sessionLimiter);
 
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
