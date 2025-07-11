@@ -45,8 +45,8 @@ RUN adduser -S appuser -u 1001 -G nodejs
 # Copy built application from builder stage
 COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
-COPY --chown=appuser:nodejs entrypoint.sh ./
-COPY --chown=appuser:nodejs init.sql ./
+COPY --from=builder --chown=appuser:nodejs /app/entrypoint.sh ./
+COPY --from=builder --chown=appuser:nodejs /app/init.sql ./
 
 # Install only production dependencies
 RUN npm ci --only=production --ignore-scripts && npm cache clean --force

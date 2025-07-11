@@ -1,0 +1,116 @@
+? Step 3: Waiting for services to be healthy...
+Waiting for postgres to be healthy...
+postgres-1  | The files belonging to this database system will be owned by user "postgres".
+postgres-1  | This user must also own the server process.
+postgres-1  |
+postgres-1  | The database cluster will be initialized with locale "C".
+postgres-1  | The default text search configuration will be set to "english".
+postgres-1  |
+postgres-1  | Data page checksums are disabled.
+postgres-1  |
+postgres-1  | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+postgres-1  | creating subdirectories ... ok
+postgres-1  | selecting dynamic shared memory implementation ... posix
+postgres-1  | selecting default max_connections ... 100
+postgres-1  | selecting default shared_buffers ... 128MB
+postgres-1  | selecting default time zone ... UTC
+postgres-1  | creating configuration files ... ok
+postgres-1  | running bootstrap script ... ok
+postgres-1  | sh: locale: not found
+postgres-1  | 2025-07-11 01:09:41.423 UTC [35] WARNING:  no usable system locales were found
+postgres-1  | performing post-bootstrap initialization ... ok
+postgres-1  | syncing data to disk ... ok
+postgres-1  |
+postgres-1  |
+postgres-1  | Success. You can now start the database server using:
+postgres-1  |
+postgres-1  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+postgres-1  |
+postgres-1  | initdb: warning: enabling "trust" authentication for local connections
+postgres-1  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+postgres-1  | waiting for server to start....2025-07-11 01:09:42.813 UTC [41] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-07-11 01:09:42.815 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-07-11 01:09:42.823 UTC [44] LOG:  database system was shut down at 2025-07-11 01:09:42 UTC
+postgres-1  | 2025-07-11 01:09:42.831 UTC [41] LOG:  database system is ready to accept connections
+postgres-1  |  done
+postgres-1  | server started
+postgres-1  | CREATE DATABASE
+postgres-1  |
+postgres-1  |
+postgres-1  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/01-init.sql
+postgres-1  | Starting database initialization for blabb.me...
+postgres-1  | SET
+postgres-1  | CREATE EXTENSION
+postgres-1  | CREATE EXTENSION
+postgres-1  | Creating sessions table...
+postgres-1  | CREATE TABLE
+postgres-1  | Creating admins table...
+postgres-1  | CREATE TABLE
+postgres-1  | Creating rooms table...
+postgres-1  | CREATE TABLE
+postgres-1  | Creating participants table...
+postgres-1  | CREATE TABLE
+postgres-1  | Creating messages table...
+postgres-1  | CREATE TABLE
+postgres-1  | Creating database indexes...
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | CREATE INDEX
+postgres-1  | Creating default admin user...
+postgres-1  | INSERT 0 1
+postgres-1  | Creating cleanup functions...
+postgres-1  | CREATE FUNCTION
+postgres-1  | Setting up permissions...
+postgres-1  | GRANT
+postgres-1  | GRANT
+postgres-1  | GRANT
+postgres-1  | Database initialization completed successfully!
+postgres-1  | Database statistics:
+postgres-1  |  schemaname | tablename | attname | n_distinct | correlation
+postgres-1  | ------------+-----------+---------+------------+-------------
+postgres-1  | (0 rows)
+postgres-1  |
+postgres-1  |
+postgres-1  |
+postgres-1  | waiting for server to shut down...2025-07-11 01:09:43.235 UTC [41] LOG:  received fast shutdown request
+postgres-1  | .2025-07-11 01:09:43.237 UTC [41] LOG:  aborting any active transactions
+postgres-1  | 2025-07-11 01:09:43.240 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+postgres-1  | 2025-07-11 01:09:43.241 UTC [42] LOG:  shutting down
+postgres-1  | 2025-07-11 01:09:43.243 UTC [42] LOG:  checkpoint starting: shutdown immediate
+postgres-1  | 2025-07-11 01:09:43.349 UTC [42] LOG:  checkpoint complete: wrote 950 buffers (2.9%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.072 s, sync=0.030 s, total=0.109 s; sync files=336, longest=0.004 s, average=0.001 s; distance=4489 kB, estimate=4489 kB
+postgres-1  | 2025-07-11 01:09:43.364 UTC [41] LOG:  database system is shut down
+postgres-1  |  done
+postgres-1  | server stopped
+postgres-1  |
+postgres-1  | PostgreSQL init process complete; ready for start up.
+postgres-1  |
+postgres-1  | 2025-07-11 01:09:43.490 UTC [1] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-07-11 01:09:43.490 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2025-07-11 01:09:43.490 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2025-07-11 01:09:43.494 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-07-11 01:09:43.499 UTC [59] LOG:  database system was shut down at 2025-07-11 01:09:43 UTC
+postgres-1  | 2025-07-11 01:09:43.508 UTC [1] LOG:  database system is ready to accept connections
+? postgres is healthy!
+Waiting for app to be healthy...
+app-1       | [dumb-init] ./entrypoint.sh: No such file or directory
+app-1       | [dumb-init] ./entrypoint.sh: No such file or directory
+app-1 exited with code 0
+app-1 exited with code 0
+app-1       | [dumb-init] ./entrypoint.sh: No such file or directory
+app-1 exited with code 0
+app-1       | [dumb-init] ./entrypoint.sh: No such file or directory
+app-1 exited with code 2
+app-1 exited with code 2
+  Attempt 1/60...
+app-1 exited with code 2
+app-1 exited with code 2
+  Attempt 2/60...
+  Attempt 3/60...
+app-1 exited with code 2
