@@ -1,0 +1,112 @@
+app-1       | Handling join-room for: obed Me723
+app-1       | JOIN ROOM: Looking for room: obed with nickname: Me723 sessionId: session_1752251198631_ispn54h
+app-1       | WebSocket message error: error: password authentication failed for user "blabbme_user"
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getRoom (file:///app/dist/index.js:156:20)
+app-1       |     at async handleJoinRoom (file:///app/dist/index.js:845:18)
+app-1       |     at async WebSocket.<anonymous> (file:///app/dist/index.js:736:13) {
+app-1       |   length: 108,
+app-1       |   severity: 'FATAL',
+app-1       |   code: '28P01',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: undefined,
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'auth.c',
+app-1       |   line: '326',
+app-1       |   routine: 'auth_failed'
+app-1       | }
+app-1       | Received WebSocket message: { type: 'heartbeat-ack' }
+app-1       | GET /api/health 200 in 2ms
+app-1       | Received WebSocket message: { type: 'ping' }
+app-1       | GET /api/health 200 in 2ms
+app-1       | GET /api/health 200 in 3ms
+app-1       | Received WebSocket message: { type: 'ping' }
+app-1       | Received WebSocket message: { type: 'heartbeat-ack' }
+app-1       | GET /api/health 200 in 3ms
+app-1       | Admin login error: error: password authentication failed for user "blabbme_user"
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAdminByUsername (file:///app/dist/index.js:148:21)
+app-1       |     at async file:///app/dist/index.js:341:21 {
+app-1       |   length: 108,
+app-1       |   severity: 'FATAL',
+app-1       |   code: '28P01',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: undefined,
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'auth.c',
+app-1       |   line: '326',
+app-1       |   routine: 'auth_failed'
+app-1       | }
+app-1       | POST /api/auth/login 500 in 17ms :: {"message":"Internal server error"}
+app-1       | Admin login error: error: password authentication failed for user "blabbme_user"
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAdminByUsername (file:///app/dist/index.js:148:21)
+app-1       |     at async file:///app/dist/index.js:341:21 {
+app-1       |   length: 108,
+app-1       |   severity: 'FATAL',
+app-1       |   code: '28P01',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: undefined,
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'auth.c',
+app-1       |   line: '326',
+app-1       |   routine: 'auth_failed'
+app-1       | }
+app-1       | POST /api/auth/login 500 in 16ms :: {"message":"Internal server error"}
+app-1       | Admin login error: error: password authentication failed for user "blabbme_user"
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAdminByUsername (file:///app/dist/index.js:148:21)
+app-1       |     at async file:///app/dist/index.js:341:21 {
+app-1       |   length: 108,
+app-1       |   severity: 'FATAL',
+app-1       |   code: '28P01',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: undefined,
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'auth.c',
+app-1       |   line: '326',
+app-1       |   routine: 'auth_failed'
+app-1       | }
+app-1       | POST /api/auth/login 500 in 16ms :: {"message":"Internal server error"}
+app-1       | GET /api/health 200 in 3ms
+app-1       | Received WebSocket message: { type: 'ping' }
