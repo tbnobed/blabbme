@@ -87,21 +87,7 @@ export default function Home() {
                 <span className="text-accent">.me</span>
               </div>
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <a href="#home" className="text-gray-600 hover:text-secondary transition-colors">
-                Home
-              </a>
-              <a href="#about" className="text-gray-600 hover:text-secondary transition-colors">
-                About
-              </a>
-              <Button
-                variant="ghost"
-                onClick={() => setLocation("/admin-login")}
-                className="text-gray-600 hover:text-secondary"
-              >
-                Admin
-              </Button>
-            </nav>
+
           </div>
         </div>
       </header>
