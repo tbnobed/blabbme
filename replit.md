@@ -8,6 +8,14 @@ This is a real-time anonymous chat application built with React, Express, and We
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Session Management Improvements
+- Extended session timeout from immediate expiration to 2 hours of inactivity
+- Added WebSocket keep-alive mechanism with 30-second server pings and 25-second client heartbeats
+- Improved reconnection logic with exponential backoff (up to 10 attempts)
+- Enhanced session restoration from database when WebSocket reconnects
+- Extended session cookies from 24 hours to 7 days
+- Added automatic session cleanup to prevent memory leaks
+
 ## System Architecture
 
 ### Frontend Architecture

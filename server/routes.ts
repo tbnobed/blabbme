@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.cookie('chat_session', sessionId, {
         httpOnly: true,
         secure: false, // Set to true in production with HTTPS
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         sameSite: 'lax'
       });
       
@@ -283,14 +283,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.cleanupExpiredRooms();
   }, 5 * 60 * 1000);
 
+  // Cleanup expired sessions every 10 minutes (sessions expire after 2 hours of inactivity)
+  setInterval(() => {
+    const now = new Date();
+    const sessionTimeout = 2 * 60 * 60 * 1000; // 2 hours
+    
+    for (const [sessionId, session] of userSessions.entries()) {
+      if (now.getTime() - session.lastActivity.getTime() > sessionTimeout) {
+        console.log(`Cleaning up expired session: ${sessionId}`);
+        userSessions.delete(sessionId);
+      }
+    }
+  }, 10 * 60 * 1000);
+
   const httpServer = createServer(app);
 
   // WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
+  // WebSocket keep-alive ping interval (30 seconds)
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+      }
+    });
+  }, 30000);
+
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket connection established');
     socketData.set(ws, {});
+
+    // Set up pong handler for keep-alive
+    ws.on('pong', () => {
+      // Update last activity for this connection
+      const data = socketData.get(ws);
+      if (data?.sessionId) {
+        const session = userSessions.get(data.sessionId);
+        if (session) {
+          session.lastActivity = new Date();
+        }
+      }
+    });
 
     ws.on('message', async (data) => {
       try {
@@ -299,6 +333,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const socketInfo = socketData.get(ws);
 
         switch (message.type) {
+          case 'ping':
+            // Handle client heartbeat - update session activity
+            const data = socketData.get(ws);
+            if (data?.sessionId) {
+              const session = userSessions.get(data.sessionId);
+              if (session) {
+                session.lastActivity = new Date();
+              }
+            }
+            ws.send(JSON.stringify({ type: 'pong' }));
+            break;
           case 'init-session':
             await handleInitSession(ws, message);
             break;
@@ -333,6 +378,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       socketData.delete(ws);
     });
+
+    // Send initial ping to establish keep-alive
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.ping();
+    }
   });
 
   async function handleInitSession(ws: WebSocket, message: any) {

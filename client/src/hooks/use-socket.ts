@@ -9,8 +9,9 @@ export function useSocket(options: UseSocketOptions = {}) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 10;
   const { sessionId, onSessionRestore } = options;
 
   const connect = () => {
@@ -32,6 +33,13 @@ export function useSocket(options: UseSocketOptions = {}) {
             sessionId,
           }));
         }
+
+        // Start heartbeat to keep connection alive
+        heartbeatIntervalRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 25000); // Send ping every 25 seconds
       };
 
       ws.onmessage = (event) => {
@@ -52,15 +60,23 @@ export function useSocket(options: UseSocketOptions = {}) {
         setIsConnected(false);
         setSocket(null);
         
+        // Clear heartbeat
+        if (heartbeatIntervalRef.current) {
+          clearInterval(heartbeatIntervalRef.current);
+          heartbeatIntervalRef.current = null;
+        }
+        
         // Auto-reconnect with exponential backoff
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          const delay = Math.pow(2, reconnectAttemptsRef.current) * 1000;
-          console.log(`Reconnecting in ${delay}ms...`);
+          const delay = Math.min(Math.pow(2, reconnectAttemptsRef.current) * 1000, 30000); // Max 30 seconds
+          console.log(`Reconnecting in ${delay}ms... (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
           }, delay);
+        } else {
+          console.log('Max reconnection attempts reached');
         }
       };
 
@@ -77,6 +93,11 @@ export function useSocket(options: UseSocketOptions = {}) {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
+    }
+    
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
     }
     
     if (socket) {
