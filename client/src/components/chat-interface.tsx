@@ -55,6 +55,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('Chat interface received message:', data.type, data);
+
+        // Handle server heartbeat here since useSocket no longer handles them
+        if (data.type === 'server-heartbeat') {
+          // Send back a response to confirm connection is alive
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'heartbeat-ack' }));
+          }
+          return; // Don't process heartbeat further
+        }
 
         switch (data.type) {
           case 'room-joined':

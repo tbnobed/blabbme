@@ -42,26 +42,8 @@ export function useSocket(options: UseSocketOptions = {}) {
         }, 25000); // Send ping every 25 seconds
       };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          // Handle session restoration
-          if (data.type === 'session-restored' && onSessionRestore) {
-            onSessionRestore(data);
-          }
-          
-          // Handle server heartbeat to keep connection alive
-          if (data.type === 'server-heartbeat') {
-            // Send back a response to confirm connection is alive
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: 'heartbeat-ack' }));
-            }
-          }
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
+      // Don't add onmessage handler here - let components handle all messages
+      // This prevents the useSocket hook from consuming messages that components need
 
       ws.onclose = () => {
         console.log('WebSocket disconnected');
