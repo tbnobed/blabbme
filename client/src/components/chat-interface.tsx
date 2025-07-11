@@ -75,11 +75,26 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             setParticipants(prev => [...prev, data.participant]);
             break;
           case 'user-left':
+            const leftMessage = data.reason === 'kicked' 
+              ? `${data.nickname} was removed from the room`
+              : `${data.nickname} left the chat`;
             toast({
-              title: "User left",
-              description: `${data.nickname} left the chat`,
+              title: data.reason === 'kicked' ? "User kicked" : "User left",
+              description: leftMessage,
             });
             setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+            break;
+          case 'kicked':
+            // User was kicked from the room
+            toast({
+              title: "Removed from room",
+              description: data.message,
+              variant: "destructive",
+            });
+            // Navigate back to home page after showing the message
+            setTimeout(() => {
+              onLeaveRoom();
+            }, 2000);
             break;
           case 'warning':
             setWarning(data.message);

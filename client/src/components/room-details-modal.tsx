@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface RoomDetailsModalProps {
   isOpen: boolean;
@@ -16,18 +17,39 @@ interface RoomDetailsModalProps {
 
 export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsModalProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: roomDetails, isLoading } = useQuery({
     queryKey: ["/api/rooms", room.id],
     enabled: isOpen && !!room.id,
   });
 
-  const kickUser = async (participant: any) => {
-    // In a real implementation, this would call an API to kick the user
-    toast({
-      title: "User kicked",
-      description: `${participant.nickname} has been removed from the room`,
-    });
+  const kickUserMutation = useMutation({
+    mutationFn: async (participant: any) => {
+      await apiRequest(`/api/rooms/${room.id}/participants/${participant.id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: (_, participant) => {
+      toast({
+        title: "User kicked",
+        description: `${participant.nickname} has been removed from the room`,
+      });
+      // Refresh room details to update participant list
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove user from room",
+        variant: "destructive",
+      });
+      console.error("Failed to kick user:", error);
+    },
+  });
+
+  const kickUser = (participant: any) => {
+    kickUserMutation.mutate(participant);
   };
 
   const getInitial = (name: string) => {
@@ -99,7 +121,8 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
                       variant="ghost"
                       size="sm"
                       onClick={() => kickUser(participant)}
-                      className="text-red-600 hover:text-red-800"
+                      disabled={kickUserMutation.isPending}
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
                       <UserX className="h-4 w-4" />
                     </Button>

@@ -274,6 +274,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Kick participant from room (admin only)
+  app.delete("/api/rooms/:roomId/participants/:participantId", async (req, res) => {
+    try {
+      const { roomId, participantId } = req.params;
+      
+      // Get participant info before removing
+      const participants = await storage.getParticipantsByRoom(roomId);
+      const participant = participants.find(p => p.id.toString() === participantId);
+      
+      if (!participant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+      
+      // Remove participant from database
+      const removed = await storage.removeParticipant(roomId, participant.socketId);
+      
+      if (removed) {
+        // Find and close WebSocket connection for this participant
+        const wss = (req.app as any).wss;
+        wss.clients.forEach((client) => {
+          const clientData = socketData.get(client);
+          if (clientData?.roomId === roomId && clientData?.nickname === participant.nickname) {
+            // Send kick notification to the user being kicked
+            client.send(JSON.stringify({
+              type: 'kicked',
+              message: 'You have been removed from the room by an admin'
+            }));
+            
+            // Update their socket data to remove room info
+            socketData.set(client, { 
+              sessionId: clientData.sessionId,
+              roomId: undefined, 
+              nickname: undefined 
+            });
+          }
+        });
+        
+        // Broadcast to remaining participants
+        broadcastToRoom(wss, roomId, {
+          type: 'user-left',
+          nickname: participant.nickname,
+          reason: 'kicked'
+        });
+        
+        res.json({ message: "Participant removed successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to remove participant" });
+      }
+    } catch (error) {
+      console.error("Error kicking participant:", error);
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  });
+
   // QR Code generation
   app.get("/api/rooms/:id/qr", async (req, res) => {
     try {
@@ -313,6 +367,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Make wss accessible to route handlers
+  (app as any).wss = wss;
 
   // WebSocket keep-alive ping interval (30 seconds)
   const pingInterval = setInterval(() => {
