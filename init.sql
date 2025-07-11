@@ -68,9 +68,9 @@ CREATE TABLE IF NOT EXISTS banned_users (
     room_id VARCHAR(255) NOT NULL,
     session_id VARCHAR(255),
     nickname VARCHAR(255) NOT NULL,
+    banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
-    reason VARCHAR(255) DEFAULT 'content_violation',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason VARCHAR(255) DEFAULT 'kicked_by_admin',
     CONSTRAINT fk_banned_users_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
 
@@ -102,6 +102,7 @@ CREATE INDEX IF NOT EXISTS idx_rooms_expires_at ON rooms(expires_at);
 CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at);
 CREATE INDEX IF NOT EXISTS idx_banned_users_room_id ON banned_users(room_id);
 CREATE INDEX IF NOT EXISTS idx_banned_users_expires_at ON banned_users(expires_at);
+CREATE INDEX IF NOT EXISTS idx_banned_users_banned_at ON banned_users(banned_at);
 CREATE INDEX IF NOT EXISTS idx_banned_users_session_nickname ON banned_users(room_id, session_id, nickname);
 CREATE INDEX IF NOT EXISTS idx_warnings_room_id ON warnings(room_id);
 CREATE INDEX IF NOT EXISTS idx_warnings_created_at ON warnings(created_at);

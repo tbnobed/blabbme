@@ -1,0 +1,38 @@
+app-1       | WebSocket message error: error: column "banned_at" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.isUserBanned (file:///app/dist/index.js:219:24)
+app-1       |     at async handleJoinRoom (file:///app/dist/index.js:854:24)
+app-1       |     at async WebSocket.<anonymous> (file:///app/dist/index.js:736:13) {
+app-1       |   length: 109,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '51',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | GET /api/health 200 in 2ms
+app-1       | GET /api/admin/stats 200 in 9ms :: {"activeRooms":2,"onlineUsers":1,"totalMessa…
+app-1       | GET /api/rooms 304 in 28ms :: [{"id":"c9fdac","name":"TBN Engineers","createdBy…
+app-1       | GET /api/admin/stats 200 in 17ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/admin/stats 200 in 12ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/admin/stats 200 in 11ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/rooms 304 in 5ms :: [{"id":"c9fdac","name":"TBN Engineers","createdBy"…
+app-1       | GET /api/admin/stats 200 in 10ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/admin/stats 200 in 12ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/rooms 304 in 5ms :: [{"id":"c9fdac","name":"TBN Engineers","createdBy"…
+app-1       | GET /api/admin/stats 200 in 10ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/admin/stats 200 in 12ms :: {"activeRooms":2,"onlineUsers":1,"totalMess…
+app-1       | GET /api/health 200 in 3ms
