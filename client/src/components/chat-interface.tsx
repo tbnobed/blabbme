@@ -228,7 +228,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
                   {getInitial(message.nickname)}
                 </span>
               </div>
-              <div className={`flex-1 ${isOwnMessage ? 'text-right' : ''}`}>
+              <div className={`flex-1 ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
                 <div
                   className={`flex items-center space-x-2 mb-1 ${
                     isOwnMessage ? 'justify-end' : ''
@@ -242,7 +242,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
                   </span>
                 </div>
                 <div
-                  className={`px-3 py-2 rounded-lg max-w-xs inline-block ${
+                  className={`px-3 py-2 rounded-lg max-w-xs inline-block text-left ${
                     isOwnMessage
                       ? 'bg-primary text-white message-own'
                       : 'bg-gray-100 text-gray-900 message-other'
