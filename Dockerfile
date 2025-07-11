@@ -15,6 +15,16 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Define build arguments for Vite environment variables
+ARG VITE_SHOW_HERO_DESCRIPTION=true
+ARG VITE_SHOW_FEATURES_SECTION=true
+ARG VITE_SHOW_START_BUTTON=true
+
+# Set environment variables for the build
+ENV VITE_SHOW_HERO_DESCRIPTION=${VITE_SHOW_HERO_DESCRIPTION}
+ENV VITE_SHOW_FEATURES_SECTION=${VITE_SHOW_FEATURES_SECTION}
+ENV VITE_SHOW_START_BUTTON=${VITE_SHOW_START_BUTTON}
+
 # Build the frontend using vite config defaults
 RUN npx vite build
 
