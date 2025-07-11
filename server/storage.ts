@@ -243,11 +243,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addParticipant(insertParticipant: InsertParticipant): Promise<Participant> {
-    const [participant] = await db
-      .insert(participants)
-      .values(insertParticipant)
-      .returning();
-    return participant;
+    try {
+      const [participant] = await db
+        .insert(participants)
+        .values(insertParticipant)
+        .returning();
+      return participant;
+    } catch (error: any) {
+      // Handle duplicate socket_id constraint violation
+      if (error.code === '23505' && error.constraint === 'participants_socket_id_key') {
+        // Remove existing participant with this socket_id and try again
+        await this.removeParticipantBySocket(insertParticipant.socketId);
+        const [participant] = await db
+          .insert(participants)
+          .values(insertParticipant)
+          .returning();
+        return participant;
+      }
+      throw error;
+    }
   }
 
   async removeParticipant(roomId: string, socketId: string): Promise<boolean> {
