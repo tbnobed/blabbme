@@ -147,7 +147,7 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             Room Details: {roomDetails?.name || room.id}
@@ -165,7 +165,7 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
           </TabsList>
           
           <TabsContent value="participants">
-            <ScrollArea className="h-64">
+            <ScrollArea className="h-72">
               <div className="space-y-2">
                 {roomDetails?.participants?.map((participant: any) => (
                   <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -202,7 +202,7 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
           </TabsContent>
           
           <TabsContent value="banned">
-            <ScrollArea className="h-64">
+            <ScrollArea className="h-72">
               <div className="space-y-2">
                 {bannedUsers?.map((ban: any) => (
                   <div key={ban.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
@@ -248,7 +248,7 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
         {/* Live Chat Feed */}
         <div className="mt-6">
           <h4 className="text-lg font-medium text-gray-900 mb-4">Live Chat</h4>
-          <ScrollArea className="h-48 bg-gray-50 p-3 rounded-lg">
+          <ScrollArea className="h-80 bg-gray-50 p-3 rounded-lg">
             <div className="space-y-2">
               {roomDetails?.messages?.map((message: any) => (
                 <div key={message.id} className="text-sm">
