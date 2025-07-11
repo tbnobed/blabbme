@@ -23,11 +23,13 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
   const { data: roomDetails, isLoading } = useQuery({
     queryKey: ["/api/rooms", room.id],
     enabled: isOpen && !!room.id,
+    refetchInterval: 2000, // Refresh every 2 seconds for real-time updates
   });
 
   const { data: bannedUsers, isLoading: isLoadingBans } = useQuery({
     queryKey: ["/api/rooms", room.id, "bans"],
     enabled: isOpen && !!room.id,
+    refetchInterval: 2000, // Refresh every 2 seconds for real-time updates
   });
 
   const kickUserMutation = useMutation({
@@ -50,10 +52,11 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
     onSuccess: (_, participant) => {
       toast({
         title: "User kicked",
-        description: `${participant.nickname} has been removed from the room`,
+        description: `${participant.nickname} has been removed from the room and banned for 30 minutes`,
       });
-      // Refresh room details to update participant list
+      // Refresh both room details and banned users list
       queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id, "bans"] });
     },
     onError: (error) => {
       toast({
@@ -87,8 +90,9 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
         title: "User unbanned",
         description: `${nickname} has been unbanned from the room`,
       });
-      // Refresh banned users list
+      // Refresh both banned users list and room details
       queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id, "bans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id] });
     },
     onError: (error) => {
       toast({
