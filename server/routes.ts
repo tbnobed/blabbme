@@ -852,7 +852,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reason: 'automatic_ban_3_warnings',
         });
         
-        // Notify room about the ban
+        // Send ban message to the banned user first
+        try {
+          ws.send(JSON.stringify({
+            type: 'kicked',
+            message: 'You have been temporarily banned for 10 minutes due to repeated inappropriate content violations.'
+          }));
+        } catch (error) {
+          console.error('Error sending ban message to user:', error);
+        }
+        
+        // Remove user from room
+        await handleLeaveRoom(ws, wss, true);
+        
+        // Notify room about the ban AFTER removing the user
         broadcastToRoom(wss, socketInfo.roomId, {
           type: 'user-banned',
           nickname: socketInfo.nickname,
@@ -860,16 +873,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           duration: '10 minutes'
         });
         
-        // Remove user from room
-        await handleLeaveRoom(ws, wss, true);
-        
-        ws.send(JSON.stringify({
-          type: 'error',
-          message: 'You have been temporarily banned for 10 minutes due to repeated inappropriate content violations.'
-        }));
-        
-        // Close the connection
-        ws.close();
+        // Close the connection after a small delay to ensure messages are sent
+        setTimeout(() => {
+          try {
+            ws.close();
+          } catch (error) {
+            console.error('Error closing banned user connection:', error);
+          }
+        }, 100);
         return;
       }
       

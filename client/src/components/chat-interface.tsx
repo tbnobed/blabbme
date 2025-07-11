@@ -59,9 +59,13 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
         // Handle server heartbeat here since useSocket no longer handles them
         if (data.type === 'server-heartbeat') {
-          // Send back a response to confirm connection is alive
-          if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ type: 'heartbeat-ack' }));
+          try {
+            // Send back a response to confirm connection is alive
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'heartbeat-ack' }));
+            }
+          } catch (heartbeatError) {
+            console.error('Error sending heartbeat:', heartbeatError);
           }
           return; // Don't process heartbeat further
         }
@@ -69,74 +73,148 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         switch (data.type) {
           case 'room-joined':
           case 'session-restored':
-            console.log('Room data received:', data.type, data);
-            setRoom(data.room);
-            setMessages(data.messages || []);
-            setParticipants(data.participants || []);
+            try {
+              console.log('Room data received:', data.type, data);
+              setRoom(data.room || null);
+              setMessages(data.messages || []);
+              setParticipants(data.participants || []);
+            } catch (roomError) {
+              console.error('Error handling room data:', roomError);
+            }
             break;
           case 'new-message':
-            setMessages(prev => [...prev, data.message]);
+            try {
+              if (data.message) {
+                setMessages(prev => [...prev, data.message]);
+              }
+            } catch (messageError) {
+              console.error('Error adding new message:', messageError);
+            }
             break;
           case 'user-joined':
-            toast({
-              title: "User joined",
-              description: `${data.nickname} joined the chat`,
-            });
-            setParticipants(prev => [...prev, data.participant]);
+            try {
+              toast({
+                title: "User joined",
+                description: `${data.nickname || 'Someone'} joined the chat`,
+              });
+              if (data.participant) {
+                setParticipants(prev => [...prev, data.participant]);
+              }
+            } catch (joinError) {
+              console.error('Error handling user join:', joinError);
+            }
             break;
           case 'user-left':
-            const leftMessage = data.reason === 'kicked' 
-              ? `${data.nickname} was removed from the room`
-              : `${data.nickname} left the chat`;
-            toast({
-              title: data.reason === 'kicked' ? "User kicked" : "User left",
-              description: leftMessage,
-            });
-            setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+            try {
+              const leftMessage = data.reason === 'kicked' 
+                ? `${data.nickname || 'User'} was removed from the room`
+                : `${data.nickname || 'User'} left the chat`;
+              toast({
+                title: data.reason === 'kicked' ? "User kicked" : "User left",
+                description: leftMessage,
+              });
+              if (data.nickname) {
+                setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+              }
+            } catch (leftError) {
+              console.error('Error handling user leave:', leftError);
+            }
             break;
           case 'kicked':
-            // User was kicked from the room
-            toast({
-              title: "Removed from room",
-              description: data.message,
-              variant: "destructive",
-            });
-            // Navigate back to home page after showing the message
-            setTimeout(() => {
+            try {
+              // User was kicked from the room
+              toast({
+                title: "Removed from room",
+                description: data.message || "You have been removed from the room",
+                variant: "destructive",
+              });
+              // Navigate back to home page after showing the message
+              setTimeout(() => {
+                onLeaveRoom();
+              }, 2000);
+            } catch (kickError) {
+              console.error('Error handling kick:', kickError);
+              // Ensure we still leave the room even if toast fails
               onLeaveRoom();
-            }, 2000);
+            }
             break;
           case 'warning':
-            setWarning(data.message);
-            setTimeout(() => setWarning(""), 5000);
+            try {
+              setWarning(data.message || "");
+              setTimeout(() => setWarning(""), 5000);
+            } catch (warningError) {
+              console.error('Error handling warning:', warningError);
+            }
             break;
           case 'user-banned':
-            // Show ban notification to room
-            toast({
-              title: "User banned",
-              description: `${data.nickname} has been temporarily banned (${data.duration}) - ${data.reason}`,
-              variant: "destructive",
-            });
-            setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+            try {
+              // Show ban notification to room
+              toast({
+                title: "User banned",
+                description: `${data.nickname || 'User'} has been temporarily banned (${data.duration || '10 minutes'}) - ${data.reason || 'Content violation'}`,
+                variant: "destructive",
+              });
+              if (data.nickname) {
+                setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+              }
+            } catch (banError) {
+              console.error('Error handling user ban notification:', banError);
+            }
             break;
           case 'error':
-            toast({
-              title: "Error",
-              description: data.message,
-              variant: "destructive",
-            });
-            if (data.message === "Room not found") {
-              onLeaveRoom();
+            try {
+              toast({
+                title: "Error",
+                description: data.message || "An error occurred",
+                variant: "destructive",
+              });
+              if (data.message === "Room not found") {
+                onLeaveRoom();
+              }
+            } catch (errorError) {
+              console.error('Error handling error message:', errorError);
             }
             break;
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
+        // Don't crash the UI on WebSocket errors
+        toast({
+          title: "Connection issue",
+          description: "There was a problem with the real-time connection.",
+          variant: "destructive",
+        });
       }
     };
 
     socket.addEventListener('message', handleMessage);
-    return () => socket.removeEventListener('message', handleMessage);
+    
+    // Handle unexpected connection close
+    const handleClose = () => {
+      console.log('WebSocket connection closed unexpectedly');
+      toast({
+        title: "Connection lost",
+        description: "Reconnecting to chat...",
+      });
+    };
+    
+    const handleError = () => {
+      console.log('WebSocket error occurred');
+      toast({
+        title: "Connection error",
+        description: "There was a problem with the chat connection.",
+        variant: "destructive",
+      });
+    };
+    
+    socket.addEventListener('close', handleClose);
+    socket.addEventListener('error', handleError);
+    
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+      socket.removeEventListener('close', handleClose);
+      socket.removeEventListener('error', handleError);
+    };
   }, [socket, toast, onLeaveRoom]);
 
   useEffect(() => {
