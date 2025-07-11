@@ -30,117 +30,12 @@ async function setupDatabase() {
       console.log('Running database initialization...');
       const initSql = fs.readFileSync('./init.sql', 'utf8');
       await pool.query(initSql);
-      console.log('Database initialization completed!');
+      console.log('✓ Database initialization completed with full schema!');
+      console.log('✓ All tables created: admins, rooms, participants, messages, banned_users, warnings');
+      console.log('✓ All indexes and functions created');
+      console.log('✓ Default admin user created: admin/admin123');
     } else {
       console.log('Database already initialized');
-      
-      // Check if warnings table exists (migration check)
-      const warningsResult = await pool.query(\"SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'warnings'\");
-      
-      if (warningsResult.rows.length === 0) {
-        console.log('Running migration: Adding warnings and banned_users tables...');
-        const migrationSql = \`
-          -- Create the banned_users table for user ban management
-          CREATE TABLE IF NOT EXISTS banned_users (
-              id SERIAL PRIMARY KEY,
-              room_id VARCHAR(255) NOT NULL,
-              session_id VARCHAR(255),
-              nickname VARCHAR(255) NOT NULL,
-              banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              expires_at TIMESTAMP NOT NULL,
-              reason VARCHAR(255) DEFAULT 'kicked_by_admin',
-              CONSTRAINT fk_banned_users_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-          );
-
-          -- Create the warnings table for content moderation tracking
-          CREATE TABLE IF NOT EXISTS warnings (
-              id SERIAL PRIMARY KEY,
-              room_id VARCHAR(255) NOT NULL,
-              session_id VARCHAR(255),
-              nickname VARCHAR(255) NOT NULL,
-              original_message TEXT NOT NULL,
-              filtered_message TEXT NOT NULL,
-              warning_type VARCHAR(50) DEFAULT 'profanity',
-              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT fk_warnings_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
-          );
-
-          -- Create indexes for the new tables
-          CREATE INDEX IF NOT EXISTS idx_banned_users_room_id ON banned_users(room_id);
-          CREATE INDEX IF NOT EXISTS idx_banned_users_expires_at ON banned_users(expires_at);
-          CREATE INDEX IF NOT EXISTS idx_banned_users_banned_at ON banned_users(banned_at);
-          CREATE INDEX IF NOT EXISTS idx_banned_users_session_nickname ON banned_users(room_id, session_id, nickname);
-          CREATE INDEX IF NOT EXISTS idx_warnings_room_id ON warnings(room_id);
-          CREATE INDEX IF NOT EXISTS idx_warnings_created_at ON warnings(created_at);
-          CREATE INDEX IF NOT EXISTS idx_warnings_room_session_nickname ON warnings(room_id, session_id, nickname);
-          CREATE INDEX IF NOT EXISTS idx_warnings_room_created_at ON warnings(room_id, created_at);
-
-          -- Create cleanup functions
-          CREATE OR REPLACE FUNCTION cleanup_expired_bans()
-          RETURNS INTEGER AS \$\$
-          DECLARE
-              deleted_count INTEGER;
-          BEGIN
-              DELETE FROM banned_users WHERE expires_at < NOW();
-              GET DIAGNOSTICS deleted_count = ROW_COUNT;
-              RETURN deleted_count;
-          END;
-          \$\$ LANGUAGE plpgsql;
-
-          CREATE OR REPLACE FUNCTION cleanup_old_warnings()
-          RETURNS INTEGER AS \$\$
-          DECLARE
-              deleted_count INTEGER;
-          BEGIN
-              DELETE FROM warnings WHERE created_at < NOW() - INTERVAL '30 days';
-              GET DIAGNOSTICS deleted_count = ROW_COUNT;
-              RETURN deleted_count;
-          END;
-          \$\$ LANGUAGE plpgsql;
-        \`;
-        
-        await pool.query(migrationSql);
-        console.log('Migration completed successfully!');
-      } else {
-        console.log('Warnings table exists, checking banned_users table schema...');
-        
-        // Check if banned_at column exists in banned_users table
-        const bannedAtResult = await pool.query(\`
-          SELECT column_name FROM information_schema.columns 
-          WHERE table_name = 'banned_users' AND column_name = 'banned_at'
-        \`);
-        
-        if (bannedAtResult.rows.length === 0) {
-          console.log('banned_at column missing, running schema fix migration...');
-          const fixSchemaSql = \`
-            -- Add missing banned_at column
-            ALTER TABLE banned_users ADD COLUMN IF NOT EXISTS banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            
-            -- Update existing rows if they have created_at
-            DO \$\$
-            BEGIN
-                IF EXISTS (
-                    SELECT 1 FROM information_schema.columns 
-                    WHERE table_name = 'banned_users' AND column_name = 'created_at'
-                ) THEN
-                    UPDATE banned_users SET banned_at = created_at WHERE banned_at IS NULL;
-                    ALTER TABLE banned_users DROP COLUMN created_at;
-                END IF;
-            END \$\$;
-            
-            -- Fix reason column default
-            ALTER TABLE banned_users ALTER COLUMN reason SET DEFAULT 'kicked_by_admin';
-            
-            -- Add missing index
-            CREATE INDEX IF NOT EXISTS idx_banned_users_banned_at ON banned_users(banned_at);
-          \`;
-          
-          await pool.query(fixSchemaSql);
-          console.log('Schema fix migration completed!');
-        } else {
-          console.log('banned_at column exists, no schema fix needed');
-        }
-      }
       
       // Ensure admin user exists with correct password
       await pool.query(\`

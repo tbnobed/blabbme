@@ -1,5 +1,6 @@
 -- Initialize the blabb.me database with required tables
 -- This file will be executed when the PostgreSQL container starts for the first time
+-- Complete schema with auto-ban system and warnings tracking
 \echo 'Starting database initialization for blabb.me...'
 
 -- Set timezone
