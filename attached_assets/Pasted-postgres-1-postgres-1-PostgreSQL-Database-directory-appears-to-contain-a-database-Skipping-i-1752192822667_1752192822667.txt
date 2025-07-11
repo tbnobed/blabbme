@@ -1,0 +1,252 @@
+postgres-1  |
+postgres-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1  |
+postgres-1  | 2025-07-11 00:03:32.642 UTC [1] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-07-11 00:03:32.642 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2025-07-11 00:03:32.642 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2025-07-11 00:03:32.645 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-07-11 00:03:32.651 UTC [29] LOG:  database system was shut down at 2025-07-10 23:37:01 UTC
+postgres-1  | 2025-07-11 00:03:32.661 UTC [1] LOG:  database system is ready to accept connections
+app-1       | ? Serving frontend from: /app/dist/public
+app-1       | Production server running on port 5000
+app-1       | Creating room with data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: '2025-07-11T00:34:05.795Z',
+app-1       |   createdBy: 'anonymous'
+app-1       | }
+app-1       | Processed room data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   createdBy: 'anonymous',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: 2025-07-11T00:34:05.795Z
+app-1       | }
+app-1       | expiresAt type: object 2025-07-11T00:34:05.795Z
+app-1       | Room creation error: ErrorEvent {
+app-1       |   [Symbol(kTarget)]: WebSocket {
+app-1       |     _events: [Object: null prototype] {
+app-1       |       error: [Function],
+app-1       |       message: [Function],
+app-1       |       close: [Function],
+app-1       |       open: [Function]
+app-1       |     },
+app-1       |     _eventsCount: 4,
+app-1       |     _maxListeners: undefined,
+app-1       |     _binaryType: 'arraybuffer',
+app-1       |     _closeCode: 1006,
+app-1       |     _closeFrameReceived: false,
+app-1       |     _closeFrameSent: false,
+app-1       |     _closeMessage: <Buffer >,
+app-1       |     _closeTimer: null,
+app-1       |     _errorEmitted: true,
+app-1       |     _extensions: {},
+app-1       |     _paused: false,
+app-1       |     _protocol: '',
+app-1       |     _readyState: 3,
+app-1       |     _receiver: null,
+app-1       |     _sender: null,
+app-1       |     _socket: null,
+app-1       |     _bufferedAmount: 0,
+app-1       |     _isServer: false,
+app-1       |     _redirects: 0,
+app-1       |     _autoPong: true,
+app-1       |     _url: 'wss://postgres/v2',
+app-1       |     _req: null,
+app-1       |     [Symbol(shapeMode)]: false,
+app-1       |     [Symbol(kCapture)]: false
+app-1       |   },
+app-1       |   [Symbol(kType)]: 'error',
+app-1       |   [Symbol(kError)]: Error: connect ECONNREFUSED 172.20.0.2:443
+app-1       |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+app-1       |     errno: -111,
+app-1       |     code: 'ECONNREFUSED',
+app-1       |     syscall: 'connect',
+app-1       |     address: '172.20.0.2',
+app-1       |     port: 443
+app-1       |   },
+app-1       |   [Symbol(kMessage)]: 'connect ECONNREFUSED 172.20.0.2:443'
+app-1       | }
+app-1       | POST /api/rooms 400 in 123ms :: {"message":"Invalid room data","error":"Unknown…
+app-1       | Creating room with data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: '2025-07-11T00:34:09.934Z',
+app-1       |   createdBy: 'anonymous'
+app-1       | }
+app-1       | Processed room data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   createdBy: 'anonymous',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: 2025-07-11T00:34:09.934Z
+app-1       | }
+app-1       | expiresAt type: object 2025-07-11T00:34:09.934Z
+app-1       | Room creation error: ErrorEvent {
+app-1       |   [Symbol(kTarget)]: WebSocket {
+app-1       |     _events: [Object: null prototype] {
+app-1       |       error: [Function],
+app-1       |       message: [Function],
+app-1       |       close: [Function],
+app-1       |       open: [Function]
+app-1       |     },
+app-1       |     _eventsCount: 4,
+app-1       |     _maxListeners: undefined,
+app-1       |     _binaryType: 'arraybuffer',
+app-1       |     _closeCode: 1006,
+app-1       |     _closeFrameReceived: false,
+app-1       |     _closeFrameSent: false,
+app-1       |     _closeMessage: <Buffer >,
+app-1       |     _closeTimer: null,
+app-1       |     _errorEmitted: true,
+app-1       |     _extensions: {},
+app-1       |     _paused: false,
+app-1       |     _protocol: '',
+app-1       |     _readyState: 3,
+app-1       |     _receiver: null,
+app-1       |     _sender: null,
+app-1       |     _socket: null,
+app-1       |     _bufferedAmount: 0,
+app-1       |     _isServer: false,
+app-1       |     _redirects: 0,
+app-1       |     _autoPong: true,
+app-1       |     _url: 'wss://postgres/v2',
+app-1       |     _req: null,
+app-1       |     [Symbol(shapeMode)]: false,
+app-1       |     [Symbol(kCapture)]: false
+app-1       |   },
+app-1       |   [Symbol(kType)]: 'error',
+app-1       |   [Symbol(kError)]: Error: connect ECONNREFUSED 172.20.0.2:443
+app-1       |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+app-1       |     errno: -111,
+app-1       |     code: 'ECONNREFUSED',
+app-1       |     syscall: 'connect',
+app-1       |     address: '172.20.0.2',
+app-1       |     port: 443
+app-1       |   },
+app-1       |   [Symbol(kMessage)]: 'connect ECONNREFUSED 172.20.0.2:443'
+app-1       | }
+app-1       | POST /api/rooms 400 in 10ms :: {"message":"Invalid room data","error":"Unknown …
+app-1       | Creating room with data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: '2025-07-11T00:34:13.434Z',
+app-1       |   createdBy: 'anonymous'
+app-1       | }
+app-1       | Processed room data: {
+app-1       |   name: 'Quick Chat Room',
+app-1       |   createdBy: 'anonymous',
+app-1       |   maxParticipants: 10,
+app-1       |   expiresAt: 2025-07-11T00:34:13.434Z
+app-1       | }
+app-1       | expiresAt type: object 2025-07-11T00:34:13.434Z
+app-1       | Room creation error: ErrorEvent {
+app-1       |   [Symbol(kTarget)]: WebSocket {
+app-1       |     _events: [Object: null prototype] {
+app-1       |       error: [Function],
+app-1       |       message: [Function],
+app-1       |       close: [Function],
+app-1       |       open: [Function]
+app-1       |     },
+app-1       |     _eventsCount: 4,
+app-1       |     _maxListeners: undefined,
+app-1       |     _binaryType: 'arraybuffer',
+app-1       |     _closeCode: 1006,
+app-1       |     _closeFrameReceived: false,
+app-1       |     _closeFrameSent: false,
+app-1       |     _closeMessage: <Buffer >,
+app-1       |     _closeTimer: null,
+app-1       |     _errorEmitted: true,
+app-1       |     _extensions: {},
+app-1       |     _paused: false,
+app-1       |     _protocol: '',
+app-1       |     _readyState: 3,
+app-1       |     _receiver: null,
+app-1       |     _sender: null,
+app-1       |     _socket: null,
+app-1       |     _bufferedAmount: 0,
+app-1       |     _isServer: false,
+app-1       |     _redirects: 0,
+app-1       |     _autoPong: true,
+app-1       |     _url: 'wss://postgres/v2',
+app-1       |     _req: null,
+app-1       |     [Symbol(shapeMode)]: false,
+app-1       |     [Symbol(kCapture)]: false
+app-1       |   },
+app-1       |   [Symbol(kType)]: 'error',
+app-1       |   [Symbol(kError)]: Error: connect ECONNREFUSED 172.20.0.2:443
+app-1       |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+app-1       |     errno: -111,
+app-1       |     code: 'ECONNREFUSED',
+app-1       |     syscall: 'connect',
+app-1       |     address: '172.20.0.2',
+app-1       |     port: 443
+app-1       |   },
+app-1       |   [Symbol(kMessage)]: 'connect ECONNREFUSED 172.20.0.2:443'
+app-1       | }
+app-1       | POST /api/rooms 400 in 11ms :: {"message":"Invalid room data","error":"Unknown …
+postgres-1  | 2025-07-11 00:08:32.713 UTC [27] LOG:  checkpoint starting: time
+postgres-1  | 2025-07-11 00:08:32.726 UTC [27] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.005 s, sync=0.001 s, total=0.014 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB
+app-1       |
+app-1       | file:///app/node_modules/@neondatabase/serverless/index.mjs:1345
+app-1       | o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+app-1       |                                                                          ^
+app-1       | ErrorEvent {
+app-1       |   [Symbol(kTarget)]: WebSocket {
+app-1       |     _events: [Object: null prototype] {
+app-1       |       error: [Function: onError] {
+app-1       |         [Symbol(kIsForOnEventAttribute)]: false,
+app-1       |         [Symbol(kListener)]: [Function (anonymous)]
+app-1       |       },
+app-1       |       message: [Function: onMessage] {
+app-1       |         [Symbol(kIsForOnEventAttribute)]: false,
+app-1       |         [Symbol(kListener)]: [Function (anonymous)]
+app-1       |       },
+app-1       |       close: [Function: onClose] {
+app-1       |         [Symbol(kIsForOnEventAttribute)]: false,
+app-1       |         [Symbol(kListener)]: [Function (anonymous)]
+app-1       |       },
+app-1       |       open: [Function: onOpen] {
+app-1       |         [Symbol(kIsForOnEventAttribute)]: false,
+app-1       |         [Symbol(kListener)]: [Function: handleWebSocketOpen]
+app-1       |       }
+app-1       |     },
+app-1       |     _eventsCount: 4,
+app-1       |     _maxListeners: undefined,
+app-1       |     _binaryType: 'arraybuffer',
+app-1       |     _closeCode: 1006,
+app-1       |     _closeFrameReceived: false,
+app-1       |     _closeFrameSent: false,
+app-1       |     _closeMessage: Buffer(0) [Uint8Array] [],
+app-1       |     _closeTimer: null,
+app-1       |     _errorEmitted: true,
+app-1       |     _extensions: {},
+app-1       |     _paused: false,
+app-1       |     _protocol: '',
+app-1       |     _readyState: 3,
+app-1       |     _receiver: null,
+app-1       |     _sender: null,
+app-1       |     _socket: null,
+app-1       |     _bufferedAmount: 0,
+app-1       |     _isServer: false,
+app-1       |     _redirects: 0,
+app-1       |     _autoPong: true,
+app-1       |     _url: 'wss://postgres/v2',
+app-1       |     _req: null,
+app-1       |     [Symbol(shapeMode)]: false,
+app-1       |     [Symbol(kCapture)]: false
+app-1       |   },
+app-1       |   [Symbol(kType)]: 'error',
+app-1       |   [Symbol(kError)]: Error: connect ECONNREFUSED 172.20.0.2:443
+app-1       |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+app-1       |     errno: -111,
+app-1       |     code: 'ECONNREFUSED',
+app-1       |     syscall: 'connect',
+app-1       |     address: '172.20.0.2',
+app-1       |     port: 443
+app-1       |   },
+app-1       |   [Symbol(kMessage)]: 'connect ECONNREFUSED 172.20.0.2:443'
+app-1       | }
+app-1       |
+app-1       | Node.js v20.19.3
+app-1 exited with code 0
+app-1       | ? Serving frontend from: /app/dist/public
+app-1       | Production server running on port 5000
