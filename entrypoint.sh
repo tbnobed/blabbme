@@ -37,6 +37,39 @@ async function setupDatabase() {
     } else {
       console.log('Database already initialized');
       
+      // Check and fix schema issues for existing deployments
+      console.log('Checking schema compatibility...');
+      
+      // Check if banned_at column exists
+      const bannedAtCheck = await pool.query(\`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'banned_users' AND column_name = 'banned_at'
+      \`);
+      
+      if (bannedAtCheck.rows.length === 0) {
+        console.log('Fixing banned_users table schema...');
+        await pool.query(\`
+          ALTER TABLE banned_users ADD COLUMN IF NOT EXISTS banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+          UPDATE banned_users SET banned_at = CURRENT_TIMESTAMP WHERE banned_at IS NULL;
+        \`);
+        console.log('✓ banned_users table schema fixed');
+      }
+      
+      // Check if created_at column exists in warnings table
+      const warningCreatedCheck = await pool.query(\`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'warnings' AND column_name = 'created_at'
+      \`);
+      
+      if (warningCreatedCheck.rows.length === 0) {
+        console.log('Fixing warnings table schema...');
+        await pool.query(\`
+          ALTER TABLE warnings ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+          UPDATE warnings SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL;
+        \`);
+        console.log('✓ warnings table schema fixed');
+      }
+      
       // Ensure admin user exists with correct password
       await pool.query(\`
         INSERT INTO admins (username, password) 
@@ -45,6 +78,7 @@ async function setupDatabase() {
         DO UPDATE SET password = 'admin123'
       \`);
       console.log('Admin user verified/updated');
+      console.log('Schema compatibility check completed');
     }
     
     await pool.end();
