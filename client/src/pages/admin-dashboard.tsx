@@ -33,6 +33,11 @@ export default function AdminDashboard() {
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    refetchInterval: 10000, // Refresh stats every 10 seconds
+  });
+
   const createRoomMutation = useMutation({
     mutationFn: (roomData: any) => apiRequest("POST", "/api/rooms", roomData),
     onSuccess: () => {
@@ -106,11 +111,11 @@ export default function AdminDashboard() {
     setLocation("/");
   };
 
-  const stats = {
+  const dashboardStats = stats || {
     activeRooms: rooms?.length || 0,
     onlineUsers: rooms?.reduce((sum: number, room: any) => sum + room.participantCount, 0) || 0,
-    messagesTotal: 0, // Would need separate API call
-    warnings: 0, // Would need separate API call
+    messagesLast24h: 0,
+    warnings: 0,
   };
 
   return (
@@ -146,7 +151,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Active Rooms</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.activeRooms}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.activeRooms}</p>
                 </div>
               </div>
             </CardContent>
@@ -159,7 +164,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Online Users</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.onlineUsers}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.onlineUsers}</p>
                 </div>
               </div>
             </CardContent>
@@ -172,7 +177,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Messages Today</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.messagesTotal}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.messagesLast24h}</p>
                 </div>
               </div>
             </CardContent>
@@ -185,7 +190,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Warnings</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.warnings}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.warnings}</p>
                 </div>
               </div>
             </CardContent>

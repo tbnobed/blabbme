@@ -274,6 +274,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Statistics endpoint
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const adminId = req.cookies.admin_session;
+      if (!adminId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const rooms = await storage.getAllActiveRooms();
+      let totalMessages = 0;
+      let totalParticipants = 0;
+      let messagesLast24h = 0;
+
+      // Calculate statistics
+      for (const room of rooms) {
+        const participants = await storage.getParticipantsByRoom(room.id);
+        totalParticipants += participants.length;
+        
+        const messages = await storage.getMessagesByRoom(room.id, 1000); // Get more messages for counting
+        totalMessages += messages.length;
+        
+        // Count messages from last 24 hours
+        const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentMessages = messages.filter(msg => new Date(msg.timestamp) > last24h);
+        messagesLast24h += recentMessages.length;
+      }
+
+      const stats = {
+        activeRooms: rooms.length,
+        onlineUsers: totalParticipants,
+        totalMessages,
+        messagesLast24h,
+        warnings: 0, // Placeholder for warnings system
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Admin stats error:", error);
+      res.status(500).json({ message: "Failed to fetch statistics" });
+    }
+  });
+
   // Kick participant from room (admin only)
   app.delete("/api/rooms/:roomId/participants/:participantId", async (req, res) => {
     try {
