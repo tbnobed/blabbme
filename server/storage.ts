@@ -1,4 +1,4 @@
-import { admins, rooms, participants, messages, type Admin, type InsertAdmin, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage } from "@shared/schema";
+import { admins, rooms, participants, messages, bannedUsers, type Admin, type InsertAdmin, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage, type BannedUser, type InsertBannedUser } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lt } from "drizzle-orm";
 
@@ -25,6 +25,11 @@ export interface IStorage {
   getMessagesByRoom(roomId: string, limit?: number): Promise<Message[]>;
   addMessage(message: InsertMessage): Promise<Message>;
   
+  // Ban methods
+  banUser(ban: InsertBannedUser): Promise<BannedUser>;
+  isUserBanned(roomId: string, sessionId: string, nickname: string): Promise<boolean>;
+  cleanupExpiredBans(): Promise<void>;
+  
   // Cleanup methods
   cleanupExpiredRooms(): Promise<void>;
 }
@@ -34,18 +39,22 @@ export class MemStorage implements IStorage {
   private rooms: Map<string, Room>;
   private participants: Map<string, Participant>;
   private messages: Map<number, Message>;
+  private bannedUsers: Map<number, BannedUser>;
   private currentAdminId: number;
   private currentParticipantId: number;
   private currentMessageId: number;
+  private currentBanId: number;
 
   constructor() {
     this.admins = new Map();
     this.rooms = new Map();
     this.participants = new Map();
     this.messages = new Map();
+    this.bannedUsers = new Map();
     this.currentAdminId = 1;
     this.currentParticipantId = 1;
     this.currentMessageId = 1;
+    this.currentBanId = 1;
     
     // Create default admin user
     this.createAdmin({ username: "admin", password: "admin123" });
@@ -162,6 +171,42 @@ export class MemStorage implements IStorage {
     };
     this.messages.set(message.id, message);
     return message;
+  }
+
+  async banUser(insertBan: InsertBannedUser): Promise<BannedUser> {
+    const ban: BannedUser = {
+      ...insertBan,
+      id: this.currentBanId++,
+      bannedAt: new Date(),
+    };
+    this.bannedUsers.set(ban.id, ban);
+    return ban;
+  }
+
+  async isUserBanned(roomId: string, sessionId: string, nickname: string): Promise<boolean> {
+    const now = new Date();
+    
+    // Clean up expired bans first
+    await this.cleanupExpiredBans();
+    
+    // Check if user is banned (by session ID or nickname)
+    const activeBans = Array.from(this.bannedUsers.values()).filter(ban => 
+      ban.roomId === roomId && 
+      ban.expiresAt > now &&
+      (ban.sessionId === sessionId || ban.nickname === nickname)
+    );
+    
+    return activeBans.length > 0;
+  }
+
+  async cleanupExpiredBans(): Promise<void> {
+    const now = new Date();
+    const expiredBans = Array.from(this.bannedUsers.entries())
+      .filter(([_, ban]) => ban.expiresAt <= now);
+    
+    for (const [id, _] of expiredBans) {
+      this.bannedUsers.delete(id);
+    }
   }
 
   async cleanupExpiredRooms(): Promise<void> {
@@ -297,6 +342,49 @@ export class DatabaseStorage implements IStorage {
       .values(insertMessage)
       .returning();
     return message;
+  }
+
+  async banUser(insertBan: InsertBannedUser): Promise<BannedUser> {
+    const [ban] = await db
+      .insert(bannedUsers)
+      .values(insertBan)
+      .returning();
+    return ban;
+  }
+
+  async isUserBanned(roomId: string, sessionId: string, nickname: string): Promise<boolean> {
+    const now = new Date();
+    
+    // First cleanup expired bans
+    await this.cleanupExpiredBans();
+    
+    // Check if user is banned (by session ID OR nickname - either can trigger a ban)
+    const activeBans = await db
+      .select()
+      .from(bannedUsers)
+      .where(
+        and(
+          eq(bannedUsers.roomId, roomId),
+          // Check that ban hasn't expired yet
+          // Using gt instead of lt because we want expiresAt > now (ban still active)
+          // We've already cleaned up expired bans above
+        )
+      );
+    
+    // Filter in JavaScript for more complex OR logic
+    const matchingBans = activeBans.filter(ban => 
+      ban.expiresAt > now && 
+      (ban.sessionId === sessionId || ban.nickname === nickname)
+    );
+    
+    return matchingBans.length > 0;
+  }
+
+  async cleanupExpiredBans(): Promise<void> {
+    const now = new Date();
+    await db
+      .delete(bannedUsers)
+      .where(lt(bannedUsers.expiresAt, now));
   }
 
   async cleanupExpiredRooms(): Promise<void> {

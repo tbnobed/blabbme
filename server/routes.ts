@@ -287,19 +287,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Participant not found" });
       }
       
+      // Create a temporary ban (30 minutes)
+      const banExpiry = new Date();
+      banExpiry.setMinutes(banExpiry.getMinutes() + 30);
+      
+      // Find session ID from socket data
+      let sessionId = null;
+      const wss = (req.app as any).wss;
+      wss.clients.forEach((client) => {
+        const clientData = socketData.get(client);
+        if (clientData?.roomId === roomId && clientData?.nickname === participant.nickname) {
+          sessionId = clientData.sessionId;
+        }
+      });
+      
+      // Ban the user
+      await storage.banUser({
+        roomId,
+        sessionId,
+        nickname: participant.nickname,
+        expiresAt: banExpiry,
+        reason: 'kicked_by_admin'
+      });
+      
       // Remove participant from database
       const removed = await storage.removeParticipant(roomId, participant.socketId);
       
       if (removed) {
         // Find and close WebSocket connection for this participant
-        const wss = (req.app as any).wss;
         wss.clients.forEach((client) => {
           const clientData = socketData.get(client);
           if (clientData?.roomId === roomId && clientData?.nickname === participant.nickname) {
             // Send kick notification to the user being kicked
             client.send(JSON.stringify({
               type: 'kicked',
-              message: 'You have been removed from the room by an admin'
+              message: 'You have been removed from the room and temporarily banned for 30 minutes'
             }));
             
             // Update their socket data to remove room info
@@ -555,6 +577,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('JOIN ROOM: Room not found or not active');
       ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
       return;
+    }
+
+    // Check if user is banned from this room
+    if (sessionId && nickname) {
+      const isBanned = await storage.isUserBanned(roomId, sessionId, nickname);
+      if (isBanned) {
+        console.log('JOIN ROOM: User is banned from room');
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'You are temporarily banned from this room. Please try again later.' 
+        }));
+        return;
+      }
     }
 
     // Check if this is a session restoration (user already in room)
