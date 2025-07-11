@@ -36,6 +36,7 @@ export interface IStorage {
   addWarning(warning: InsertWarning): Promise<Warning>;
   getWarningsCount(timeframe?: 'today' | 'week' | 'all'): Promise<number>;
   getWarningsByRoom(roomId: string): Promise<Warning[]>;
+  getUserWarningsCount(roomId: string, sessionId: string, nickname: string): Promise<number>;
   
   // Cleanup methods
   cleanupExpiredRooms(): Promise<void>;
@@ -273,6 +274,17 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserWarningsCount(roomId: string, sessionId: string, nickname: string): Promise<number> {
+    // Count warnings for this user in this room in the last 24 hours
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return Array.from(this.warnings.values()).filter(
+      warning => 
+        warning.roomId === roomId &&
+        warning.createdAt >= last24h &&
+        (warning.sessionId === sessionId || warning.nickname === nickname)
+    ).length;
+  }
+
   async cleanupExpiredRooms(): Promise<void> {
     const now = new Date();
     const expiredRooms = Array.from(this.rooms.values())
@@ -508,6 +520,23 @@ export class DatabaseStorage implements IStorage {
 
   async getWarningsByRoom(roomId: string): Promise<Warning[]> {
     return await db.select().from(warnings).where(eq(warnings.roomId, roomId));
+  }
+
+  async getUserWarningsCount(roomId: string, sessionId: string, nickname: string): Promise<number> {
+    // Count warnings for this user in this room in the last 24 hours
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const userWarnings = await db.select().from(warnings).where(
+      and(
+        eq(warnings.roomId, roomId),
+        // Check warnings in last 24 hours and match by session or nickname
+      )
+    );
+    
+    // Filter in JavaScript for complex OR logic and date comparison
+    return userWarnings.filter(warning => 
+      warning.createdAt && warning.createdAt >= last24h &&
+      (warning.sessionId === sessionId || warning.nickname === nickname)
+    ).length;
   }
 
   async cleanupExpiredRooms(): Promise<void> {

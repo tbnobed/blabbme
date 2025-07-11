@@ -110,6 +110,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             setWarning(data.message);
             setTimeout(() => setWarning(""), 5000);
             break;
+          case 'user-banned':
+            // Show ban notification to room
+            toast({
+              title: "User banned",
+              description: `${data.nickname} has been temporarily banned (${data.duration}) - ${data.reason}`,
+              variant: "destructive",
+            });
+            setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
+            break;
           case 'error':
             toast({
               title: "Error",

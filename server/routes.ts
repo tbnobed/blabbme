@@ -826,10 +826,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         warningType: 'profanity',
       });
       
+      // Check user's warning count - auto-ban after 3 warnings
+      const userWarnings = await storage.getUserWarningsCount(
+        socketInfo.roomId,
+        socketInfo.sessionId || '',
+        socketInfo.nickname
+      );
+      
+      if (userWarnings >= 3) {
+        // Auto-ban user for 10 minutes
+        const banExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await storage.banUser({
+          roomId: socketInfo.roomId,
+          sessionId: socketInfo.sessionId || null,
+          nickname: socketInfo.nickname,
+          expiresAt: banExpiresAt,
+          reason: 'automatic_ban_3_warnings',
+        });
+        
+        // Notify room about the ban
+        broadcastToRoom(wss, socketInfo.roomId, {
+          type: 'user-banned',
+          nickname: socketInfo.nickname,
+          reason: 'Automatic ban after 3 warnings',
+          duration: '10 minutes'
+        });
+        
+        // Remove user from room
+        await handleLeaveRoom(ws, wss, true);
+        
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'You have been temporarily banned for 10 minutes due to repeated inappropriate content violations.'
+        }));
+        
+        // Close the connection
+        ws.close();
+        return;
+      }
+      
       ws.send(JSON.stringify({
         type: 'warning',
-        message: 'Please keep things respectful.'
+        message: `Please keep things respectful. Warning ${userWarnings}/3 - 3 warnings result in a 10-minute ban.`
       }));
+      return;
     }
 
     // Save message
