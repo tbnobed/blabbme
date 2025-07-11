@@ -525,10 +525,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update session activity
       session.lastActivity = new Date();
       
-      // If user was in a room, reconnect them
+      // If user was in a room, check if they can reconnect (not banned)
       if (session.roomId && session.nickname) {
         const room = await storage.getRoom(session.roomId);
         if (room && room.isActive) {
+          // Check if user is banned before restoring session
+          const isBanned = await storage.isUserBanned(session.roomId, sessionId || 'unknown', session.nickname);
+          if (isBanned) {
+            console.log('Session restoration: User is banned, clearing session');
+            // Clear the session since user is banned
+            userSessions.delete(sessionId);
+            socketData.set(ws, { sessionId });
+            ws.send(JSON.stringify({ 
+              type: 'session-initialized', 
+              sessionId,
+              message: 'You are temporarily banned from your previous room.' 
+            }));
+            return;
+          }
+          
           // Check if participant is still in the room
           const participants = await storage.getParticipantsByRoom(session.roomId);
           let existingParticipant = participants.find(p => p.nickname === session.nickname);
