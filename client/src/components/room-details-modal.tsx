@@ -26,9 +26,16 @@ export default function RoomDetailsModal({ isOpen, onClose, room }: RoomDetailsM
 
   const kickUserMutation = useMutation({
     mutationFn: async (participant: any) => {
-      await apiRequest(`/api/rooms/${room.id}/participants/${participant.id}`, {
+      const response = await fetch(`/api/rooms/${room.id}/participants/${participant.id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to kick user: ${response.statusText}`);
+      }
+      
+      return response.json();
     },
     onSuccess: (_, participant) => {
       toast({
