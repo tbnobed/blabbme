@@ -1,4 +1,4 @@
-import { admins, rooms, participants, messages, bannedUsers, type Admin, type InsertAdmin, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage, type BannedUser, type InsertBannedUser } from "@shared/schema";
+import { admins, rooms, participants, messages, bannedUsers, warnings, type Admin, type InsertAdmin, type Room, type InsertRoom, type Participant, type InsertParticipant, type Message, type InsertMessage, type BannedUser, type InsertBannedUser, type Warning, type InsertWarning } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lt } from "drizzle-orm";
 
@@ -32,6 +32,11 @@ export interface IStorage {
   getBannedUsers(roomId: string): Promise<BannedUser[]>;
   cleanupExpiredBans(): Promise<void>;
   
+  // Warning methods
+  addWarning(warning: InsertWarning): Promise<Warning>;
+  getWarningsCount(timeframe?: 'today' | 'week' | 'all'): Promise<number>;
+  getWarningsByRoom(roomId: string): Promise<Warning[]>;
+  
   // Cleanup methods
   cleanupExpiredRooms(): Promise<void>;
 }
@@ -42,10 +47,12 @@ export class MemStorage implements IStorage {
   private participants: Map<string, Participant>;
   private messages: Map<number, Message>;
   private bannedUsers: Map<number, BannedUser>;
+  private warnings: Map<number, Warning>;
   private currentAdminId: number;
   private currentParticipantId: number;
   private currentMessageId: number;
   private currentBanId: number;
+  private currentWarningId: number;
 
   constructor() {
     this.admins = new Map();
@@ -53,10 +60,12 @@ export class MemStorage implements IStorage {
     this.participants = new Map();
     this.messages = new Map();
     this.bannedUsers = new Map();
+    this.warnings = new Map();
     this.currentAdminId = 1;
     this.currentParticipantId = 1;
     this.currentMessageId = 1;
     this.currentBanId = 1;
+    this.currentWarningId = 1;
     
     // Create default admin user
     this.createAdmin({ username: "admin", password: "admin123" });
@@ -226,6 +235,42 @@ export class MemStorage implements IStorage {
     for (const [id, _] of expiredBans) {
       this.bannedUsers.delete(id);
     }
+  }
+
+  async addWarning(insertWarning: InsertWarning): Promise<Warning> {
+    const warning: Warning = {
+      id: this.currentWarningId++,
+      ...insertWarning,
+      createdAt: new Date(),
+    };
+    this.warnings.set(warning.id, warning);
+    return warning;
+  }
+
+  async getWarningsCount(timeframe: 'today' | 'week' | 'all' = 'all'): Promise<number> {
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (timeframe) {
+      case 'today':
+        cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'week':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        return this.warnings.size;
+    }
+    
+    return Array.from(this.warnings.values()).filter(
+      warning => warning.createdAt >= cutoffDate
+    ).length;
+  }
+
+  async getWarningsByRoom(roomId: string): Promise<Warning[]> {
+    return Array.from(this.warnings.values()).filter(
+      warning => warning.roomId === roomId
+    );
   }
 
   async cleanupExpiredRooms(): Promise<void> {
@@ -432,6 +477,37 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(bannedUsers)
       .where(lt(bannedUsers.expiresAt, now));
+  }
+
+  async addWarning(insertWarning: InsertWarning): Promise<Warning> {
+    const [warning] = await db
+      .insert(warnings)
+      .values(insertWarning)
+      .returning();
+    return warning;
+  }
+
+  async getWarningsCount(timeframe: 'today' | 'week' | 'all' = 'all'): Promise<number> {
+    const now = new Date();
+    
+    switch (timeframe) {
+      case 'today':
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const result = await db.select().from(warnings).where(and(eq(warnings.createdAt, today)));
+        return result.length;
+      case 'week':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const weekResult = await db.select().from(warnings);
+        // Filter in memory for date range
+        return weekResult.filter(w => w.createdAt && w.createdAt >= weekAgo).length;
+      default:
+        const allResult = await db.select().from(warnings);
+        return allResult.length;
+    }
+  }
+
+  async getWarningsByRoom(roomId: string): Promise<Warning[]> {
+    return await db.select().from(warnings).where(eq(warnings.roomId, roomId));
   }
 
   async cleanupExpiredRooms(): Promise<void> {

@@ -151,7 +151,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Active Rooms</p>
-                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.activeRooms}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.activeRooms || rooms?.length || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Online Users</p>
-                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.onlineUsers}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.onlineUsers || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Messages Today</p>
-                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.messagesLast24h}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.messagesLast24h || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -189,8 +189,9 @@ export default function AdminDashboard() {
                   <AlertTriangle className="text-red-600 h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm text-gray-600">Warnings</p>
-                  <p className="text-2xl font-semibold text-gray-900">{dashboardStats.warnings}</p>
+                  <p className="text-sm text-gray-600">Content Warnings</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats?.warnings || 0}</p>
+                  <p className="text-xs text-gray-500">Today: {stats?.warningsToday || 0}</p>
                 </div>
               </div>
             </CardContent>

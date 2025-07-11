@@ -301,12 +301,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messagesLast24h += recentMessages.length;
       }
 
+      // Get warnings count for moderation tracking
+      const totalWarnings = await storage.getWarningsCount('all');
+      const warningsToday = await storage.getWarningsCount('today');
+      
       const stats = {
         activeRooms: rooms.length,
         onlineUsers: totalParticipants,
         totalMessages,
         messagesLast24h,
-        warnings: 0, // Placeholder for warnings system
+        warnings: totalWarnings,
+        warningsToday,
       };
 
       res.json(stats);
@@ -811,6 +816,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isFiltered = filter.isProfane(originalContent);
     
     if (isFiltered) {
+      // Track warning when content is filtered
+      await storage.addWarning({
+        roomId: socketInfo.roomId,
+        sessionId: socketInfo.sessionId || null,
+        nickname: socketInfo.nickname,
+        originalMessage: originalContent,
+        filteredMessage: filter.clean(originalContent),
+        warningType: 'profanity',
+      });
+      
       ws.send(JSON.stringify({
         type: 'warning',
         message: 'Please keep things respectful.'

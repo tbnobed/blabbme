@@ -47,6 +47,18 @@ export const bannedUsers = pgTable("banned_users", {
   reason: text("reason").default("kicked_by_admin"),
 });
 
+// Warnings table for tracking content moderation
+export const warnings = pgTable("warnings", {
+  id: serial("id").primaryKey(),
+  roomId: text("room_id").notNull(),
+  sessionId: text("session_id"),
+  nickname: text("nickname").notNull(),
+  originalMessage: text("original_message").notNull(),
+  filteredMessage: text("filtered_message").notNull(),
+  warningType: text("warning_type").notNull().default("profanity"), // profanity, spam, etc
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+});
+
 export const insertAdminSchema = createInsertSchema(admins).pick({
   username: true,
   password: true,
@@ -75,6 +87,11 @@ export const insertBannedUserSchema = createInsertSchema(bannedUsers).omit({
   bannedAt: true,
 });
 
+export const insertWarningSchema = createInsertSchema(warnings).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = typeof admins.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -85,3 +102,5 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
 export type BannedUser = typeof bannedUsers.$inferSelect;
+export type InsertWarning = z.infer<typeof insertWarningSchema>;
+export type Warning = typeof warnings.$inferSelect;
