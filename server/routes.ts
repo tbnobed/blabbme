@@ -192,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.cookie('chat_session', sessionId, {
         httpOnly: true,
-        secure: false, // Set to true in production with HTTPS
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https', // Auto-detect HTTPS
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         sameSite: 'lax'
       });
