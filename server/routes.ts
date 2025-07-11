@@ -292,23 +292,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       banExpiry.setMinutes(banExpiry.getMinutes() + 30);
       
       // Find session ID from socket data
-      let sessionId = null;
+      let sessionId = 'unknown';
       const wss = (req.app as any).wss;
       wss.clients.forEach((client) => {
         const clientData = socketData.get(client);
         if (clientData?.roomId === roomId && clientData?.nickname === participant.nickname) {
-          sessionId = clientData.sessionId;
+          sessionId = clientData.sessionId || 'unknown';
         }
       });
       
+      console.log('Creating ban for:', { roomId, sessionId, nickname: participant.nickname, expiresAt: banExpiry });
+      
       // Ban the user
-      await storage.banUser({
-        roomId,
-        sessionId,
-        nickname: participant.nickname,
-        expiresAt: banExpiry,
-        reason: 'kicked_by_admin'
-      });
+      try {
+        await storage.banUser({
+          roomId,
+          sessionId,
+          nickname: participant.nickname,
+          expiresAt: banExpiry,
+          reason: 'kicked_by_admin'
+        });
+        console.log('Ban created successfully');
+      } catch (error) {
+        console.error('Failed to create ban:', error);
+      }
       
       // Remove participant from database
       const removed = await storage.removeParticipant(roomId, participant.socketId);
@@ -580,8 +587,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Check if user is banned from this room
-    if (sessionId && nickname) {
-      const isBanned = await storage.isUserBanned(roomId, sessionId, nickname);
+    if (nickname) {
+      console.log('Checking ban status for:', { roomId, sessionId, nickname });
+      const isBanned = await storage.isUserBanned(roomId, sessionId || 'unknown', nickname);
+      console.log('Ban check result:', isBanned);
       if (isBanned) {
         console.log('JOIN ROOM: User is banned from room');
         ws.send(JSON.stringify({ 
