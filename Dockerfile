@@ -45,12 +45,14 @@ RUN adduser -S appuser -u 1001 -G nodejs
 # Copy built application from builder stage
 COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
+COPY --chown=appuser:nodejs entrypoint.sh ./
+COPY --chown=appuser:nodejs init.sql ./
 
 # Install only production dependencies
 RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/logs && chown -R appuser:nodejs /app
+# Create necessary directories with proper permissions and make scripts executable
+RUN mkdir -p /app/logs && chown -R appuser:nodejs /app && chmod +x /app/entrypoint.sh
 
 # Switch to non-root user
 USER appuser
@@ -63,9 +65,9 @@ ENV NODE_ENV=production
 ENV PORT=5000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:5000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
+  CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Start the application
+# Start the application with entrypoint script
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["./entrypoint.sh"]
