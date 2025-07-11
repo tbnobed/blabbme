@@ -35,7 +35,9 @@ export default function AdminDashboard() {
 
   const { data: stats } = useQuery({
     queryKey: ["/api/admin/stats"],
-    refetchInterval: 10000, // Refresh stats every 10 seconds
+    refetchInterval: 2000, // Refresh every 2 seconds for real-time stats
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache the data
   });
 
   const createRoomMutation = useMutation({

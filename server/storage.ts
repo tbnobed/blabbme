@@ -504,9 +504,20 @@ export class DatabaseStorage implements IStorage {
     
     switch (timeframe) {
       case 'today':
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const result = await db.select().from(warnings).where(and(eq(warnings.createdAt, today)));
-        return result.length;
+        // Use UTC to match database timestamps
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setUTCHours(23, 59, 59, 999);
+        
+        const result = await db.select().from(warnings);
+        // Filter in memory for today's warnings
+        const todayWarnings = result.filter(w => {
+          if (!w.createdAt) return false;
+          const warningDate = new Date(w.createdAt);
+          return warningDate >= todayStart && warningDate <= todayEnd;
+        });
+        return todayWarnings.length;
       case 'week':
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const weekResult = await db.select().from(warnings);

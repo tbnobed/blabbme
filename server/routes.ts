@@ -305,6 +305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalWarnings = await storage.getWarningsCount('all');
       const warningsToday = await storage.getWarningsCount('today');
       
+
+      
       const stats = {
         activeRooms: rooms.length,
         onlineUsers: totalParticipants,
@@ -314,6 +316,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         warningsToday,
       };
 
+      // Prevent caching of admin stats
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       res.json(stats);
     } catch (error) {
       console.error("Admin stats error:", error);
@@ -817,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (isFiltered) {
       // Track warning when content is filtered
-      await storage.addWarning({
+      const warning = await storage.addWarning({
         roomId: socketInfo.roomId,
         sessionId: socketInfo.sessionId || null,
         nickname: socketInfo.nickname,
@@ -825,6 +831,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filteredMessage: filter.clean(originalContent),
         warningType: 'profanity',
       });
+      
+
       
       // Check user's warning count - auto-ban after 3 warnings
       const userWarnings = await storage.getUserWarningsCount(

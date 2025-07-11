@@ -8,7 +8,16 @@ This is a real-time anonymous chat application built with React, Express, and We
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Session Management Improvements
+## Recent Content Moderation & Auto-Ban System Implementation (July 11, 2025)
+- **Auto-Ban System**: Users automatically banned for 10 minutes after 3 warnings in 24-hour period
+- **Progressive Warning System**: Shows "Warning 1/3", "Warning 2/3", then auto-ban on 3rd violation
+- **Real-time Ban Notifications**: Room-wide notifications when users get automatically banned
+- **Database Warning Tracking**: Complete warning history with original/filtered content and timestamps
+- **Enhanced Admin Dashboard**: Real-time warnings statistics showing total and daily counts
+- **UTC Timezone Handling**: Fixed timezone issues for accurate "today" warning counts
+- **Cache Prevention**: Admin stats refresh every 2 seconds with no-cache headers
+
+## Previous Session Management Improvements
 - Extended session timeout from immediate expiration to 2 hours of inactivity
 - Added WebSocket keep-alive mechanism with 30-second server pings and 25-second client heartbeats
 - Improved reconnection logic with exponential backoff (up to 10 attempts)
