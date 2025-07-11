@@ -18,6 +18,11 @@ export default function Home() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const { toast } = useToast();
 
+  // Environment variables for controlling landing page sections
+  const showHeroDescription = import.meta.env.VITE_SHOW_HERO_DESCRIPTION !== 'false';
+  const showFeaturesSection = import.meta.env.VITE_SHOW_FEATURES_SECTION !== 'false';
+  const showStartButton = import.meta.env.VITE_SHOW_START_BUTTON !== 'false';
+
   const createNewRoom = async () => {
     setIsCreatingRoom(true);
     try {
@@ -100,34 +105,39 @@ export default function Home() {
               Start Chatting
               <span className="text-primary"> Instantly</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-              Create or join anonymous chat rooms in seconds. No signup required.
-              Share with friends using QR codes or simple links.
-            </p>
+            {showHeroDescription && (
+              <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+                Create or join anonymous chat rooms in seconds. No signup required.
+                Share with friends using QR codes or simple links.
+              </p>
+            )}
 
             {/* Main Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <Button
-                size="lg"
-                onClick={createNewRoom}
-                disabled={isCreatingRoom}
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                {isCreatingRoom ? "Creating Room..." : "Start New Chat"}
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => setShowJoinModal(true)}
-                className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-              >
-                <Users className="mr-2 h-5 w-5" />
-                Join Existing Chat
-              </Button>
-            </div>
+            {showStartButton && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+                <Button
+                  size="lg"
+                  onClick={createNewRoom}
+                  disabled={isCreatingRoom}
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  {isCreatingRoom ? "Creating Room..." : "Start New Chat"}
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={() => setShowJoinModal(true)}
+                  className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-white px-8 py-4 text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  <Users className="mr-2 h-5 w-5" />
+                  Join Existing Chat
+                </Button>
+              </div>
+            )}
 
             {/* Features Grid */}
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {showFeaturesSection && (
+              <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               <Card className="border-gray-100 shadow-sm">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -161,7 +171,8 @@ export default function Home() {
                   </p>
                 </CardContent>
               </Card>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
