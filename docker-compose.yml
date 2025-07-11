@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: blabbme
+      POSTGRES_DB: blabbme_db
       POSTGRES_USER: blabbme_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
@@ -13,7 +13,7 @@ services:
     networks:
       - blabbme_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blabbme_user -d blabbme"]
+      test: ["CMD-SHELL", "pg_isready -U blabbme_user -d blabbme_db"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -37,12 +37,12 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://blabbme_user:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/blabbme
+      DATABASE_URL: postgresql://blabbme_user:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/blabbme_db
       PGHOST: postgres
       PGPORT: 5432
       PGUSER: blabbme_user
       PGPASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
-      PGDATABASE: blabbme
+      PGDATABASE: blabbme_db
       NODE_ENV: production
       PORT: 5000
       SESSION_SECRET: ${SESSION_SECRET:-your_very_long_random_session_secret_here_change_this_in_production}

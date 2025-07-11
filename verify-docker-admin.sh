@@ -3,15 +3,22 @@
 echo "=== Blabb.me Docker Admin Account Verification ==="
 echo ""
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose not found. Please install docker-compose."
+# Determine which docker compose command to use
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "❌ Neither 'docker-compose' nor 'docker compose' found. Please install Docker Compose."
     exit 1
 fi
 
+echo "Using: $DOCKER_COMPOSE"
+echo ""
+
 # Check if containers are running
 echo "📋 Checking container status..."
-docker-compose ps
+$DOCKER_COMPOSE ps
 
 echo ""
 echo "🔍 Checking PostgreSQL connection..."
