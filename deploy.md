@@ -1,193 +1,253 @@
-# Docker Deployment Guide for blabb.me
+# Blabb.me Production Deployment Guide
+
+## Overview
+
+This guide explains how to deploy blabb.me to Ubuntu servers using Docker with existing nginx proxy manager integration and HTTPS certificates.
 
 ## Prerequisites
 
-1. Ubuntu server with Docker and Docker Compose v2 installed
-2. Nginx Proxy Manager running with network named "proxy_network"
-3. Domain name pointed to your server
-4. At least 2GB RAM and 10GB disk space
+- Ubuntu server with Docker and Docker Compose installed
+- Nginx Proxy Manager (NPM) already configured
+- Domain name with HTTPS certificates
+- PostgreSQL 15+ support
 
-## Installation Steps
+## Quick Deployment
 
-### 1. Install Docker (if not already installed)
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# Install Docker Compose v2
-sudo apt install docker-compose-plugin
-
-# Add user to docker group
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Verify installation
-docker --version
-docker compose version
-```
-
-### 2. Deploy the Application
-
-1. **Upload project files to your server:**
+1. **Clone and Configure**
    ```bash
-   # Create application directory
-   sudo mkdir -p /opt/blabbme
-   sudo chown $USER:$USER /opt/blabbme
-   cd /opt/blabbme
+   git clone <your-repo-url> blabbme
+   cd blabbme
    
-   # Upload all files including:
-   # - Dockerfile
-   # - docker-compose.yml
-   # - init.sql
-   # - .dockerignore
-   # - All source code files
-   ```
-
-2. **Configure environment variables:**
-   ```bash
-   # Copy example environment file
+   # Create environment file
    cp .env.example .env
    
-   # Edit with secure passwords
+   # Edit environment variables
    nano .env
-   
-   # Example .env content:
-   POSTGRES_PASSWORD=MySecurePassword123!
-   SESSION_SECRET=$(openssl rand -base64 32)
-   APP_PORT=5000
    ```
 
-3. **Deploy the application:**
+2. **Set Environment Variables**
    ```bash
-   # Clear Docker build cache to ensure fresh build
-   docker system prune --all --force
-   
-   # Build and start services (this may take a few minutes on first run)
-   docker compose up -d --build --no-cache
-   
-   # Check service status
-   docker compose ps
-   
-   # Monitor logs to ensure successful startup
-   docker compose logs -f app
-   docker compose logs -f postgres
+   # Required variables in .env
+   POSTGRES_PASSWORD=your_secure_password_here
+   SESSION_SECRET=your_very_long_random_session_secret_here
+   APP_PORT=5000  # Internal port (NPM will proxy to this)
    ```
 
-4. **Configure Nginx Proxy Manager:**
-   - Add new proxy host in NPM interface
+3. **Deploy with Docker Compose**
+   ```bash
+   # Start the application
+   docker-compose up -d
+   
+   # Check logs
+   docker-compose logs -f
+   ```
+
+## Nginx Proxy Manager Integration
+
+### NPM Configuration
+
+1. **Add Proxy Host in NPM**
    - Domain: your-domain.com
-   - Forward Hostname/IP: blabbme-app-1 (or your server IP)
-   - Forward Port: 5000
-   - **IMPORTANT: Enable WebSocket Support** (Advanced tab)
-   - SSL: Enable with Let's Encrypt
-   - Force SSL: Enabled
+   - Scheme: http
+   - Forward Hostname/IP: Your server's IP
+   - Forward Port: 5000 (or your APP_PORT)
+   - Enable "Websockets Support" (Important for real-time chat!)
 
-## Configuration Details
+2. **SSL Certificate**
+   - Request SSL certificate through NPM
+   - Enable "Force SSL" and "HTTP/2 Support"
 
-### Environment Variables
-- `POSTGRES_PASSWORD`: Database password (change from default)
-- `DATABASE_URL`: Automatically configured for Docker setup
-- `NODE_ENV`: Set to `production`
+### Advanced NPM Settings (Optional)
 
-### Ports
-- Application: 5000 (exposed to host)
-- PostgreSQL: 5432 (internal only)
+Add these to the "Advanced" tab in NPM:
 
-### Volumes
-- `postgres_data`: Persistent database storage
+```nginx
+# WebSocket support for real-time features
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
 
-### Default Admin Credentials
-- Username: `admin`
-- Password: `admin123`
-- **Important: Change these immediately after deployment**
-
-## Post-Deployment Steps
-
-1. **Change admin password:**
-   - Visit: https://your-domain.com/admin
-   - Log in with default credentials
-   - Change password immediately
-
-2. **Test the application:**
-   - Visit: https://your-domain.com
-   - Create a test room
-   - Verify real-time messaging works
-
-3. **Monitor logs:**
-   ```bash
-   docker-compose logs -f app
-   docker-compose logs -f postgres
-   ```
-
-## Maintenance
-
-### Updates
-```bash
-# Pull latest code
-git pull  # or re-upload files
-
-# Rebuild and restart
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+# Increase timeouts for long-lived connections
+proxy_read_timeout 86400;
+proxy_send_timeout 86400;
 ```
 
-### Backup Database
-```bash
-# Create backup
-docker-compose exec postgres pg_dump -U blabbme_user blabbme > backup.sql
+## Database Features
 
-# Restore backup
-docker-compose exec -T postgres psql -U blabbme_user blabbme < backup.sql
-```
+### New Auto-Ban System
 
-### View Logs
+- **Automatic Bans**: Users get 10-minute bans after 3 warnings in 24 hours
+- **Progressive Warnings**: Shows "Warning 1/3", "Warning 2/3", then auto-ban
+- **Real-time Notifications**: Room-wide notifications for automatic bans
+
+### Migration Handling
+
+The deployment automatically handles database migrations:
+
+- **Fresh Deployments**: Complete schema created from `init.sql`
+- **Existing Deployments**: Automatic migration adds warnings and banned_users tables
+- **Backward Compatible**: Safe to deploy over existing installations
+
+### Admin Dashboard
+
+- **URL**: https://your-domain.com/admin
+- **Credentials**: username `admin`, password `admin123`
+- **Features**:
+  - Real-time warnings statistics
+  - Daily and total warning counts
+  - Room management
+  - User ban management
+
+## Container Architecture
+
+### Services
+
+1. **PostgreSQL Database**
+   - Image: postgres:15-alpine
+   - Persistent storage with docker volume
+   - Optimized for chat application workload
+   - Automatic schema initialization
+
+2. **Node.js Application**
+   - Multi-stage Alpine-based build
+   - Non-root user for security
+   - Health checks and automatic restarts
+   - WebSocket support for real-time chat
+
+### Security Features
+
+- Non-root container execution
+- Session-based authentication
+- Rate limiting (1000 requests per 15 minutes)
+- Content moderation with profanity filtering
+- Automatic ban system for repeat violations
+
+## Monitoring and Maintenance
+
+### Health Checks
+
+- **Application**: `http://your-domain.com/api/health`
+- **Database**: Built-in PostgreSQL health checks
+- **Container Status**: `docker-compose ps`
+
+### Log Management
+
 ```bash
-# Application logs
+# View application logs
 docker-compose logs -f app
 
-# Database logs
+# View database logs
 docker-compose logs -f postgres
 
-# All services
-docker-compose logs -f
+# View specific timeframe
+docker-compose logs --since="1h" app
 ```
+
+### Database Maintenance
+
+```bash
+# Connect to database
+docker-compose exec postgres psql -U blabbme_user -d blabbme_db
+
+# Run cleanup functions manually
+docker-compose exec postgres psql -U blabbme_user -d blabbme_db -c "SELECT cleanup_expired_bans();"
+docker-compose exec postgres psql -U blabbme_user -d blabbme_db -c "SELECT cleanup_old_warnings();"
+```
+
+## Scaling and Performance
+
+### Resource Requirements
+
+- **Minimum**: 1 CPU, 1GB RAM, 10GB storage
+- **Recommended**: 2 CPU, 2GB RAM, 20GB storage
+- **High Traffic**: 4+ CPU, 4GB+ RAM, SSD storage
+
+### Performance Optimizations
+
+- PostgreSQL connection pooling
+- Database indexes for fast queries
+- Compressed logging with rotation
+- WebSocket keep-alive for connection stability
 
 ## Troubleshooting
 
-### WebSocket Issues
-- Ensure Nginx Proxy Manager has WebSocket support enabled
-- Check that port 5000 is accessible
-- Verify SSL/TLS configuration if using HTTPS
+### Common Issues
 
-### Database Connection Issues
-- Check PostgreSQL container is running: `docker-compose ps`
-- Verify environment variables in .env file
-- Check database logs: `docker-compose logs postgres`
+1. **WebSocket Connection Fails**
+   - Ensure "Websockets Support" is enabled in NPM
+   - Check firewall allows connections on APP_PORT
 
-### Performance Optimization
-- For high traffic, consider:
-  - Increasing PostgreSQL memory settings
-  - Adding Redis for session storage
-  - Implementing horizontal scaling with multiple app instances
+2. **Database Connection Errors**
+   - Verify POSTGRES_PASSWORD in .env matches docker-compose.yml
+   - Check database container health: `docker-compose ps`
 
-## Security Notes
+3. **Migration Failures**
+   - Check logs: `docker-compose logs app`
+   - Manually run migration: `docker-compose exec app node -e "require('./migrations/001_add_warnings_and_bans.sql')"`
 
-1. Change default admin credentials immediately
-2. Use strong database passwords
-3. Enable SSL/TLS via Nginx Proxy Manager
-4. Consider firewall rules to restrict direct access to port 5000
-5. Regular security updates for Docker images
-6. Monitor logs for suspicious activity
+4. **Admin Login Issues**
+   - Default credentials: admin/admin123
+   - Reset via database: `docker-compose exec postgres psql -U blabbme_user -d blabbme_db -c "UPDATE admins SET password = 'admin123' WHERE username = 'admin';"`
+
+### Performance Issues
+
+1. **High Memory Usage**
+   - Check active rooms: Admin dashboard
+   - Restart containers: `docker-compose restart`
+
+2. **Slow Database Queries**
+   - Monitor with: `docker-compose exec postgres psql -U blabbme_user -d blabbme_db -c "SELECT * FROM pg_stat_activity;"`
+
+### Recovery Procedures
+
+1. **Complete Reset**
+   ```bash
+   docker-compose down -v  # Removes data!
+   docker-compose up -d
+   ```
+
+2. **Backup and Restore**
+   ```bash
+   # Backup
+   docker-compose exec postgres pg_dump -U blabbme_user blabbme_db > backup.sql
+   
+   # Restore
+   docker-compose exec -T postgres psql -U blabbme_user blabbme_db < backup.sql
+   ```
+
+## Updates and Maintenance
+
+### Application Updates
+
+```bash
+# Pull latest changes
+git pull origin main
+
+# Rebuild and redeploy
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+
+# Check deployment
+docker-compose logs -f app
+```
+
+### Security Updates
+
+- Regularly update Docker images
+- Monitor for security advisories
+- Keep NPM and host system updated
+- Review access logs periodically
 
 ## Support
 
 For issues or questions:
-1. Check application logs: `docker-compose logs -f app`
-2. Verify all services are running: `docker-compose ps`
-3. Test database connectivity
-4. Check Nginx Proxy Manager configuration
+- Check application logs first
+- Review this deployment guide
+- Verify NPM WebSocket configuration
+- Test database connectivity
+
+The application includes comprehensive error logging and automatic recovery mechanisms for most common issues.

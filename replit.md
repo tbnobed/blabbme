@@ -50,12 +50,14 @@ Preferred communication style: Simple, everyday language.
 - **Chat History**: All messages saved to database for admin access
 
 ## Production Deployment Status
-- **Docker Deployment**: Fully operational with self-contained setup
-- **Database**: PostgreSQL container with automatic schema initialization and admin user creation
-- **Production Server**: Working correctly with entrypoint script handling database setup
-- **Build System**: Multi-stage Docker build fully functional with proper Alpine configuration
-- **Network**: Ready for Nginx Proxy Manager integration
+- **Docker Deployment**: Fully operational with self-contained setup and migration support
+- **Database**: PostgreSQL container with automatic schema initialization and migration handling
+- **Production Server**: Enhanced entrypoint script with automatic migration detection and execution
+- **Build System**: Multi-stage Docker build with migration files and comprehensive documentation
+- **Network**: Complete Nginx Proxy Manager integration guide with WebSocket support
 - **Admin Authentication**: Automatic admin user creation (admin/admin123) on fresh deployments
+- **Migration System**: Automatic detection and application of database schema updates for existing installations
+- **Deployment Guide**: Complete `deploy.md` with troubleshooting, monitoring, and maintenance procedures
 
 ## Key Components
 

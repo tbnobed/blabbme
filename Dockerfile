@@ -47,6 +47,7 @@ COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
 COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
 COPY --from=builder --chown=appuser:nodejs /app/entrypoint.sh ./
 COPY --from=builder --chown=appuser:nodejs /app/init.sql ./
+COPY --from=builder --chown=appuser:nodejs /app/migrations ./migrations
 
 # Install only production dependencies
 RUN npm ci --only=production --ignore-scripts && npm cache clean --force
