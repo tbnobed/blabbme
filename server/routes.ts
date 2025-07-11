@@ -410,6 +410,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.cleanupExpiredRooms();
   }, 5 * 60 * 1000);
 
+
+
+  const httpServer = createServer(app);
+
+  // WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Make wss accessible to route handlers
+  (app as any).wss = wss;
+
+  // Store session data and socket mappings
+  const socketData = new Map<WebSocket, SocketData>();
+  const userSessions = new Map<string, UserSession>();
+  const messageLimiter = new Map<string, { count: number; resetTime: number }>();
+
   // Cleanup expired sessions every 10 minutes (sessions expire after 2 hours of inactivity)
   setInterval(() => {
     const now = new Date();
@@ -423,14 +438,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }, 10 * 60 * 1000);
 
-  const httpServer = createServer(app);
-
-  // WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Make wss accessible to route handlers
-  (app as any).wss = wss;
-
   // WebSocket keep-alive ping interval (30 seconds)
   const pingInterval = setInterval(() => {
     wss.clients.forEach((ws) => {
@@ -439,6 +446,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   }, 30000);
+
+  // Additional server-side heartbeat to keep idle browsers alive
+  const serverHeartbeat = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'server-heartbeat' }));
+        } catch (error) {
+          console.error('Error sending server heartbeat:', error);
+        }
+      }
+    });
+  }, 45000); // Every 45 seconds
 
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket connection established');
@@ -473,6 +493,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             ws.send(JSON.stringify({ type: 'pong' }));
+            break;
+          case 'heartbeat-ack':
+            // Handle heartbeat acknowledgment from client
+            const socketInfo = socketData.get(ws);
+            if (socketInfo?.sessionId) {
+              const session = userSessions.get(socketInfo.sessionId);
+              if (session) {
+                session.lastActivity = new Date();
+              }
+            }
             break;
           case 'init-session':
             await handleInitSession(ws, message);
@@ -753,6 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     // Broadcast message to room
+    console.log('Broadcasting new message from', socketInfo.nickname, 'to room', socketInfo.roomId);
     broadcastToRoom(wss, socketInfo.roomId, {
       type: 'new-message',
       message: savedMessage,
@@ -786,14 +817,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   function broadcastToRoom(wss: WebSocketServer, roomId: string, data: any) {
+    console.log('Broadcasting to room:', roomId, 'data type:', data.type);
+    let broadcastCount = 0;
+    
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         const clientInfo = socketData.get(client);
         if (clientInfo?.roomId === roomId) {
-          client.send(JSON.stringify(data));
+          try {
+            client.send(JSON.stringify(data));
+            broadcastCount++;
+          } catch (error) {
+            console.error('Error broadcasting to client:', error);
+          }
         }
       }
     });
+    
+    console.log('Broadcasted to', broadcastCount, 'clients in room', roomId);
   }
 
   function generateSocketId(ws: WebSocket, sessionId?: string): string {

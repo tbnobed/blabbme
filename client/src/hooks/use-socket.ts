@@ -50,6 +50,14 @@ export function useSocket(options: UseSocketOptions = {}) {
           if (data.type === 'session-restored' && onSessionRestore) {
             onSessionRestore(data);
           }
+          
+          // Handle server heartbeat to keep connection alive
+          if (data.type === 'server-heartbeat') {
+            // Send back a response to confirm connection is alive
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'heartbeat-ack' }));
+            }
+          }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }
