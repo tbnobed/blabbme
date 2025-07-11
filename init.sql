@@ -75,10 +75,10 @@ CREATE INDEX IF NOT EXISTS idx_rooms_expires_at ON rooms(expires_at);
 CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at);
 
 -- Insert default admin user (username: admin, password: admin123)
--- Password hash generated with bcrypt rounds=10
+-- Using plain text password for simplicity
 \echo 'Creating default admin user...'
 INSERT INTO admins (username, password) 
-VALUES ('admin', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi')
+VALUES ('admin', 'admin123')
 ON CONFLICT (username) DO NOTHING;
 
 -- Create a cleanup function for expired rooms
