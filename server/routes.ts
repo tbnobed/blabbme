@@ -44,13 +44,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      const user = await storage.getAdminByUsername(username);
       
-      if (!user || user.password !== password) {
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+      }
+      
+      const admin = await storage.getAdminByUsername(username);
+      if (!admin || admin.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      res.json({ user: { id: user.id, username: user.username } });
+      // Set session cookie for admin
+      res.cookie('admin_session', admin.id.toString(), {
+        httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax'
+      });
+      
+      res.json({ 
+        message: "Login successful", 
+        admin: { id: admin.id, username: admin.username } 
+      });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      res.clearCookie('admin_session');
+      res.json({ message: "Logout successful" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/auth/check", async (req, res) => {
+    try {
+      const adminId = req.cookies.admin_session;
+      if (!adminId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const admin = await storage.getAdmin(parseInt(adminId));
+      if (!admin) {
+        res.clearCookie('admin_session');
+        return res.status(401).json({ message: "Invalid session" });
+      }
+      
+      res.json({ 
+        admin: { id: admin.id, username: admin.username } 
+      });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
