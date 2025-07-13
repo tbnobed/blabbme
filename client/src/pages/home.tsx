@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,11 +18,61 @@ export default function Home() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const { toast } = useToast();
 
+  // Check for URL parameters to auto-create room
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const createRoom = urlParams.get('create');
+    const roomName = urlParams.get('name');
+    const maxParticipants = urlParams.get('maxParticipants');
+    const nickname = urlParams.get('nickname');
+    
+    if (createRoom === 'true') {
+      handleUrlBasedRoomCreation(roomName, maxParticipants, nickname);
+    }
+  }, []);
+
   // Environment variables for controlling landing page sections
   const showHeroDescription = import.meta.env.VITE_SHOW_HERO_DESCRIPTION !== 'false';
   const showFeaturesSection = import.meta.env.VITE_SHOW_FEATURES_SECTION !== 'false';
   const showStartNewChatButton = import.meta.env.VITE_SHOW_START_NEW_CHAT_BUTTON !== 'false';
   const showJoinChatButton = import.meta.env.VITE_SHOW_JOIN_CHAT_BUTTON !== 'false';
+
+  const handleUrlBasedRoomCreation = async (roomName?: string | null, maxParticipants?: string | null, nickname?: string | null) => {
+    setIsCreatingRoom(true);
+    try {
+      const response = await apiRequest("POST", "/api/rooms", {
+        name: roomName || "Custom Chat Room",
+        maxParticipants: maxParticipants ? parseInt(maxParticipants) : 10,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
+        createdBy: "url-created",
+      });
+
+      if (response.ok) {
+        const room = await response.json();
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Navigate to room with nickname if provided
+        const roomUrl = nickname ? `/room/${room.id}?nickname=${encodeURIComponent(nickname)}` : `/room/${room.id}`;
+        setLocation(roomUrl);
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to create room from URL",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create room from URL. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingRoom(false);
+    }
+  };
 
   const createNewRoom = async () => {
     setIsCreatingRoom(true);
