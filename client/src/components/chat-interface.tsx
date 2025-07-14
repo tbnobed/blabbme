@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, Share, LogOut, Send } from "lucide-react";
+import { MessageCircle, Share, LogOut, Send, Bell, BellOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QRModal from "./qr-modal";
 
@@ -42,11 +42,120 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Request notification permission when component mounts
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        setNotificationsEnabled(permission === 'granted');
+      }
+    };
+
+    requestNotificationPermission();
+  }, []);
+
+  // Function to play notification sound
+  const playNotificationSound = () => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Create a simple notification sound using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Sound notification error:', error);
+    }
+  };
+
+  // Function to show browser notification
+  const showNotification = (title: string, message: string, icon?: string) => {
+    if (!notificationsEnabled || document.hasFocus()) {
+      // Still play sound even if tab is active (if sound is enabled)
+      if (!document.hasFocus()) {
+        playNotificationSound();
+      }
+      return; // Don't show notification if tab is active or permissions not granted
+    }
+
+    try {
+      const notification = new Notification(title, {
+        body: message,
+        icon: icon || '/favicon.ico',
+        tag: 'blabb-message', // This replaces previous notifications
+        requireInteraction: false,
+        silent: !soundEnabled, // Use system sound if enabled
+      });
+
+      // Auto-close notification after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Focus window when notification is clicked
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    } catch (error) {
+      console.log('Notification error:', error);
+    }
+  };
+
+  // Toggle notification permission
+  const toggleNotifications = async () => {
+    if (!('Notification' in window)) {
+      toast({
+        title: "Notifications not supported",
+        description: "Your browser doesn't support notifications",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (notificationsEnabled) {
+      setNotificationsEnabled(false);
+      toast({
+        title: "Notifications disabled",
+        description: "You won't receive message alerts",
+      });
+    } else {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        toast({
+          title: "Notifications enabled",
+          description: "You'll receive alerts for new messages",
+        });
+      } else {
+        toast({
+          title: "Notifications blocked",
+          description: "Please enable notifications in your browser settings",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   useEffect(() => {
@@ -86,6 +195,24 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             try {
               if (data.message) {
                 setMessages(prev => [...prev, data.message]);
+                
+                // Show notification for new messages from other users
+                if (data.message.nickname !== nickname) {
+                  const messagePreview = data.message.content.length > 50 
+                    ? data.message.content.substring(0, 50) + '...'
+                    : data.message.content;
+                  
+                  // Always play sound for new messages (when tab isn't focused)
+                  if (!document.hasFocus()) {
+                    playNotificationSound();
+                  }
+                  
+                  // Show browser notification if enabled
+                  showNotification(
+                    `${data.message.nickname} in ${room?.name || 'Chat Room'}`,
+                    messagePreview
+                  );
+                }
               }
             } catch (messageError) {
               console.error('Error adding new message:', messageError);
@@ -273,8 +400,35 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           <Button
             variant="ghost"
             size="sm"
+            onClick={toggleNotifications}
+            className={`${
+              notificationsEnabled 
+                ? 'text-primary hover:text-primary/80' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title={notificationsEnabled ? 'Disable notifications' : 'Enable notifications'}
+          >
+            {notificationsEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`${
+              soundEnabled 
+                ? 'text-primary hover:text-primary/80' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title={soundEnabled ? 'Disable sound' : 'Enable sound'}
+          >
+            {soundEnabled ? '🔊' : '🔇'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowQRModal(true)}
             className="text-gray-500 hover:text-gray-700"
+            title="Share room"
           >
             <Share className="h-4 w-4" />
           </Button>
@@ -283,6 +437,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             size="sm"
             onClick={onLeaveRoom}
             className="text-gray-500 hover:text-gray-700"
+            title="Leave room"
           >
             <LogOut className="h-4 w-4" />
           </Button>
