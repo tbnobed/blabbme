@@ -60,6 +60,9 @@ export function InstallPrompt() {
           const registration = await navigator.serviceWorker.register('/api/sw.js');
           console.log('Dynamic SW registered:', registration);
           criteria.serviceWorker = true;
+          
+          // Set up push notifications after service worker is ready
+          setupPushNotifications(registration);
         } catch (error) {
           console.log('SW registration failed:', error);
         }
@@ -85,6 +88,65 @@ export function InstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
+
+  // Setup push notifications
+  const setupPushNotifications = async (registration: ServiceWorkerRegistration) => {
+    try {
+      // Check if user has granted notification permission
+      if (Notification.permission !== 'granted') {
+        console.log('Notification permission not granted');
+        return;
+      }
+
+      // Get the public VAPID key
+      const response = await fetch('/api/vapid-public-key');
+      const { publicKey } = await response.json();
+      
+      // Subscribe to push notifications
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      // Get current session ID
+      const sessionResponse = await fetch('/api/session/current');
+      const sessionData = await sessionResponse.json();
+      
+      if (sessionData.sessionId) {
+        // Send subscription to server
+        await fetch('/api/push-subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId: sessionData.sessionId,
+            subscription: subscription.toJSON()
+          }),
+        });
+        
+        console.log('Push notifications set up successfully');
+      }
+    } catch (error) {
+      console.log('Failed to setup push notifications:', error);
+    }
+  };
+
+  // Helper function to convert VAPID key
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;

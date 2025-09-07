@@ -9,8 +9,16 @@ import { insertRoomSchema, insertMessageSchema } from "@shared/schema";
 import { v4 as uuidv4 } from "uuid";
 import * as QRCode from "qrcode";
 import { Filter } from "bad-words";
+import webpush from "web-push";
 
 const filter = new Filter();
+
+// Configure Web Push
+webpush.setVapidDetails(
+  'mailto:admin@blabb.me',
+  'BMHxZteK6Zlimolyf7qw1ewtrV9hAFWKgX0XRe4W-tz4W8V3e5WtTygKherdgVP_JaESoMo0oGi84cFIjWCBjSk',
+  'M7n5LIFDjBX0NaKBjIsI2Uphza2c2PKS-9pyLKS0ALk'
+);
 
 // Rate limiting for API routes - more lenient for normal usage
 const apiLimiter = rateLimit({
@@ -42,6 +50,7 @@ interface UserSession {
   roomId?: string;
   nickname?: string;
   lastActivity: Date;
+  pushSubscription?: PushSubscription;
 }
 
 const socketData = new Map<WebSocket, SocketData>();
@@ -105,22 +114,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Basic fetch handler
       });
       
+      self.addEventListener('push', (event) => {
+        console.log('Push received:', event);
+        
+        let data = {};
+        if (event.data) {
+          try {
+            data = event.data.json();
+          } catch (e) {
+            data = { title: 'New Message', body: event.data.text() || 'You have a new message' };
+          }
+        }
+        
+        const options = {
+          title: data.title || 'New Message',
+          body: data.body || 'You have a new message',
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag: data.roomId || 'message',
+          data: data,
+          requireInteraction: true,
+          actions: [
+            {
+              action: 'open',
+              title: 'Open Chat'
+            }
+          ]
+        };
+        
+        event.waitUntil(
+          self.registration.showNotification(options.title, options)
+        );
+      });
+      
       self.addEventListener('notificationclick', (event) => {
-        console.log('Notification clicked');
+        console.log('Notification clicked:', event);
         event.notification.close();
+        
+        const roomId = event.notification.data?.roomId;
+        const url = roomId ? \`/?room=\${roomId}\` : '/';
+        
         event.waitUntil(
           clients.matchAll({
             type: 'window',
             includeUncontrolled: true
           }).then((clientList) => {
-            if (clientList.length > 0) {
-              return clientList[0].focus();
+            // Check if chat is already open
+            for (const client of clientList) {
+              if (client.url.includes(roomId || '')) {
+                return client.focus();
+              }
             }
+            // Open new window if not found
             if (clients.openWindow) {
-              return clients.openWindow('/');
+              return clients.openWindow(url);
             }
           })
         );
+      });
+      
+      self.addEventListener('notificationclose', (event) => {
+        console.log('Notification closed:', event);
       });
     `;
     
@@ -128,6 +182,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Service-Worker-Allowed', '/');
     res.setHeader('Cache-Control', 'no-cache');
     res.send(swCode);
+  });
+
+  // VAPID public key endpoint
+  app.get('/api/vapid-public-key', (req, res) => {
+    res.json({
+      publicKey: 'BMHxZteK6Zlimolyf7qw1ewtrV9hAFWKgX0XRe4W-tz4W8V3e5WtTygKherdgVP_JaESoMo0oGi84cFIjWCBjSk'
+    });
+  });
+
+  // Subscribe to push notifications
+  app.post('/api/push-subscribe', sessionLimiter, (req, res) => {
+    const { sessionId, subscription } = req.body;
+    
+    if (!sessionId || !subscription) {
+      return res.status(400).json({ error: 'sessionId and subscription required' });
+    }
+
+    const session = userSessions.get(sessionId);
+    if (session) {
+      session.pushSubscription = subscription;
+      console.log('Push subscription registered for session:', sessionId);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Session not found' });
+    }
   });
 
   // Debug route to check paths
@@ -1076,7 +1155,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function broadcastToRoom(wss: WebSocketServer, roomId: string, data: any) {
     console.log('Broadcasting to room:', roomId, 'data type:', data.type);
     let broadcastCount = 0;
+    const connectedSessionIds = new Set<string>();
     
+    // Send to active WebSocket clients
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         const clientInfo = socketData.get(client);
@@ -1084,6 +1165,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             client.send(JSON.stringify(data));
             broadcastCount++;
+            // Track which sessions are already connected
+            if (clientInfo.sessionId) {
+              connectedSessionIds.add(clientInfo.sessionId);
+            }
           } catch (error) {
             console.error('Error broadcasting to client:', error);
           }
@@ -1091,7 +1176,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
+    // Send push notifications to disconnected users if this is a message
+    if (data.type === 'new-message') {
+      sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
+    }
+    
     console.log('Broadcasted to', broadcastCount, 'clients in room', roomId);
+  }
+
+  // Send push notifications to users not currently connected
+  async function sendPushNotificationsToRoom(roomId: string, messageData: any, connectedSessionIds: Set<string>) {
+    try {
+      // Find all sessions in this room that aren't currently connected
+      const disconnectedSessions: UserSession[] = [];
+      
+      userSessions.forEach((session) => {
+        if (session.roomId === roomId && 
+            session.pushSubscription && 
+            !connectedSessionIds.has(session.sessionId)) {
+          disconnectedSessions.add(session);
+        }
+      });
+
+      if (disconnectedSessions.length === 0) {
+        console.log('No push subscriptions to send for room:', roomId);
+        return;
+      }
+
+      const payload = JSON.stringify({
+        title: \`New message in \${messageData.roomName || 'chat room'}\`,
+        body: \`\${messageData.nickname}: \${messageData.message}\`,
+        roomId: roomId,
+        timestamp: messageData.timestamp
+      });
+
+      // Send to all disconnected users with push subscriptions
+      const pushPromises = disconnectedSessions.map(async (session) => {
+        try {
+          await webpush.sendNotification(session.pushSubscription!, payload);
+          console.log('Push notification sent to session:', session.sessionId);
+        } catch (error) {
+          console.error('Failed to send push notification:', error);
+          // Remove invalid subscription
+          if (session.pushSubscription) {
+            session.pushSubscription = undefined;
+          }
+        }
+      });
+
+      await Promise.allSettled(pushPromises);
+      console.log(\`Sent push notifications to \${disconnectedSessions.length} users in room \${roomId}\`);
+    } catch (error) {
+      console.error('Error sending push notifications:', error);
+    }
   }
 
   function generateSocketId(ws: WebSocket, sessionId?: string): string {
