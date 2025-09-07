@@ -32,43 +32,33 @@ export function InstallPrompt() {
         https: location.protocol === 'https:' || location.hostname === 'localhost'
       };
 
-      // Check manifest
+      console.log('Checking PWA criteria...');
+      console.log('Protocol:', location.protocol);
+      console.log('Hostname:', location.hostname);
+      console.log('HTTPS check:', criteria.https);
+
+      // Check manifest - try both inline and file approaches
       try {
-        const manifestResponse = await fetch('/manifest.json');
-        criteria.manifest = manifestResponse.ok;
+        const manifestLinks = document.querySelectorAll('link[rel="manifest"]');
+        console.log('Found manifest links:', manifestLinks.length);
+        
+        if (manifestLinks.length > 0) {
+          criteria.manifest = true;
+          console.log('Manifest found in HTML');
+        } else {
+          const manifestResponse = await fetch('/manifest.json');
+          criteria.manifest = manifestResponse.ok;
+          console.log('Manifest fetch result:', manifestResponse.status);
+        }
       } catch (error) {
         console.log('Manifest check failed:', error);
       }
 
-      // Register inline service worker and check
+      // Register dynamic service worker and check
       if ('serviceWorker' in navigator) {
         try {
-          // Create service worker as blob URL
-          const swCode = `
-            const CACHE_NAME = 'blabbme-v1';
-            self.addEventListener('install', (event) => {
-              console.log('SW installed');
-              self.skipWaiting();
-            });
-            self.addEventListener('activate', (event) => {
-              console.log('SW activated');
-              self.clients.claim();
-            });
-            self.addEventListener('fetch', (event) => {
-              // Basic fetch handler
-            });
-            self.addEventListener('notificationclick', (event) => {
-              event.notification.close();
-              event.waitUntil(
-                clients.openWindow('/')
-              );
-            });
-          `;
-          const blob = new Blob([swCode], { type: 'application/javascript' });
-          const swUrl = URL.createObjectURL(blob);
-          
-          const registration = await navigator.serviceWorker.register(swUrl);
-          console.log('Inline SW registered:', registration);
+          const registration = await navigator.serviceWorker.register('/api/sw.js');
+          console.log('Dynamic SW registered:', registration);
           criteria.serviceWorker = true;
         } catch (error) {
           console.log('SW registration failed:', error);
@@ -78,12 +68,15 @@ export function InstallPrompt() {
       setPwaCriteria(criteria);
       console.log('PWA Criteria:', criteria);
 
-      // Show manual instructions after 3 seconds if no install prompt appeared
+      // Show manual instructions after 5 seconds if no install prompt appeared
       setTimeout(() => {
-        if (!deferredPrompt) {
+        if (!deferredPrompt && criteria.https && criteria.manifest && criteria.serviceWorker) {
+          console.log('PWA criteria met but no install prompt - showing manual instructions');
           setShowManualInstructions(true);
+        } else {
+          console.log('PWA criteria not met:', criteria);
         }
-      }, 3000);
+      }, 5000);
     };
 
     checkPWACriteria();

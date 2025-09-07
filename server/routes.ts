@@ -54,18 +54,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ? path.resolve(process.cwd(), "dist", "public")
     : path.resolve(import.meta.dirname, "..", "client", "public");
   
+  // Dynamic manifest endpoint
+  app.get('/api/manifest', (req, res) => {
+    const manifest = {
+      name: "Blabb.me - Anonymous Chat",
+      short_name: "Blabb.me",
+      description: "Anonymous real-time chat rooms with QR code sharing",
+      start_url: "/",
+      display: "standalone",
+      background_color: "#ffffff",
+      theme_color: "#3b82f6",
+      orientation: "portrait-primary",
+      categories: ["social", "communication"],
+      icons: [
+        {
+          src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAAdVJREFUeNrtwTEBAAAAwqD1T20JT6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOANvgABAAHtNTYAAAABJRU5ErkJggg==",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "maskable"
+        },
+        {
+          src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAAdVJREFUeNrtwTEBAAAAwqD1T20JT6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOANvgABAAHtNTYAAAABJRU5ErkJggg==",
+          sizes: "512x512", 
+          type: "image/png",
+          purpose: "any"
+        }
+      ]
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json(manifest);
+  });
+
+  // Dynamic service worker endpoint  
+  app.get('/api/sw.js', (req, res) => {
+    const swCode = `
+      const CACHE_NAME = 'blabbme-v1';
+      
+      self.addEventListener('install', (event) => {
+        console.log('SW installed');
+        self.skipWaiting();
+      });
+      
+      self.addEventListener('activate', (event) => {
+        console.log('SW activated');  
+        self.clients.claim();
+      });
+      
+      self.addEventListener('fetch', (event) => {
+        // Basic fetch handler
+      });
+      
+      self.addEventListener('notificationclick', (event) => {
+        console.log('Notification clicked');
+        event.notification.close();
+        event.waitUntil(
+          clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+          }).then((clientList) => {
+            if (clientList.length > 0) {
+              return clientList[0].focus();
+            }
+            if (clients.openWindow) {
+              return clients.openWindow('/');
+            }
+          })
+        );
+      });
+    `;
+    
+    res.setHeader('Content-Type', 'text/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.send(swCode);
+  });
+
   // Debug route to check paths
   app.get('/debug/pwa', (req, res) => {
     const manifestPath = path.join(clientPublicPath, 'manifest.json');
     const swPath = path.join(clientPublicPath, 'sw.js');
     res.json({
+      environment: process.env.NODE_ENV,
       clientPublicPath,
       manifestPath,
       manifestExists: fs.existsSync(manifestPath),
       swPath,
       swExists: fs.existsSync(swPath),
       nodeVersion: process.version,
-      dirname: import.meta.dirname
+      dirname: import.meta.dirname,
+      dynamicEndpoints: {
+        manifest: '/api/manifest',
+        serviceWorker: '/api/sw.js'
+      }
     });
   });
 
