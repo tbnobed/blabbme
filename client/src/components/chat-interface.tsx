@@ -89,7 +89,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
   };
 
-  // Function to show browser notification
+  // Function to show browser notification (enhanced for PWA)
   const showNotification = (title: string, message: string, icon?: string) => {
     if (!notificationsEnabled || document.hasFocus()) {
       // Still play sound even if tab is active (if sound is enabled)
@@ -100,12 +100,56 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
 
     try {
+      // Try to use service worker for better PWA support
+      if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
+        navigator.serviceWorker.ready.then(registration => {
+          const notificationOptions: any = {
+            body: message,
+            icon: icon || '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: 'blabb-message',
+            requireInteraction: false,
+            silent: !soundEnabled,
+            data: {
+              url: window.location.href,
+              timestamp: Date.now()
+            },
+            actions: [
+              {
+                action: 'open',
+                title: 'Open Chat'
+              }
+            ]
+          };
+          
+          // Add vibration for mobile devices
+          if (soundEnabled && 'vibrate' in navigator) {
+            notificationOptions.vibrate = [100, 50, 100];
+          }
+          
+          registration.showNotification(title, notificationOptions);
+        }).catch(() => {
+          // Fallback to regular notification
+          showRegularNotification(title, message, icon);
+        });
+      } else {
+        showRegularNotification(title, message, icon);
+      }
+    } catch (error) {
+      console.log('Notification error:', error);
+      showRegularNotification(title, message, icon);
+    }
+  };
+
+  // Fallback regular notification function
+  const showRegularNotification = (title: string, message: string, icon?: string) => {
+    try {
       const notification = new Notification(title, {
         body: message,
-        icon: icon || '/favicon.ico',
-        tag: 'blabb-message', // This replaces previous notifications
+        icon: icon || '/icon-192.png',
+        tag: 'blabb-message',
         requireInteraction: false,
-        silent: !soundEnabled, // Use system sound if enabled
+        silent: !soundEnabled,
       });
 
       // Auto-close notification after 5 seconds
@@ -119,7 +163,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         notification.close();
       };
     } catch (error) {
-      console.log('Notification error:', error);
+      console.log('Regular notification error:', error);
     }
   };
 
