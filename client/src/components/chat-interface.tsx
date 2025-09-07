@@ -51,6 +51,76 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Setup push notifications
+  const setupPushNotifications = async () => {
+    try {
+      if (!notificationsEnabled) {
+        console.log('Notifications not enabled, skipping push setup');
+        return;
+      }
+
+      if (!('serviceWorker' in navigator)) {
+        console.log('Service worker not supported');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      console.log('Service worker ready for push setup');
+      
+      // Get the public VAPID key
+      const response = await fetch('/api/vapid-public-key');
+      const { publicKey } = await response.json();
+      
+      // Subscribe to push notifications
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      // Get current session ID
+      const sessionResponse = await fetch('/api/session/current');
+      const sessionData = await sessionResponse.json();
+      
+      if (sessionData.sessionId) {
+        // Send subscription to server
+        const subscribeResponse = await fetch('/api/push-subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId: sessionData.sessionId,
+            subscription: subscription.toJSON()
+          }),
+        });
+        
+        if (subscribeResponse.ok) {
+          console.log('Push notifications set up successfully for room:', roomId);
+        } else {
+          console.log('Failed to register push subscription:', subscribeResponse.status);
+        }
+      }
+    } catch (error) {
+      console.log('Failed to setup push notifications:', error);
+    }
+  };
+
+  // Helper function to convert VAPID key
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
   // Request notification permission when component mounts
   useEffect(() => {
     const requestNotificationPermission = async () => {
@@ -58,6 +128,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         const permission = await Notification.requestPermission();
         setNotificationsEnabled(permission === 'granted');
         console.log('Notification permission:', permission);
+        
+        // Setup push notifications after permission is granted
+        if (permission === 'granted') {
+          // Wait a bit for service worker to be ready
+          setTimeout(setupPushNotifications, 1000);
+        }
       }
     };
 
@@ -228,8 +304,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         setNotificationsEnabled(true);
         toast({
           title: "Notifications enabled",
-          description: "You'll receive alerts for new messages",
+          description: "Setting up push notifications...",
         });
+        
+        // Setup push notifications immediately
+        await setupPushNotifications();
       } else {
         toast({
           title: "Notifications blocked",
