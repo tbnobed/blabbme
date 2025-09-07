@@ -170,6 +170,7 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    setShowManualInstructions(false);
     // Remember user dismissed it for this session
     sessionStorage.setItem('installPromptDismissed', 'true');
   };
