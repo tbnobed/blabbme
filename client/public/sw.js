@@ -74,13 +74,37 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event.notification.data);
   event.notification.close();
 
-  if (event.action === 'open') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
+  // Get the URL to open (either the stored URL or default to home)
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    // Try to focus existing client first
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((clientList) => {
+      // Check if there's already a window open with the same URL
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      
+      // If no existing window found, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    }).catch((error) => {
+      console.log('Error handling notification click:', error);
+      // Fallback: just try to open the URL
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
 
 // Background sync for messages when app regains connectivity

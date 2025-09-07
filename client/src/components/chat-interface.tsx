@@ -57,10 +57,28 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       if ('Notification' in window) {
         const permission = await Notification.requestPermission();
         setNotificationsEnabled(permission === 'granted');
+        console.log('Notification permission:', permission);
+      }
+    };
+
+    // Handle visibility changes for better PWA behavior
+    const handleVisibilityChange = () => {
+      console.log('Visibility changed:', document.hidden, document.visibilityState);
+      if (document.visibilityState === 'visible') {
+        // App came back to foreground - could reconnect if needed
+        console.log('App is now visible');
+      } else {
+        // App went to background
+        console.log('App is now hidden/backgrounded');
       }
     };
 
     requestNotificationPermission();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Function to play notification sound
@@ -91,18 +109,33 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   // Function to show browser notification (enhanced for PWA)
   const showNotification = (title: string, message: string, icon?: string) => {
-    if (!notificationsEnabled || document.hasFocus()) {
-      // Still play sound even if tab is active (if sound is enabled)
-      if (!document.hasFocus()) {
-        playNotificationSound();
-      }
-      return; // Don't show notification if tab is active or permissions not granted
+    console.log('showNotification called:', { title, message, notificationsEnabled, hasFocus: document.hasFocus(), isStandalone: window.matchMedia('(display-mode: standalone)').matches });
+    
+    if (!notificationsEnabled) {
+      console.log('Notifications disabled, skipping');
+      return;
+    }
+
+    // For PWA (standalone mode), always show notifications
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const shouldShowNotification = isStandalone || !document.hasFocus() || document.hidden;
+    
+    // Always play sound for background notifications
+    if (!document.hasFocus() || document.hidden) {
+      playNotificationSound();
+    }
+    
+    if (!shouldShowNotification) {
+      console.log('Tab is focused and not in standalone mode, skipping notification');
+      return;
     }
 
     try {
       // Try to use service worker for better PWA support
       if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
+        console.log('Attempting to show service worker notification');
         navigator.serviceWorker.ready.then(registration => {
+          console.log('Service worker ready, showing notification');
           const notificationOptions: any = {
             body: message,
             icon: icon || '/icon-192.png',
@@ -112,7 +145,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             silent: !soundEnabled,
             data: {
               url: window.location.href,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              roomId: window.location.pathname.split('/').pop()
             },
             actions: [
               {
@@ -127,12 +161,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             notificationOptions.vibrate = [100, 50, 100];
           }
           
-          registration.showNotification(title, notificationOptions);
-        }).catch(() => {
+          return registration.showNotification(title, notificationOptions);
+        }).then(() => {
+          console.log('Service worker notification shown successfully');
+        }).catch((error) => {
+          console.log('Service worker notification failed:', error);
           // Fallback to regular notification
           showRegularNotification(title, message, icon);
         });
       } else {
+        console.log('Service worker not available, using regular notification');
         showRegularNotification(title, message, icon);
       }
     } catch (error) {
@@ -252,6 +290,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
                   }
                   
                   // Show browser notification if enabled
+                  console.log('Triggering notification for new message from:', data.message.nickname);
                   showNotification(
                     `${data.message.nickname} in ${room?.name || 'Chat Room'}`,
                     messagePreview
