@@ -48,8 +48,11 @@ const socketData = new Map<WebSocket, SocketData>();
 const userSessions = new Map<string, UserSession>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve PWA files from client/public directory
-  const clientPublicPath = path.resolve(import.meta.dirname, "..", "client", "public");
+  // Serve PWA files from appropriate directory based on environment
+  const isProduction = process.env.NODE_ENV === 'production';
+  const clientPublicPath = isProduction 
+    ? path.resolve(process.cwd(), "dist", "public")
+    : path.resolve(import.meta.dirname, "..", "client", "public");
   
   // Debug route to check paths
   app.get('/debug/pwa', (req, res) => {
@@ -68,10 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve manifest.json
   app.get('/manifest.json', (req, res) => {
-    console.log('Manifest route hit');
     const manifestPath = path.join(clientPublicPath, 'manifest.json');
-    console.log('Looking for manifest at:', manifestPath);
-    console.log('File exists:', fs.existsSync(manifestPath));
     if (fs.existsSync(manifestPath)) {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
@@ -83,10 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve service worker
   app.get('/sw.js', (req, res) => {
-    console.log('Service worker route hit');
     const swPath = path.join(clientPublicPath, 'sw.js');
-    console.log('Looking for service worker at:', swPath);
-    console.log('File exists:', fs.existsSync(swPath));
     if (fs.existsSync(swPath)) {
       res.setHeader('Content-Type', 'text/javascript');
       res.setHeader('Service-Worker-Allowed', '/');

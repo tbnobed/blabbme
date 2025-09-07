@@ -30,9 +30,18 @@ ENV VITE_SHOW_JOIN_CHAT_BUTTON=${VITE_SHOW_JOIN_CHAT_BUTTON}
 # Build the frontend using vite config defaults
 RUN npx vite build
 
+# Copy PWA files to the build output directory
+RUN echo "=== Copying PWA files to dist/public ===" && \
+    mkdir -p dist/public && \
+    cp client/public/manifest.json dist/public/ 2>/dev/null || echo "manifest.json not found, skipping" && \
+    cp client/public/sw.js dist/public/ 2>/dev/null || echo "sw.js not found, skipping" && \
+    cp client/public/icon-*.png dist/public/ 2>/dev/null || echo "icons not found, skipping"
+
 # Debug: Check what actually got built
 RUN echo "=== Debug: Checking build output ===" && \
     ls -la dist/ && \
+    echo "=== PWA files in dist/public ===" && \
+    ls -la dist/public/ | grep -E "(manifest|sw|icon)" || echo "No PWA files found" && \
     echo "=== Looking for any built files ===" && \
     find . -name "*.html" -o -name "*.js" -o -name "*.css" | grep -v node_modules | head -10
 
