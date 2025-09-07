@@ -71,8 +71,30 @@ export function InstallPrompt() {
       setPwaCriteria(criteria);
       console.log('PWA Criteria:', criteria);
 
-      // Show manual instructions after 5 seconds if no install prompt appeared
+      // For Chrome/Edge: Show detailed debugging info
+      console.log('=== PWA Install Debugging ===');
+      console.log('User Agent:', navigator.userAgent);
+      console.log('Is Chrome:', /Chrome/.test(navigator.userAgent));
+      console.log('Is Edge:', /Edge/.test(navigator.userAgent));
+      console.log('Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+      console.log('Already installed:', window.matchMedia('(display-mode: standalone)').matches);
+      
+      // Check for PWA engagement heuristics
       setTimeout(() => {
+        console.log('=== 5 Second Check ===');
+        console.log('Deferred prompt available:', !!deferredPrompt);
+        console.log('All criteria met:', criteria.https && criteria.manifest && criteria.serviceWorker);
+        
+        if (!deferredPrompt) {
+          console.log('❌ No beforeinstallprompt event received');
+          console.log('Possible reasons:');
+          console.log('- App may already be installed');
+          console.log('- Browser engagement requirements not met');
+          console.log('- PWA criteria not fully satisfied');
+          console.log('- Domain/HTTPS issues');
+        }
+
+      // Show manual instructions after 5 seconds if no install prompt appeared  
         if (!deferredPrompt && criteria.https && criteria.manifest && criteria.serviceWorker) {
           console.log('PWA criteria met but no install prompt - showing manual instructions');
           setShowManualInstructions(true);
