@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import rateLimit from "express-rate-limit";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { insertRoomSchema, insertMessageSchema } from "@shared/schema";
 import { v4 as uuidv4 } from "uuid";
@@ -46,6 +48,67 @@ const socketData = new Map<WebSocket, SocketData>();
 const userSessions = new Map<string, UserSession>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve PWA files from client/public directory
+  const clientPublicPath = path.resolve(import.meta.dirname, "..", "client", "public");
+  
+  // Debug route to check paths
+  app.get('/debug/pwa', (req, res) => {
+    const manifestPath = path.join(clientPublicPath, 'manifest.json');
+    const swPath = path.join(clientPublicPath, 'sw.js');
+    res.json({
+      clientPublicPath,
+      manifestPath,
+      manifestExists: fs.existsSync(manifestPath),
+      swPath,
+      swExists: fs.existsSync(swPath),
+      nodeVersion: process.version,
+      dirname: import.meta.dirname
+    });
+  });
+
+  // Serve manifest.json
+  app.get('/manifest.json', (req, res) => {
+    console.log('Manifest route hit');
+    const manifestPath = path.join(clientPublicPath, 'manifest.json');
+    console.log('Looking for manifest at:', manifestPath);
+    console.log('File exists:', fs.existsSync(manifestPath));
+    if (fs.existsSync(manifestPath)) {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.sendFile(manifestPath);
+    } else {
+      res.status(404).send('Manifest not found');
+    }
+  });
+  
+  // Serve service worker
+  app.get('/sw.js', (req, res) => {
+    console.log('Service worker route hit');
+    const swPath = path.join(clientPublicPath, 'sw.js');
+    console.log('Looking for service worker at:', swPath);
+    console.log('File exists:', fs.existsSync(swPath));
+    if (fs.existsSync(swPath)) {
+      res.setHeader('Content-Type', 'text/javascript');
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('Cache-Control', 'no-cache'); // Don't cache service worker
+      res.sendFile(swPath);
+    } else {
+      res.status(404).send('Service worker not found');
+    }
+  });
+  
+  // Serve PWA icons
+  app.get('/icon-:size.png', (req, res) => {
+    const iconPath = path.join(clientPublicPath, `icon-${req.params.size}.png`);
+    if (fs.existsSync(iconPath)) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      res.sendFile(iconPath);
+    } else {
+      res.status(404).send('Icon not found');
+    }
+  });
+
   // Apply general rate limiting to all API routes
   app.use("/api", apiLimiter);
   
