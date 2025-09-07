@@ -202,9 +202,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const session = userSessions.get(sessionId);
     if (session) {
       session.pushSubscription = subscription;
-      console.log('Push subscription registered for session:', sessionId);
+      console.log('🔔 Push subscription registered for session:', sessionId, 'in room:', session.roomId);
       res.json({ success: true });
     } else {
+      console.log('❌ Push subscription failed - session not found:', sessionId);
       res.status(404).json({ error: 'Session not found' });
     }
   });
