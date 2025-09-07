@@ -1204,8 +1204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const payload = JSON.stringify({
-        title: \`New message in \${messageData.roomName || 'chat room'}\`,
-        body: \`\${messageData.nickname}: \${messageData.message}\`,
+        title: `New message in ${messageData.roomName || 'chat room'}`,
+        body: `${messageData.nickname}: ${messageData.message}`,
         roomId: roomId,
         timestamp: messageData.timestamp
       });
@@ -1225,7 +1225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       await Promise.allSettled(pushPromises);
-      console.log(\`Sent push notifications to \${disconnectedSessions.length} users in room \${roomId}\`);
+      console.log(`Sent push notifications to ${disconnectedSessions.length} users in room ${roomId}`);
     } catch (error) {
       console.error('Error sending push notifications:', error);
     }
