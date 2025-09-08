@@ -58,6 +58,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       console.log('📱 Notifications enabled:', notificationsEnabled);
       console.log('📱 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
       console.log('📱 Is standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
+      console.log('📱 User agent:', navigator.userAgent);
+      console.log('📱 Service worker support:', 'serviceWorker' in navigator);
+      console.log('📱 Push manager support:', 'PushManager' in window);
       
       if (!notificationsEnabled) {
         console.log('❌ Notifications not enabled, skipping push setup');
@@ -85,15 +88,36 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         return;
       }
       
+      console.log('✅ Push manager available');
+      console.log('📱 VAPID public key:', publicKey);
+      
+      // Convert VAPID key with error handling
+      let applicationServerKey;
+      try {
+        applicationServerKey = urlBase64ToUint8Array(publicKey);
+        console.log('✅ VAPID key converted successfully');
+      } catch (error) {
+        console.log('❌ VAPID key conversion failed:', error);
+        return;
+      }
+      
       console.log('📱 Subscribing to push notifications...');
       
-      // Subscribe to push notifications
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-
-      console.log('✅ Push subscription created:', subscription);
+      // Subscribe to push notifications with detailed error handling
+      let subscription;
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey
+        });
+        console.log('✅ Push subscription created successfully:', subscription);
+      } catch (error) {
+        console.log('❌ Push subscription failed:', error);
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          console.log('📱 iOS push subscription error - this might be a Safari limitation');
+        }
+        return;
+      }
 
       // Get current session ID
       const sessionResponse = await fetch('/api/session/current');
@@ -123,7 +147,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         }
       }
     } catch (error) {
-      console.log('Failed to setup push notifications:', error);
+      console.log('❌ Failed to setup push notifications:', error);
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        console.log('📱 iOS debugging - error details:', {
+          errorName: error.name,
+          errorMessage: error.message,
+          isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+          serviceWorkerSupport: 'serviceWorker' in navigator,
+          pushManagerSupport: 'PushManager' in window,
+          notificationPermission: Notification.permission
+        });
+      }
     }
   };
 
