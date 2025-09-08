@@ -57,6 +57,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     return saved !== 'false'; // Default to true
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isTogglingRef = useRef(false);  // Prevent notifications during toggle process
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -392,6 +393,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const showNotification = (title: string, message: string, icon?: string) => {
     console.log('showNotification called:', { title, message, notificationsEnabled, hasFocus: document.hasFocus(), isStandalone: window.matchMedia('(display-mode: standalone)').matches });
     
+    // Block notifications during toggle process to prevent race conditions
+    if (isTogglingRef.current) {
+      console.log('🚫 Notifications blocked - toggle in progress');
+      return;
+    }
+    
     if (!notificationsEnabled) {
       console.log('Notifications disabled, skipping');
       return;
@@ -539,7 +546,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     if (actuallyEnabled) {
       console.log('🔕 Disabling notifications...');
       
-      // Immediately set states to prevent notifications during unsubscribe
+      // Immediately block notifications to prevent race conditions
+      isTogglingRef.current = true;
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
       
@@ -547,7 +555,13 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       try {
         if ('serviceWorker' in navigator) {
           console.log('🔄 Getting service worker registration...');
-          const registration = await navigator.serviceWorker.ready;
+          const registration = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Service worker timeout')), 5000)
+            )
+          ]) as ServiceWorkerRegistration;
+          
           console.log('🔄 Getting current push subscription...');
           const subscription = await registration.pushManager.getSubscription();
           
@@ -637,6 +651,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         });
       }
     }
+    
+    // Reset toggle flag
+    isTogglingRef.current = false;
   };
 
   useEffect(() => {
