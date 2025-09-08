@@ -1489,6 +1489,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         session.pushSubscription = undefined;
       }
 
+      // CRITICAL: Remove ALL participant data from database to prevent session restoration
+      console.log('🧹 EXPLICIT LEAVE: Removing all participant data for session:', socketInfo.sessionId);
+      try {
+        await storage.removeParticipantBySession(socketInfo.roomId, socketInfo.sessionId);
+        console.log('🧹 Database participant data cleared - no auto-rejoin possible');
+      } catch (error) {
+        console.log('🧹 Error clearing participant data:', error);
+      }
+
       // Notify room about participant leaving only for explicit leaves
       const participants = await storage.getParticipantsByRoom(socketInfo.roomId);
       broadcastToRoom(wss, socketInfo.roomId, {
