@@ -67,7 +67,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   // Setup push notifications
   const [isSettingUpPush, setIsSettingUpPush] = useState(false);
   
-  const setupPushNotifications = async () => {
+  const setupPushNotifications = async (forceSetup = false) => {
     if (isSettingUpPush) {
       console.log('⚠️ Push setup already in progress, skipping...');
       return;
@@ -83,9 +83,13 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       console.log('📱 Service worker support:', 'serviceWorker' in navigator);
       console.log('📱 Push manager support:', 'PushManager' in window);
       
-      if (!notificationsEnabled) {
+      if (!notificationsEnabled && !forceSetup) {
         console.log('❌ Notifications not enabled, skipping push setup');
         return;
+      }
+      
+      if (forceSetup) {
+        console.log('🔄 Force setup enabled - proceeding with push setup regardless of current state');
       }
 
       if (!('serviceWorker' in navigator)) {
@@ -637,7 +641,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         
         try {
           // Setup push notifications first, only enable if successful
-          await setupPushNotifications();
+          await setupPushNotifications(true);  // Force setup regardless of current state
           
           // Force enable state after successful push setup
           console.log('✅ Push setup completed successfully - enabling bell icon');
@@ -900,7 +904,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             console.log('✅ Permission granted, setting up push for room:', roomId);
-            await setupPushNotifications();
+            await setupPushNotifications(true);  // Force setup when getting new permission
             localStorage.setItem('notificationsEnabled', 'true');
           } else {
             console.log('❌ Permission denied');

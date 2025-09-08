@@ -1,0 +1,66 @@
+🔄 Toggle: local state = false server state = false
+chat-interface.tsx:611 🔔 Starting notification permission request...
+chat-interface.tsx:613 🔔 Permission result: granted
+chat-interface.tsx:616 🔔 Permission granted, starting push setup...
+chat-interface.tsx:78 🔔 Starting push notification setup...
+chat-interface.tsx:79 📱 Notifications enabled: false
+chat-interface.tsx:80 📱 Is iOS: false
+chat-interface.tsx:81 📱 Is standalone mode: false
+chat-interface.tsx:82 📱 User agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+chat-interface.tsx:83 📱 Service worker support: true
+chat-interface.tsx:84 📱 Push manager support: true
+chat-interface.tsx:87 ❌ Notifications not enabled, skipping push setup
+chat-interface.tsx:627 ✅ Push setup completed successfully - enabling bell icon
+chat-interface.tsx:861 🔔 Room joined, setting up push notifications for room: 18a4ff
+chat-interface.tsx:867 ✅ Permission granted AND notifications enabled, setting up push for room: 18a4ff
+chat-interface.tsx:78 🔔 Starting push notification setup...
+chat-interface.tsx:79 📱 Notifications enabled: true
+chat-interface.tsx:80 📱 Is iOS: false
+chat-interface.tsx:81 📱 Is standalone mode: false
+chat-interface.tsx:82 📱 User agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+chat-interface.tsx:83 📱 Service worker support: true
+chat-interface.tsx:84 📱 Push manager support: true
+chat-interface.tsx:97 📱 Waiting for service worker to be ready...
+chat-interface.tsx:668 🔓 Toggle process completed - unblocking notifications
+chat-interface.tsx:678 Chat interface received message: server-heartbeat {type: 'server-heartbeat'}
+chat-interface.tsx:678 Chat interface received message: new-message {type: 'new-message', message: {…}}
+chat-interface.tsx:722 Triggering notification for new message from:  Eee
+chat-interface.tsx:394 showNotification called: {title: ' Eee in Chat Room', message: 'Yeyeye', notificationsEnabled: true, hasFocus: false, isStandalone: false}
+chat-interface.tsx:424 Attempting to show service worker notification
+chat-interface.tsx:678 Chat interface received message: pong {type: 'pong'}
+chat-interface.tsx:358 🔄 App focused - syncing with server
+chat-interface.tsx:299 📱 Visibility changed: true hidden
+chat-interface.tsx:310 🏠 App backgrounded - notifying server for push notifications
+chat-interface.tsx:331 🔄 Syncing with server - checking subscription status...
+chat-interface.tsx:499 🔍 Checking server subscription status via cookies...
+chat-interface.tsx:502 📡 Making API call to: /api/push-status
+chat-interface.tsx:507 📡 Response status: 200 OK
+chat-interface.tsx:511 📡 Response content-type: application/json; charset=utf-8
+chat-interface.tsx:515 📋 Server subscription status: false
+chat-interface.tsx:337 📋 Server subscription status: false
+chat-interface.tsx:338 🔔 Current notification permission: granted
+chat-interface.tsx:339 🔔 Local enabled state: true
+chat-interface.tsx:343 ⚠️  Server state differs from local! Syncing to server: false
+chat-interface.tsx:678 Chat interface received message: new-message {type: 'new-message', message: {…}}
+chat-interface.tsx:722 Triggering notification for new message from:  Eee
+chat-interface.tsx:394 showNotification called: {title: ' Eee in Chat Room', message: 'Hehehee', notificationsEnabled: true, hasFocus: false, isStandalone: false}
+chat-interface.tsx:424 Attempting to show service worker notification
+chat-interface.tsx:217 ❌ Failed to setup push notifications: Error: Service worker timeout
+    at chat-interface.tsx:100:60
+chat-interface.tsx:869 ✅ Push notifications ready for room: 18a4ff
+chat-interface.tsx:678 Chat interface received message: pong {type: 'pong'}
+chat-interface.tsx:299 📱 Visibility changed: false visible
+chat-interface.tsx:301 👀 App foregrounded - notifying server
+chat-interface.tsx:358 🔄 App focused - syncing with server
+chat-interface.tsx:331 🔄 Syncing with server - checking subscription status...
+chat-interface.tsx:499 🔍 Checking server subscription status via cookies...
+chat-interface.tsx:502 📡 Making API call to: /api/push-status
+chat-interface.tsx:507 📡 Response status: 200 OK
+chat-interface.tsx:511 📡 Response content-type: application/json; charset=utf-8
+chat-interface.tsx:515 📋 Server subscription status: false
+chat-interface.tsx:337 📋 Server subscription status: false
+chat-interface.tsx:338 🔔 Current notification permission: granted
+chat-interface.tsx:339 🔔 Local enabled state: true
+chat-interface.tsx:343 ⚠️  Server state differs from local! Syncing to server: false
+chat-interface.tsx:678 Chat interface received message: server-heartbeat {type: 'server-heartbeat'}
+chat-interface.tsx:678 Chat interface received message: pong {type: 'pong'}
