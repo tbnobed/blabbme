@@ -64,6 +64,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     : path.resolve(import.meta.dirname, "..", "client", "public");
   
 
+  // Dynamic manifest endpoint with proper icons for Chrome
+  app.get('/api/manifest', (req, res) => {
+    const manifest = {
+      name: "Blabb.me - Anonymous Chat",
+      short_name: "Blabb.me",
+      description: "Anonymous real-time chat rooms with QR code sharing. Join instantly with QR codes.",
+      start_url: "/",
+      scope: "/",
+      display: "standalone",
+      background_color: "#ffffff",
+      theme_color: "#3b82f6",
+      orientation: "portrait-primary",
+      categories: ["social", "communication", "utilities"],
+      lang: "en",
+      dir: "ltr",
+      icons: [
+        {
+          // Create a proper 192x192 icon using SVG data URI
+          src: "data:image/svg+xml;base64," + Buffer.from(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+              <rect width="192" height="192" rx="24" fill="#3b82f6"/>
+              <text x="96" y="110" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="white">B</text>
+              <circle cx="60" cy="140" r="8" fill="white" opacity="0.8"/>
+              <circle cx="96" cy="140" r="8" fill="white" opacity="0.6"/>
+              <circle cx="132" cy="140" r="8" fill="white" opacity="0.4"/>
+            </svg>
+          `).toString('base64'),
+          sizes: "192x192",
+          type: "image/svg+xml",
+          purpose: "any maskable"
+        },
+        {
+          // Create a proper 512x512 icon using SVG data URI  
+          src: "data:image/svg+xml;base64," + Buffer.from(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+              <rect width="512" height="512" rx="64" fill="#3b82f6"/>
+              <text x="256" y="300" font-family="Arial, sans-serif" font-size="200" font-weight="bold" text-anchor="middle" fill="white">B</text>
+              <circle cx="160" cy="380" r="20" fill="white" opacity="0.8"/>
+              <circle cx="256" cy="380" r="20" fill="white" opacity="0.6"/>
+              <circle cx="352" cy="380" r="20" fill="white" opacity="0.4"/>
+            </svg>
+          `).toString('base64'),
+          sizes: "512x512", 
+          type: "image/svg+xml",
+          purpose: "any"
+        },
+        {
+          // Maskable icon for Chrome/Android
+          src: "data:image/svg+xml;base64," + Buffer.from(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+              <rect width="192" height="192" fill="#3b82f6"/>
+              <text x="96" y="110" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="white">B</text>
+            </svg>
+          `).toString('base64'),
+          sizes: "192x192",
+          type: "image/svg+xml", 
+          purpose: "maskable"
+        }
+      ],
+      screenshots: [
+        {
+          src: "data:image/svg+xml;base64," + Buffer.from(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="540" height="720" viewBox="0 0 540 720">
+              <rect width="540" height="720" fill="#f8fafc"/>
+              <rect x="20" y="60" width="500" height="80" rx="8" fill="#3b82f6"/>
+              <text x="270" y="110" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Blabb.me Chat</text>
+              <rect x="40" y="180" width="460" height="400" rx="8" fill="white" stroke="#e2e8f0"/>
+              <text x="60" y="220" font-family="Arial, sans-serif" font-size="16" fill="#64748b">Anonymous Chat Room</text>
+            </svg>
+          `).toString('base64'),
+          sizes: "540x720",
+          type: "image/svg+xml",
+          form_factor: "narrow"
+        }
+      ],
+      shortcuts: [
+        {
+          name: "Start New Chat",
+          short_name: "New Chat",
+          description: "Create a new anonymous chat room",
+          url: "/?create=true",
+          icons: [{ src: "/api/manifest", sizes: "192x192" }]
+        }
+      ]
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+    res.json(manifest);
+  });
+
   // Dynamic service worker endpoint  
   app.get('/api/sw.js', (req, res) => {
     const swCode = `

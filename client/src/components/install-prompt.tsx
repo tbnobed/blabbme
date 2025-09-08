@@ -74,10 +74,22 @@ export function InstallPrompt() {
       // For Chrome/Edge: Show detailed debugging info
       console.log('=== PWA Install Debugging ===');
       console.log('User Agent:', navigator.userAgent);
-      console.log('Is Chrome:', /Chrome/.test(navigator.userAgent));
+      const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+      console.log('Is Chrome:', isChrome);
       console.log('Is Edge:', /Edge/.test(navigator.userAgent));
       console.log('Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
       console.log('Already installed:', window.matchMedia('(display-mode: standalone)').matches);
+      
+      // Force show manual instructions for Chrome immediately if no prompt
+      if (isChrome) {
+        setTimeout(() => {
+          console.log('=== Chrome Install Check ===');
+          if (!deferredPrompt && criteria.https && criteria.manifest && criteria.serviceWorker) {
+            console.log('Chrome detected - showing install instructions');
+            setShowManualInstructions(true);
+          }
+        }, 2000); // Show faster for Chrome users
+      }
       
       // Check for PWA engagement heuristics
       setTimeout(() => {
@@ -87,11 +99,7 @@ export function InstallPrompt() {
         
         if (!deferredPrompt) {
           console.log('❌ No beforeinstallprompt event received');
-          console.log('Possible reasons:');
-          console.log('- App may already be installed');
-          console.log('- Browser engagement requirements not met');
-          console.log('- PWA criteria not fully satisfied');
-          console.log('- Domain/HTTPS issues');
+          console.log('Chrome requires user engagement - try visiting the site multiple times');
         }
 
       // Show manual instructions after 5 seconds if no install prompt appeared  
@@ -251,6 +259,18 @@ export function InstallPrompt() {
 
   // Show manual installation instructions if criteria are met but no auto-prompt
   if (showManualInstructions && !isDismissed && pwaCriteria.manifest && pwaCriteria.serviceWorker) {
+    const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+    const isEdge = /Edge/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    let instructionText = "In Safari: tap Share → Add to Home Screen for app-like experience with notifications";
+    
+    if (isChrome) {
+      instructionText = "In Chrome: click the menu (⋮) → 'Add to Home screen' or look for the install icon in the address bar";
+    } else if (isEdge) {
+      instructionText = "In Edge: click the menu (⋯) → 'Apps' → 'Install this site as an app'";
+    }
+    
     return (
       <div className="fixed bottom-4 left-4 right-4 z-50 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg shadow-lg p-4 max-w-sm mx-auto">
         <div className="flex items-start gap-3">
@@ -260,7 +280,7 @@ export function InstallPrompt() {
               Add to Home Screen
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              In Safari: tap Share → Add to Home Screen for app-like experience with notifications
+              {instructionText}
             </p>
             <div className="flex gap-2 mt-3">
               <Button 
