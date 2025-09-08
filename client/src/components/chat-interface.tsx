@@ -218,9 +218,37 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestPermissions();
   }, []);
 
-  // Setup WebSocket message handling
+  // Setup WebSocket message handling and visibility tracking
   useEffect(() => {
     if (!socket) return;
+
+    // Send current visibility state when socket connects
+    const sendVisibilityState = () => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        const isVisible = !document.hidden && document.hasFocus();
+        console.log(`📱 Sending visibility state: ${isVisible ? 'visible' : 'hidden'}`);
+        socket.send(JSON.stringify({
+          type: 'app-visibility',
+          visible: isVisible
+        }));
+      }
+    };
+
+    // Send initial visibility state
+    setTimeout(sendVisibilityState, 100);
+
+    // Track visibility changes
+    const handleVisibilityChange = () => {
+      sendVisibilityState();
+    };
+
+    const handleFocusChange = () => {
+      sendVisibilityState();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocusChange);
+    window.addEventListener('blur', handleFocusChange);
 
     const handleMessage = (event: MessageEvent) => {
       try {
@@ -345,6 +373,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       socket.removeEventListener('message', handleMessage);
       socket.removeEventListener('close', handleClose);
       socket.removeEventListener('error', handleError);
+      
+      // Clean up visibility tracking
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocusChange);
+      window.removeEventListener('blur', handleFocusChange);
     };
   }, [socket, nickname, room, toast, onLeaveRoom]);
 
