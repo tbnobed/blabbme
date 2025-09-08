@@ -1241,6 +1241,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log('Sending session-restored message to client, room:', session.roomId, 'nickname:', session.nickname);
           ws.send(JSON.stringify(restorationData));
+          
+          // Send welcome message for session restoration too (to trigger push registration)
+          setTimeout(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              console.log('🎉 Sending welcome message after session restoration for:', session.nickname);
+              ws.send(JSON.stringify({
+                type: 'welcome-message',
+                message: `Welcome back to ${room.name}, ${session.nickname}! 👋`,
+                roomId: session.roomId,
+                nickname: session.nickname
+              }));
+            }
+          }, 1000); // 1 second delay to ensure client is ready
           return;
         }
       }
@@ -1368,6 +1381,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       messages,
       participants: updatedParticipants,
     }));
+    
+    // Send welcome message as a trigger for push registration (delayed to ensure client is ready)
+    setTimeout(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        console.log('🎉 Sending welcome message to trigger push registration for:', nickname);
+        ws.send(JSON.stringify({
+          type: 'welcome-message',
+          message: `Welcome to ${room.name}, ${nickname}! 🎉`,
+          roomId,
+          nickname
+        }));
+      }
+    }, 1000); // 1 second delay to ensure client is ready
   }
 
   async function handleSendMessage(ws: WebSocket, message: any, wss: WebSocketServer) {

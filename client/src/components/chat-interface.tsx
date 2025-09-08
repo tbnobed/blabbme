@@ -471,11 +471,23 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             setRoom(data.room || null);
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
+            break;
             
-            // CRITICAL: Register push notifications IMMEDIATELY when joining a room
-            if (data.room?.id) {
-              console.log('📱 Triggering IMMEDIATE push registration for room:', data.room.id);
-              registerPushForRoom(data.room.id);
+          case 'welcome-message':
+            console.log('🎉 CLIENT: Received welcome message - triggering push registration');
+            // Display welcome message to user
+            if (data.message) {
+              toast({
+                title: "Welcome!",
+                description: data.message,
+                duration: 3000,
+              });
+            }
+            
+            // CRITICAL: Use welcome message as reliable trigger for push registration
+            if (data.roomId) {
+              console.log('📱 Welcome message: Triggering push registration for room:', data.roomId);
+              registerPushForRoom(data.roomId);
             }
             break;
             
