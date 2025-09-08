@@ -42,79 +42,79 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event - iOS compatible version with extensive debugging
+// Push notification event - iOS Safari PWA compatible version  
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push event received in service worker');
-  console.log('🔔 Event data exists:', !!event.data);
-  console.log('🔔 User agent:', navigator.userAgent);
-  console.log('🔔 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
+  console.log('🔔 PUSH EVENT TRIGGERED in service worker');
   console.log('🔔 Timestamp:', new Date().toISOString());
+  console.log('🔔 Event data exists:', !!event.data);
   
-  // Force show a notification even without data to test iOS handling
-  if (!event.data) {
-    console.log('🔔 No data received, showing test notification');
-    event.waitUntil(
-      self.registration.showNotification('Test Push', {
-        body: 'Push received but no data',
-        tag: 'test-push'
-      })
+  // Confirm delivery to server (this proves service worker got the push)
+  try {
+    fetch('/api/push-delivered/current', { method: 'POST' }).catch(e => 
+      console.log('📬 Delivery confirmation failed:', e)
     );
-    return;
+  } catch (e) {
+    console.log('📬 Fetch error:', e);
   }
   
-  // Simple, iOS-compatible notification
-  let title = 'Blabb.me';
-  let body = 'You have a new chat message';
-  let data = {};
+  // Default notification for iOS Safari PWA
+  let title = 'New Chat Message';
+  let body = 'You have a new message in Blabb.me';
+  let icon = undefined; // iOS Safari doesn't like icons
+  let badge = undefined; // iOS Safari doesn't like badges  
   
-  // Try to parse payload but don't fail if it doesn't work
+  // Try to extract message content for better notification
   if (event.data) {
     try {
       const payload = event.data.json();
-      console.log('🔔 Parsed payload:', payload);
-      title = payload.title || title;
-      body = payload.body || body;
-      data = payload;
-    } catch (error) {
-      console.log('🔔 JSON parse failed, trying text:', error);
-      // Fallback to simple text
-      try {
-        const textData = event.data.text();
-        console.log('🔔 Text data:', textData);
-        body = textData || body;
-      } catch (e) {
-        console.log('🔔 Text parse also failed:', e);
+      console.log('🔔 Push payload:', payload);
+      
+      if (payload.message) {
+        const msg = payload.message;
+        title = `${msg.nickname} in chat`;
+        body = msg.content;
+      } else if (payload.title && payload.body) {
+        title = payload.title;
+        body = payload.body;
       }
+    } catch (error) {
+      console.log('🔔 Payload parse failed, using defaults:', error);
     }
+  } else {
+    console.log('🔔 No payload data - showing default notification');
   }
 
-  console.log('🔔 Final notification:', { title, body });
-
-  // Ultra-simple options for iOS compatibility - no icon that might fail
+  // iOS Safari PWA requires specific notification options
   const options = {
     body: body,
-    tag: 'blabbme-message',
-    requireInteraction: false,
-    silent: false,
-    data: data
+    tag: 'chat-message', // Prevents duplicate notifications
+    requireInteraction: true, // iOS needs this to show properly
+    silent: false, // Make sure it's not silent
+    // Don't include icon, badge, or complex data for iOS compatibility
   };
 
-  console.log('🔔 Showing notification with options:', options);
+  console.log('🔔 Showing notification:', title, options);
 
+  // Force show notification immediately - iOS Safari is very strict about timing
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    Promise.resolve()
       .then(() => {
-        console.log('✅ Notification shown successfully');
+        console.log('🔔 About to call showNotification...');
+        return self.registration.showNotification(title, options);
+      })
+      .then(() => {
+        console.log('✅ NOTIFICATION DISPLAYED SUCCESSFULLY');
       })
       .catch((error) => {
-        console.error('❌ Notification failed:', error);
-        // Ultimate fallback - absolute minimal notification
-        return self.registration.showNotification('New Message', {
-          body: 'Chat message received'
+        console.error('❌ NOTIFICATION FAILED:', error);
+        // iOS fallback - absolutely minimal notification
+        return self.registration.showNotification('Chat Message', {
+          body: 'New message received',
+          requireInteraction: true
         }).then(() => {
-          console.log('✅ Fallback notification shown');
+          console.log('✅ FALLBACK NOTIFICATION SHOWN');
         }).catch((fallbackError) => {
-          console.error('❌ Even fallback failed:', fallbackError);
+          console.error('💥 EVEN FALLBACK FAILED:', fallbackError);
         });
       })
   );
