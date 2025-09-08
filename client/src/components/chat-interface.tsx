@@ -173,6 +173,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       
       if (sessionData.sessionId) {
         console.log('📱 Sending subscription to server...');
+        console.log('📱 Session ID for registration:', sessionData.sessionId);
+        console.log('📱 Subscription endpoint:', subscription.endpoint);
+        
         // Send subscription to server - server expects the subscription directly
         const subscribeResponse = await fetch('/api/push-subscribe', {
           method: 'POST',
@@ -183,13 +186,19 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           credentials: 'include' // Important for session-based auth
         });
         
+        console.log('📱 Server response status:', subscribeResponse.status);
+        
         if (subscribeResponse.ok) {
+          const responseData = await subscribeResponse.json();
+          console.log('✅ Server response data:', responseData);
           console.log('✅ Push notifications set up successfully for room:', roomId);
           if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
             console.log('📱 iOS: Push notifications should now work when app is backgrounded');
           }
         } else {
-          console.log('❌ Failed to register push subscription:', subscribeResponse.status);
+          const errorText = await subscribeResponse.text();
+          console.error('❌ Server registration failed:', subscribeResponse.status, errorText);
+          throw new Error(`Server registration failed: ${subscribeResponse.status} - ${errorText}`);
         }
       }
     } catch (error) {
