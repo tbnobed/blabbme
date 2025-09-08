@@ -1,5 +1,5 @@
 // Service Worker for PWA functionality and push notifications
-const CACHE_NAME = 'blabbme-v2'; // Force service worker update
+const CACHE_NAME = 'blabbme-v3'; // Force mobile service worker update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -49,6 +49,7 @@ self.addEventListener('push', (event) => {
   console.log('🔔 Event data exists:', !!event.data);
   
   // Confirm delivery to server (this proves service worker got the push)
+  console.log('📬 Service worker received push - confirming delivery');
   try {
     fetch('/api/push-delivered/current', { method: 'POST' }).catch(e => 
       console.log('📬 Delivery confirmation failed:', e)
