@@ -119,14 +119,34 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       }
       console.log('✅ Service worker supported');
 
-      // Step 2: Wait for service worker with timeout
-      console.log('⏳ Waiting for service worker ready...');
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Service worker ready timeout after 5 seconds')), 5000)
-        )
-      ]) as ServiceWorkerRegistration;
+      // Step 2: Get service worker registration (iOS Safari friendly)
+      console.log('⏳ Getting service worker registration...');
+      let registration = await navigator.serviceWorker.getRegistration();
+      
+      if (!registration) {
+        console.log('🔄 No existing registration, creating new one...');
+        registration = await navigator.serviceWorker.register('/api/sw.js');
+        console.log('✅ New service worker registered');
+      } else {
+        console.log('✅ Found existing service worker registration');
+      }
+      
+      // Wait a bit for it to become active if needed
+      if (registration.installing || registration.waiting) {
+        console.log('⏳ Waiting for service worker to become active...');
+        await new Promise((resolve) => {
+          const checkState = () => {
+            if (registration?.active) {
+              console.log('✅ Service worker is now active');
+              resolve(registration);
+            } else {
+              setTimeout(checkState, 100);
+            }
+          };
+          checkState();
+        });
+      }
+      
       console.log('✅ Service worker ready:', !!registration);
       
       // Step 3: Check push manager
