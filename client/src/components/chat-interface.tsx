@@ -64,7 +64,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   };
 
   // Setup push notifications
+  const [isSettingUpPush, setIsSettingUpPush] = useState(false);
+  
   const setupPushNotifications = async () => {
+    if (isSettingUpPush) {
+      console.log('⚠️ Push setup already in progress, skipping...');
+      return;
+    }
+    
+    setIsSettingUpPush(true);
     try {
       console.log('🔔 Starting push notification setup...');
       console.log('📱 Notifications enabled:', notificationsEnabled);
@@ -84,11 +92,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         return;
       }
 
-      // Wait for service worker to be truly ready with timeout
+      // Wait for service worker to be truly ready with longer timeout
       console.log('📱 Waiting for service worker to be ready...');
       const registration = await Promise.race([
         navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker timeout')), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker timeout')), 30000))
       ]) as ServiceWorkerRegistration;
       console.log('✅ Service worker ready for push setup');
       
@@ -216,6 +224,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           notificationPermission: Notification.permission
         });
       }
+    } finally {
+      setIsSettingUpPush(false);
     }
   };
 
