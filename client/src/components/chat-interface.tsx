@@ -315,44 +315,42 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     };
   }, [socket]); // Remove notificationsEnabled dependency to prevent loops
 
-  // Sync with server state on every app load
-  useEffect(() => {
-    const syncWithServerOnLoad = async () => {
-      console.log('🔄 App loaded - checking server subscription status...');
-      
-      // Always check server state first
-      const serverHasSubscription = await checkServerSubscriptionStatus();
-      const currentPermission = 'Notification' in window ? Notification.permission : 'default';
-      
-      console.log('📋 Server subscription status:', serverHasSubscription);
-      console.log('🔔 Current notification permission:', currentPermission);
-      console.log('🔔 Local enabled state:', notificationsEnabled);
-      
-      // Sync local state with server state
-      if (serverHasSubscription !== notificationsEnabled) {
-        console.log('⚠️  Server state differs from local! Syncing to server:', serverHasSubscription);
-        setNotificationsEnabled(serverHasSubscription);
-        localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
-      }
-      
-      // Auto-setup push notifications if server says we're subscribed and permission is granted
-      if (serverHasSubscription && currentPermission === 'granted') {
-        console.log('🔔 Server shows subscription + permission granted - auto-setting up push');
-        const timeoutId = setTimeout(() => {
-          setupPushNotifications().catch(error => {
-            console.error('Failed to auto-setup push notifications:', error);
-          });
-        }, 2000);
-        return () => clearTimeout(timeoutId);
-      } else if (serverHasSubscription && currentPermission !== 'granted') {
-        console.log('🔔 Server shows subscription but permission revoked - disabling');
-        setNotificationsEnabled(false);
-        localStorage.setItem('notificationsEnabled', 'false');
-      }
-    };
+  // Sync with server state on app load and whenever we need to check
+  const syncWithServer = async () => {
+    console.log('🔄 Syncing with server - checking subscription status...');
+    
+    // Always check server state first
+    const serverHasSubscription = await checkServerSubscriptionStatus();
+    const currentPermission = 'Notification' in window ? Notification.permission : 'default';
+    
+    console.log('📋 Server subscription status:', serverHasSubscription);
+    console.log('🔔 Current notification permission:', currentPermission);
+    console.log('🔔 Local enabled state:', notificationsEnabled);
+    
+    // Sync local state with server state
+    if (serverHasSubscription !== notificationsEnabled) {
+      console.log('⚠️  Server state differs from local! Syncing to server:', serverHasSubscription);
+      setNotificationsEnabled(serverHasSubscription);
+      localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
+    }
+    
+    return serverHasSubscription;
+  };
 
-    syncWithServerOnLoad();
-  }, []); // Run once on mount to sync with server
+  // Run sync on mount and also when visibility changes
+  useEffect(() => {
+    console.log('🔄 Component mounted - running initial sync');
+    syncWithServer();
+    
+    // Also sync when app comes back to foreground
+    const handleFocus = () => {
+      console.log('🔄 App focused - syncing with server');
+      setTimeout(() => syncWithServer(), 500); // Small delay to let things settle
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []); // Run once on mount
 
   // Function to play notification sound
   const playNotificationSound = () => {
