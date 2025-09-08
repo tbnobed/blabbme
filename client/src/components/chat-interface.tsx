@@ -42,13 +42,19 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  // Initialize notification state - auto-enable for new users
+  // Initialize notification state - check browser permission first
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
+    
+    // If browser permission is already granted, enable notifications
+    if ('Notification' in window && Notification.permission === 'granted') {
+      return true;
+    }
+    
+    // Otherwise check localStorage preference
     const saved = localStorage.getItem('notificationsEnabled');
     console.log('🔔 Initializing notifications from localStorage:', saved);
-    // Auto-enable for new users (no previous preference), respect existing choice
-    return saved !== 'false';
+    return saved === 'true';
   });
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -747,22 +753,6 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     setupForRoom();
   }, [roomId, notificationsEnabled]);
 
-  // Sync notification state with browser permission on load
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const syncNotificationState = () => {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        setNotificationsEnabled(true);
-        localStorage.setItem('notificationsEnabled', 'true');
-      } else if (Notification.permission === 'denied') {
-        setNotificationsEnabled(false);
-        localStorage.setItem('notificationsEnabled', 'false');
-      }
-    };
-    
-    syncNotificationState();
-  }, []);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
