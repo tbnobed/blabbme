@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from "uuid";
 import * as QRCode from "qrcode";
 import { Filter } from "bad-words";
 import webpush from "web-push";
-import { healthMonitor } from "./health-monitor";
 
 const filter = new Filter();
 
@@ -399,46 +398,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/session", sessionLimiter);
   app.use("/api/rooms", sessionLimiter);
 
-  // Production Health Monitoring Endpoints - Critical for hundreds of users
-  app.get('/api/health', async (req, res) => {
-    try {
-      const health = await healthMonitor.getSystemHealth();
-      res.json(health);
-    } catch (error) {
-      console.error('Health endpoint error:', error);
-      res.status(500).json({ error: 'Health check failed' });
-    }
-  });
-  
-  // Detailed health metrics for production monitoring
-  app.get('/api/health/detailed', async (req, res) => {
-    try {
-      const health = await healthMonitor.getSystemHealth();
-      res.json({
-        health,
-        system: {
-          activeConnections: socketData.size,
-          activeSessions: userSessions.size,
-          nodeVersion: process.version,
-          platform: process.platform,
-          arch: process.arch
-        },
-        websockets: {
-          totalConnections: socketData.size,
-          connectionsByRoom: Array.from(socketData.entries()).reduce((acc, [ws, data]) => {
-            if (data.roomId) {
-              acc[data.roomId] = (acc[data.roomId] || 0) + 1;
-            }
-            return acc;
-          }, {} as Record<string, number>)
-        }
-      });
-    } catch (error) {
-      console.error('Detailed health endpoint error:', error);
-      res.status(500).json({ error: 'Detailed health check failed' });
-    }
-  });
-
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -522,7 +481,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/rooms", async (req, res) => {
-    healthMonitor.incrementMetric('room_creation_requests');
     try {
       console.log("Creating room with data:", req.body);
       
@@ -539,11 +497,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const room = await storage.createRoom(roomData);
       console.log("Created room:", room);
-      healthMonitor.incrementMetric('rooms_created');
       res.json(room);
     } catch (error) {
       console.error("Room creation error:", error);
-      healthMonitor.incrementMetric('room_creation_errors');
       res.status(400).json({ message: "Invalid room data", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
@@ -1070,30 +1026,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           case 'app-visibility':
             // Handle app visibility for push notification targeting
-            let visibilitySocketInfo = socketData.get(ws);
-            let sessionId = visibilitySocketInfo?.sessionId;
-            
-            // If no socket info, try to find session ID from message or other sources
-            if (!sessionId && message.sessionId) {
-              sessionId = message.sessionId;
-              console.log(`🔄 Using sessionId from message: ${sessionId}`);
-            }
-            
-            if (sessionId) {
-              const session = userSessions.get(sessionId);
+            const visibilitySocketInfo = socketData.get(ws);
+            if (visibilitySocketInfo?.sessionId) {
+              const session = userSessions.get(visibilitySocketInfo.sessionId);
               if (session) {
                 (session as any).isAppVisible = message.visible;
-                console.log(`📱 App visibility for ${sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${(session as any).isAppVisible})`);
-                
-                // Update socket data if it exists
-                if (visibilitySocketInfo) {
-                  visibilitySocketInfo.sessionId = sessionId;
-                }
+                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${(session as any).isAppVisible})`);
               } else {
-                console.log(`❌ Session not found for visibility update: ${sessionId}`);
+                console.log(`❌ Session not found for visibility update: ${visibilitySocketInfo.sessionId}`);
               }
             } else {
-              console.log(`❌ No session info found for visibility message`);
+              console.log(`❌ No socket info found for visibility message`);
             }
             break;
         }
@@ -1494,12 +1437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Send push notifications to disconnected users if this is a message
     if (data.type === 'new-message') {
-      // Delay to ensure visibility states are captured before push check
-      console.log('🕒 Setting up delayed push check in 500ms...');
-      setTimeout(() => {
-        console.log('⏰ DELAYED PUSH CHECK STARTING - visibility states should now be updated');
-        sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
-      }, 500); // 500ms delay to capture any recent visibility changes
+      sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
     }
     
     console.log('Broadcasted to', broadcastCount, 'clients in room', roomId);
@@ -1512,34 +1450,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This includes: disconnected users OR connected users with app backgrounded
       const disconnectedSessions: UserSession[] = [];
       
-      console.log('🔍 Checking all sessions for push notifications...');
       userSessions.forEach((session) => {
-        if (session.roomId === roomId) {
-          const hasPushSub = !!session.pushSubscription;
+        if (session.roomId === roomId && session.pushSubscription) {
           const isConnected = connectedSessionIds.has(session.sessionId);
+          const isAppBackgrounded = (session as any).isAppVisible === false;
           
-          // Get fresh visibility state from connected WebSocket if available
-          let isAppVisible = (session as any).isAppVisible;
-          const socketInfo = Array.from(socketData.values()).find(s => s.sessionId === session.sessionId);
-          if (socketInfo && isConnected) {
-            // If connected, trust the most recent visibility state we have
-            isAppVisible = (session as any).isAppVisible;
-          }
-          
-          const isAppBackgrounded = isAppVisible === false;
-          
-          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, visibility=${isAppVisible}, backgrounded=${isAppBackgrounded}`);
-          
-          if (hasPushSub) {
-            // Send push if user is disconnected OR if connected but app is backgrounded
-            if (!isConnected || isAppBackgrounded) {
-              console.log(`✅ 📤 SENDING PUSH to session ${session.sessionId}: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}`);
-              disconnectedSessions.push(session);
-            } else {
-              console.log(`❌ No push needed for ${session.sessionId}: connected=${isConnected}, visible=${isAppVisible}`);
-            }
-          } else {
-            console.log(`❌ Session ${session.sessionId} has no push subscription`);
+          // Send push if user is disconnected OR if connected but app is backgrounded
+          if (!isConnected || isAppBackgrounded) {
+            console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${(session as any).isAppVisible}`);
+            disconnectedSessions.push(session);
           }
         }
       });
