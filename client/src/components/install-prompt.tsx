@@ -61,8 +61,7 @@ export function InstallPrompt() {
           console.log('Dynamic SW registered:', registration);
           criteria.serviceWorker = true;
           
-          // Set up push notifications after service worker is ready
-          setupPushNotifications(registration);
+          // Push notifications will be set up later when user joins a room
         } catch (error) {
           console.log('SW registration failed:', error);
         }
