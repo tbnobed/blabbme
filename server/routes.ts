@@ -1388,22 +1388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       participants: updatedParticipants,
     }));
     
-    // Send welcome message as a trigger for push registration (delayed to ensure client is ready)
-    console.log('🕒 Setting up welcome message timeout for new room join');
-    setTimeout(() => {
-      console.log('⏰ New join welcome timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
-      if (ws.readyState === WebSocket.OPEN) {
-        console.log('🎉 Sending welcome message to trigger push registration for:', nickname);
-        ws.send(JSON.stringify({
-          type: 'welcome-message',
-          message: `Welcome to ${room.name}, ${nickname}! 🎉`,
-          roomId,
-          nickname
-        }));
-      } else {
-        console.log('❌ WebSocket closed during new join, cannot send welcome message. State:', ws.readyState);
-      }
-    }, 1000); // 1 second delay to ensure client is ready
+    // Send welcome message IMMEDIATELY to trigger push registration
+    console.log('🎉 Sending immediate welcome message for new room join:', nickname);
+    ws.send(JSON.stringify({
+      type: 'welcome-message',
+      message: `Welcome to ${room.name}, ${nickname}! 🎉`,
+      roomId,
+      nickname
+    }));
   }
 
   async function handleSendMessage(ws: WebSocket, message: any, wss: WebSocketServer) {
