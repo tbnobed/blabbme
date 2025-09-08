@@ -188,6 +188,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
     } catch (error) {
       console.error('💥 Push notification setup failed at step:', error instanceof Error ? error.message : 'Unknown error');
       console.error('💥 Full error:', error);
+      throw error; // Re-throw error so registerPushForRoom can handle it
     } finally {
       setIsSettingUpPush(false);
     }
