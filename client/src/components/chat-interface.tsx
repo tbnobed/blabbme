@@ -843,17 +843,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         </div>
         <div className="flex items-center space-x-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={toggleNotifications}
-            className={`${
+            className={`text-xs px-2 py-1 ${
               notificationsEnabled 
-                ? 'text-primary hover:text-primary/80' 
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
+                : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
             }`}
-            title={notificationsEnabled ? 'Disable notifications' : 'Enable notifications'}
           >
-            {notificationsEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+            {notificationsEnabled ? '🔔 ON' : '🔕 OFF'}
           </Button>
           <Button
             variant="ghost"
