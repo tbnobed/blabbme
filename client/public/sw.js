@@ -42,45 +42,33 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event - iOS compatible version
+// Push notification event
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push event received');
-  
-  // Simple, iOS-compatible notification
-  let title = 'New Message';
-  let body = 'You have a new chat message';
-  
-  // Try to parse payload but don't fail if it doesn't work
-  if (event.data) {
-    try {
-      const payload = event.data.json();
-      title = payload.title || title;
-      body = payload.body || body;
-    } catch (error) {
-      // Fallback to simple text
-      try {
-        body = event.data.text() || body;
-      } catch (e) {
-        // Use default
-      }
-    }
-  }
-
-  // Minimal options for iOS compatibility
   const options = {
-    body: body,
+    body: event.data ? event.data.text() : 'New message in chat',
     icon: '/icon-192.png',
-    data: { url: '/' }
+    badge: '/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: '1'
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Open Chat',
+        icon: '/icon-192.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/icon-192.png'
+      }
+    ]
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
-      .catch(() => {
-        // Ultimate fallback
-        return self.registration.showNotification('New Message', {
-          body: 'You have a new message'
-        });
-      })
+    self.registration.showNotification('Blabb.me', options)
   );
 });
 

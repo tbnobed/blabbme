@@ -42,20 +42,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  // Initialize notification state from localStorage - be more permissive
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    // If user previously enabled notifications, start as enabled
-    // We'll check actual permission in useEffect and adjust if needed
-    const saved = localStorage.getItem('notificationsEnabled');
-    console.log('🔔 Initializing notifications from localStorage:', saved);
-    return saved === 'true';
-  });
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('soundEnabled');
-    return saved !== 'false'; // Default to true
-  });
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -84,12 +72,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         return;
       }
 
-      // Wait for service worker to be truly ready with timeout
-      console.log('📱 Waiting for service worker to be ready...');
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker timeout')), 10000))
-      ]) as ServiceWorkerRegistration;
+      const registration = await navigator.serviceWorker.ready;
       console.log('✅ Service worker ready for push setup');
       
       // Get the public VAPID key
@@ -142,14 +125,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       
       if (sessionData.sessionId) {
         console.log('📱 Sending subscription to server...');
-        // Send subscription to server - server expects the subscription directly
+        // Send subscription to server
         const subscribeResponse = await fetch('/api/push-subscribe', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(subscription.toJSON()),
-          credentials: 'include' // Important for session-based auth
+          body: JSON.stringify({
+            sessionId: sessionData.sessionId,
+            subscription: subscription.toJSON()
+          }),
         });
         
         if (subscribeResponse.ok) {
@@ -204,33 +189,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('📱 PWA installed:', window.matchMedia('(display-mode: standalone)').matches);
         
         const permission = await Notification.requestPermission();
-        const enabled = permission === 'granted';
-        setNotificationsEnabled(enabled);
-        localStorage.setItem('notificationsEnabled', enabled.toString());
+        setNotificationsEnabled(permission === 'granted');
         console.log('🔔 Notification permission:', permission);
         
         // Setup push notifications after permission is granted
         if (permission === 'granted') {
-          console.log('✅ Permission granted, setting up push notifications...');
-          // Try multiple times with increasing delays to ensure service worker is ready
-          const trySetupPush = async (attempt = 1) => {
-            console.log(`📱 Push setup attempt ${attempt}/3`);
-            try {
-              await setupPushNotifications();
-              console.log('✅ Push notifications setup completed successfully');
-            } catch (error) {
-              console.log(`❌ Push setup attempt ${attempt} failed:`, error);
-              if (attempt < 3) {
-                console.log(`⏳ Retrying push setup in ${attempt * 2} seconds...`);
-                setTimeout(() => trySetupPush(attempt + 1), attempt * 2000);
-              } else {
-                console.log('❌ All push setup attempts failed');
-              }
-            }
-          };
-          
-          // Start first attempt after a short delay
-          setTimeout(() => trySetupPush(), 1000);
+          console.log('✅ Permission granted, setting up push in 2 seconds...');
+          // Wait a bit for service worker to be ready
+          setTimeout(setupPushNotifications, 2000);
         } else {
           console.log('❌ Notification permission denied or not granted');
           if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
@@ -242,25 +208,13 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     // Handle visibility changes for better PWA behavior
     const handleVisibilityChange = () => {
-      console.log('📱 Visibility changed:', document.hidden, document.visibilityState);
+      console.log('Visibility changed:', document.hidden, document.visibilityState);
       if (document.visibilityState === 'visible') {
-        console.log('👀 App foregrounded - notifying server');
-        // Tell server we're in foreground (visible)
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'app-visibility',
-            visible: true
-          }));
-        }
+        // App came back to foreground - could reconnect if needed
+        console.log('App is now visible');
       } else {
-        console.log('🏠 App backgrounded - notifying server for push notifications');
-        // Tell server we're in background (hidden) for push notifications
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'app-visibility',
-            visible: false
-          }));
-        }
+        // App went to background
+        console.log('App is now hidden/backgrounded');
       }
     };
 
@@ -270,31 +224,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [socket]); // Remove notificationsEnabled dependency to prevent loops
-
-  // Separate effect for auto-setting up push notifications - only runs once
-  useEffect(() => {
-    // Check notification permission and sync state
-    if ('Notification' in window) {
-      const currentPermission = Notification.permission;
-      console.log('🔔 Current notification permission:', currentPermission);
-      console.log('🔔 Current enabled state:', notificationsEnabled);
-      
-      if (notificationsEnabled && currentPermission === 'granted') {
-        console.log('🔔 Auto-setting up push notifications (already enabled)');
-        const timeoutId = setTimeout(() => {
-          setupPushNotifications().catch(error => {
-            console.error('Failed to auto-setup push notifications:', error);
-          });
-        }, 2000);
-        return () => clearTimeout(timeoutId);
-      } else if (notificationsEnabled && currentPermission !== 'granted') {
-        console.log('🔔 Notifications were enabled but permission revoked, disabling');
-        setNotificationsEnabled(false);
-        localStorage.setItem('notificationsEnabled', 'false');
-      }
-    }
-  }, []); // Empty dependency array - only run once on mount
+  }, []);
 
   // Function to play notification sound
   const playNotificationSound = () => {
@@ -433,7 +363,6 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     if (notificationsEnabled) {
       setNotificationsEnabled(false);
-      localStorage.setItem('notificationsEnabled', 'false');
       toast({
         title: "Notifications disabled",
         description: "You won't receive message alerts",
@@ -442,7 +371,6 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         setNotificationsEnabled(true);
-        localStorage.setItem('notificationsEnabled', 'true');
         toast({
           title: "Notifications enabled",
           description: "Setting up push notifications...",
@@ -619,16 +547,22 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     socket.addEventListener('message', handleMessage);
     
-    // Handle unexpected connection close - just log, don't show disruptive toasts
+    // Handle unexpected connection close
     const handleClose = () => {
-      console.log('WebSocket connection closed - will reconnect automatically');
-      // Don't show toast - PWA reconnection is normal behavior
+      console.log('WebSocket connection closed unexpectedly');
+      toast({
+        title: "Connection lost",
+        description: "Reconnecting to chat...",
+      });
     };
     
-    const handleError = (event: Event) => {
-      console.log('WebSocket error occurred:', event);
-      // Don't show error toasts - they interfere with push notifications
-      // Users will notice if messages don't send/receive
+    const handleError = () => {
+      console.log('WebSocket error occurred');
+      toast({
+        title: "Connection error",
+        description: "There was a problem with the chat connection.",
+        variant: "destructive",
+      });
     };
     
     socket.addEventListener('close', handleClose);
