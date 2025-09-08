@@ -54,22 +54,38 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   // Setup push notifications
   const setupPushNotifications = async () => {
     try {
+      console.log('🔔 Starting push notification setup...');
+      console.log('📱 Notifications enabled:', notificationsEnabled);
+      console.log('📱 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
+      console.log('📱 Is standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
+      
       if (!notificationsEnabled) {
-        console.log('Notifications not enabled, skipping push setup');
+        console.log('❌ Notifications not enabled, skipping push setup');
         return;
       }
 
       if (!('serviceWorker' in navigator)) {
-        console.log('Service worker not supported');
+        console.log('❌ Service worker not supported');
         return;
       }
 
       const registration = await navigator.serviceWorker.ready;
-      console.log('Service worker ready for push setup');
+      console.log('✅ Service worker ready for push setup');
       
       // Get the public VAPID key
       const response = await fetch('/api/vapid-public-key');
       const { publicKey } = await response.json();
+      
+      // Check if push manager is available (crucial for iOS)
+      if (!registration.pushManager) {
+        console.log('❌ Push manager not available');
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          console.log('📱 iOS: Push requires PWA to be installed (added to home screen)');
+        }
+        return;
+      }
+      
+      console.log('📱 Subscribing to push notifications...');
       
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
@@ -77,11 +93,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
 
+      console.log('✅ Push subscription created:', subscription);
+
       // Get current session ID
       const sessionResponse = await fetch('/api/session/current');
       const sessionData = await sessionResponse.json();
       
       if (sessionData.sessionId) {
+        console.log('📱 Sending subscription to server...');
         // Send subscription to server
         const subscribeResponse = await fetch('/api/push-subscribe', {
           method: 'POST',
@@ -95,9 +114,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         });
         
         if (subscribeResponse.ok) {
-          console.log('Push notifications set up successfully for room:', roomId);
+          console.log('✅ Push notifications set up successfully for room:', roomId);
+          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            console.log('📱 iOS: Push notifications should now work when app is backgrounded');
+          }
         } else {
-          console.log('Failed to register push subscription:', subscribeResponse.status);
+          console.log('❌ Failed to register push subscription:', subscribeResponse.status);
         }
       }
     } catch (error) {
@@ -125,14 +147,27 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   useEffect(() => {
     const requestNotificationPermission = async () => {
       if ('Notification' in window) {
+        console.log('🔔 Setting up notifications for chat...');
+        console.log('📱 User agent:', navigator.userAgent);
+        console.log('📱 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
+        console.log('📱 Is Safari:', /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent));
+        console.log('📱 Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+        console.log('📱 PWA installed:', window.matchMedia('(display-mode: standalone)').matches);
+        
         const permission = await Notification.requestPermission();
         setNotificationsEnabled(permission === 'granted');
-        console.log('Notification permission:', permission);
+        console.log('🔔 Notification permission:', permission);
         
         // Setup push notifications after permission is granted
         if (permission === 'granted') {
+          console.log('✅ Permission granted, setting up push in 2 seconds...');
           // Wait a bit for service worker to be ready
-          setTimeout(setupPushNotifications, 1000);
+          setTimeout(setupPushNotifications, 2000);
+        } else {
+          console.log('❌ Notification permission denied or not granted');
+          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            console.log('📱 iOS detected - notifications require PWA to be added to home screen first');
+          }
         }
       }
     };

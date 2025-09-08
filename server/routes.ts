@@ -175,35 +175,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       self.addEventListener('push', (event) => {
-        console.log('Push received:', event);
+        console.log('🔔 Push received:', event);
         
         let data = {};
         if (event.data) {
           try {
             data = event.data.json();
+            console.log('📱 Push data:', data);
           } catch (e) {
+            console.log('📱 Push data parse error, using text:', e);
             data = { title: 'New Message', body: event.data.text() || 'You have a new message' };
           }
+        } else {
+          console.log('📱 No push data received');
+          data = { title: 'Blabb.me', body: 'You have a new message' };
         }
+        
+        // Use base64 icon since we don't have static files
+        const iconBase64 = 'data:image/svg+xml;base64,' + btoa(\`
+          <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+            <rect width="192" height="192" rx="24" fill="#3b82f6"/>
+            <text x="96" y="110" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="white">B</text>
+          </svg>
+        \`);
         
         const options = {
           title: data.title || 'New Message',
-          body: data.body || 'You have a new message',
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-          tag: data.roomId || 'message',
+          body: data.body || 'You have a new message in Blabb.me',
+          icon: iconBase64,
+          badge: iconBase64,
+          tag: data.roomId || 'blabbme-message',
           data: data,
-          requireInteraction: true,
-          actions: [
-            {
-              action: 'open',
-              title: 'Open Chat'
-            }
-          ]
+          requireInteraction: false, // iOS works better with false
+          silent: false,
+          timestamp: Date.now(),
+          // iOS Safari specific
+          vibrate: [200, 100, 200],
+          renotify: true
         };
+        
+        console.log('📱 Showing notification with options:', options);
         
         event.waitUntil(
           self.registration.showNotification(options.title, options)
+            .then(() => {
+              console.log('✅ Notification shown successfully');
+            })
+            .catch((error) => {
+              console.error('❌ Failed to show notification:', error);
+            })
         );
       });
       
