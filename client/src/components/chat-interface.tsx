@@ -42,47 +42,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  // Initialize notification state - iOS-specific handling
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
-    
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    
-    // For iOS: If permission is granted, always start enabled regardless of localStorage
-    if (isIOS && 'Notification' in window && Notification.permission === 'granted') {
-      console.log('📱 iOS with granted permission - forcing enabled state');
-      localStorage.setItem('notificationsEnabled', 'true');
-      return true;
-    }
-    
-    // For other devices: check localStorage first
     const saved = localStorage.getItem('notificationsEnabled');
-    console.log('🔔 Initializing notifications - iOS:', isIOS, 'permission:', Notification?.permission, 'saved:', saved);
-    
     if (saved === 'true') return true;
     if (saved === 'false') return false;
-    
-    // Default: enable if permission granted, otherwise disabled
     return 'Notification' in window && Notification.permission === 'granted';
   });
 
-  // iOS-specific: Override setNotificationsEnabled to prevent disabling when permission granted
-  const originalSetNotificationsEnabled = setNotificationsEnabled;
-  const setNotificationsEnabledWithIOSFix = (value: boolean) => {
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    
-    if (isIOS && !value && 'Notification' in window && Notification.permission === 'granted') {
-      console.log('📱 iOS: Preventing bell from being disabled when permission is granted');
-      localStorage.setItem('notificationsEnabled', 'true');
-      originalSetNotificationsEnabled(true);
-      return;
-    }
-    
-    originalSetNotificationsEnabled(value);
-  };
-  
-  // Replace the setter with our iOS-aware version
-  const setNotificationsEnabledFinal = setNotificationsEnabledWithIOSFix;
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -363,7 +330,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         return () => clearTimeout(timeoutId);
       } else if (notificationsEnabled && currentPermission !== 'granted') {
         console.log('🔔 Notifications were enabled but permission revoked, disabling');
-        setNotificationsEnabledFinal(false);
+        setNotificationsEnabled(false);
         localStorage.setItem('notificationsEnabled', 'false');
       }
     }
@@ -505,7 +472,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
 
     if (notificationsEnabled) {
-      setNotificationsEnabledFinal(false);
+      setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
       toast({
         title: "Notifications disabled",
@@ -529,12 +496,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           
           // Force enable state after successful push setup
           console.log('✅ Push setup completed successfully - enabling bell icon');
-          setNotificationsEnabledFinal(true);
+          setNotificationsEnabled(true);
           localStorage.setItem('notificationsEnabled', 'true');
           
           // Force a re-render to make sure UI updates
           setTimeout(() => {
-            setNotificationsEnabledFinal(true);
+            setNotificationsEnabled(true);
           }, 100);
           
           toast({
@@ -547,7 +514,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           console.error('❌ Push setup failed:', error);
           
           // Reset notification state on failure
-          setNotificationsEnabledFinal(false);
+          setNotificationsEnabled(false);
           localStorage.setItem('notificationsEnabled', 'false');
           
           toast({
@@ -769,12 +736,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           // iOS-specific: Force UI update on iPhone devices
           if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
             console.log('📱 iOS detected - forcing notification UI update');
-            setNotificationsEnabledFinal(true);
+            setNotificationsEnabled(true);
             localStorage.setItem('notificationsEnabled', 'true');
             // Force multiple re-renders for iOS
-            setTimeout(() => setNotificationsEnabledFinal(true), 50);
-            setTimeout(() => setNotificationsEnabledFinal(true), 200);
-            setTimeout(() => setNotificationsEnabledFinal(true), 500);
+            setTimeout(() => setNotificationsEnabled(true), 50);
+            setTimeout(() => setNotificationsEnabled(true), 200);
+            setTimeout(() => setNotificationsEnabled(true), 500);
           }
         } else if ('Notification' in window && Notification.permission === 'default') {
           console.log('🔔 Requesting permission for room:', roomId);
@@ -785,7 +752,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             localStorage.setItem('notificationsEnabled', 'true');
           } else {
             console.log('❌ Permission denied');
-            setNotificationsEnabledFinal(false);
+            setNotificationsEnabled(false);
             localStorage.setItem('notificationsEnabled', 'false');
           }
         }
