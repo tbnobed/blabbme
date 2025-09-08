@@ -42,43 +42,66 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event - iOS compatible version
+// Push notification event - iOS compatible version with extensive debugging
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push event received');
+  console.log('🔔 Push event received in service worker');
+  console.log('🔔 Event data exists:', !!event.data);
+  console.log('🔔 User agent:', navigator.userAgent);
+  console.log('🔔 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
   
   // Simple, iOS-compatible notification
-  let title = 'New Message';
+  let title = 'Blabb.me';
   let body = 'You have a new chat message';
+  let data = {};
   
   // Try to parse payload but don't fail if it doesn't work
   if (event.data) {
     try {
       const payload = event.data.json();
+      console.log('🔔 Parsed payload:', payload);
       title = payload.title || title;
       body = payload.body || body;
+      data = payload;
     } catch (error) {
+      console.log('🔔 JSON parse failed, trying text:', error);
       // Fallback to simple text
       try {
-        body = event.data.text() || body;
+        const textData = event.data.text();
+        console.log('🔔 Text data:', textData);
+        body = textData || body;
       } catch (e) {
-        // Use default
+        console.log('🔔 Text parse also failed:', e);
       }
     }
   }
 
-  // Minimal options for iOS compatibility
+  console.log('🔔 Final notification:', { title, body });
+
+  // Ultra-simple options for iOS compatibility - no icon that might fail
   const options = {
     body: body,
-    icon: '/icon-192.png',
-    data: { url: '/' }
+    tag: 'blabbme-message',
+    requireInteraction: false,
+    silent: false,
+    data: data
   };
+
+  console.log('🔔 Showing notification with options:', options);
 
   event.waitUntil(
     self.registration.showNotification(title, options)
-      .catch(() => {
-        // Ultimate fallback
+      .then(() => {
+        console.log('✅ Notification shown successfully');
+      })
+      .catch((error) => {
+        console.error('❌ Notification failed:', error);
+        // Ultimate fallback - absolute minimal notification
         return self.registration.showNotification('New Message', {
-          body: 'You have a new message'
+          body: 'Chat message received'
+        }).then(() => {
+          console.log('✅ Fallback notification shown');
+        }).catch((fallbackError) => {
+          console.error('❌ Even fallback failed:', fallbackError);
         });
       })
   );
