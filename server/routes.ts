@@ -1243,7 +1243,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ws.send(JSON.stringify(restorationData));
           
           // Send welcome message for session restoration too (to trigger push registration)
+          console.log('🕒 Setting up welcome message timeout for session restoration');
           setTimeout(() => {
+            console.log('⏰ Welcome message timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
             if (ws.readyState === WebSocket.OPEN) {
               console.log('🎉 Sending welcome message after session restoration for:', session.nickname);
               ws.send(JSON.stringify({
@@ -1252,6 +1254,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 roomId: session.roomId,
                 nickname: session.nickname
               }));
+            } else {
+              console.log('❌ WebSocket closed, cannot send welcome message. State:', ws.readyState);
             }
           }, 1000); // 1 second delay to ensure client is ready
           return;
@@ -1383,7 +1387,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }));
     
     // Send welcome message as a trigger for push registration (delayed to ensure client is ready)
+    console.log('🕒 Setting up welcome message timeout for new room join');
     setTimeout(() => {
+      console.log('⏰ New join welcome timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
       if (ws.readyState === WebSocket.OPEN) {
         console.log('🎉 Sending welcome message to trigger push registration for:', nickname);
         ws.send(JSON.stringify({
@@ -1392,6 +1398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId,
           nickname
         }));
+      } else {
+        console.log('❌ WebSocket closed during new join, cannot send welcome message. State:', ws.readyState);
       }
     }, 1000); // 1 second delay to ensure client is ready
   }
