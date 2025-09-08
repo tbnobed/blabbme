@@ -871,6 +871,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'leave-room':
             await handleLeaveRoom(ws, wss, message.explicit || false);
             break;
+          case 'app-visibility':
+            // Handle app visibility for push notification targeting
+            const visibilitySocketInfo = socketData.get(ws);
+            if (visibilitySocketInfo?.sessionId) {
+              const session = userSessions.get(visibilitySocketInfo.sessionId);
+              if (session) {
+                session.isAppVisible = message.visible;
+                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'}`);
+              }
+            }
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -1275,14 +1286,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send push notifications to users not currently connected
   async function sendPushNotificationsToRoom(roomId: string, messageData: any, connectedSessionIds: Set<string>) {
     try {
-      // Find all sessions in this room that aren't currently connected
+      // Find all sessions in this room that should receive push notifications
+      // This includes: disconnected users OR connected users with app backgrounded
       const disconnectedSessions: UserSession[] = [];
       
       userSessions.forEach((session) => {
-        if (session.roomId === roomId && 
-            session.pushSubscription && 
-            !connectedSessionIds.has(session.sessionId)) {
-          disconnectedSessions.push(session);
+        if (session.roomId === roomId && session.pushSubscription) {
+          const isConnected = connectedSessionIds.has(session.sessionId);
+          const isAppBackgrounded = session.isAppVisible === false;
+          
+          // Send push if user is disconnected OR if connected but app is backgrounded
+          if (!isConnected || isAppBackgrounded) {
+            disconnectedSessions.push(session);
+          }
         }
       });
 
@@ -1296,10 +1312,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId: s.sessionId,
         nickname: s.nickname,
         hasPushSub: !!s.pushSubscription,
-        isConnected: connectedSessionIds.has(s.sessionId)
+        isConnected: connectedSessionIds.has(s.sessionId),
+        isAppVisible: s.isAppVisible
       })));
       
-      console.log('📱 Disconnected sessions with push:', disconnectedSessions.length);
+      console.log('📱 Sessions needing push notifications (disconnected OR backgrounded):', disconnectedSessions.length);
       
       if (disconnectedSessions.length === 0) {
         console.log('❌ No push subscriptions to send for room:', roomId);

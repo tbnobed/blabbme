@@ -230,13 +230,25 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     // Handle visibility changes for better PWA behavior
     const handleVisibilityChange = () => {
-      console.log('Visibility changed:', document.hidden, document.visibilityState);
+      console.log('📱 Visibility changed:', document.hidden, document.visibilityState);
       if (document.visibilityState === 'visible') {
-        // App came back to foreground - could reconnect if needed
-        console.log('App is now visible');
+        console.log('👀 App foregrounded - notifying server');
+        // Tell server we're in foreground (visible)
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'app-visibility',
+            visible: true
+          }));
+        }
       } else {
-        // App went to background
-        console.log('App is now hidden/backgrounded');
+        console.log('🏠 App backgrounded - notifying server for push notifications');
+        // Tell server we're in background (hidden) for push notifications
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'app-visibility',
+            visible: false
+          }));
+        }
       }
     };
 
