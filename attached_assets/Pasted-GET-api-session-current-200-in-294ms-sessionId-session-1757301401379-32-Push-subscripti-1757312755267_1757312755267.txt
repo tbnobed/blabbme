@@ -1,0 +1,186 @@
+GET /api/session/current 200 in 294ms :: {"sessionId":"session_1757301401379_32…
+🔔 Push subscription registered for session: session_1757301401379_32xsbhm in room: apypmh
+POST /api/push-subscribe 200 in 1ms :: {"success":true}
+GET /api/session/current 200 in 1ms :: {"sessionId":"session_1757301401379_32xs…
+GET /api/vapid-public-key 304 in 0ms :: {"publicKey":"BMHxZteK6Zlimolyf7qw1ewtr…
+GET /api/session/current 200 in 0ms :: {"sessionId":"session_1757301401379_32xs…
+🔔 Push subscription registered for session: session_1757301401379_32xsbhm in room: apypmh
+POST /api/push-subscribe 200 in 1ms :: {"success":true}
+GET /api/manifest 304 in 0ms :: {"name":"Blabb.me - Anonymous Chat","short_name…
+WebSocket connection established
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'apypmh',
+  nickname: 'hello',
+  sessionId: 'session_1757301401379_32xsbhm'
+}
+Handling join-room for: apypmh hello
+JOIN ROOM: Looking for room: apypmh with nickname: hello sessionId: session_1757301401379_32xsbhm
+JOIN ROOM: Found room: {
+  id: 'apypmh',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:49:00.850Z,
+  createdAt: 2025-09-08T06:19:01.502Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'apypmh',
+  sessionId: 'session_1757301401379_32xsbhm',
+  nickname: 'hello'
+}
+Ban check result: false
+JOIN ROOM: Updating existing participant socket ID
+WebSocket connection established
+Received WebSocket message: { type: 'init-session', sessionId: 'session_1757301401379_32xsbhm' }
+handleInitSession: sessionId: session_1757301401379_32xsbhm session found: true
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'apypmh',
+  nickname: 'hello',
+  sessionId: 'session_1757301401379_32xsbhm'
+}
+Handling join-room for: apypmh hello
+JOIN ROOM: Looking for room: apypmh with nickname: hello sessionId: session_1757301401379_32xsbhm
+JOIN ROOM: Found room: {
+  id: 'apypmh',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:49:00.850Z,
+  createdAt: 2025-09-08T06:19:01.502Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'apypmh',
+  sessionId: 'session_1757301401379_32xsbhm',
+  nickname: 'hello'
+}
+Ban check result: false
+JOIN ROOM: User already in room via session restoration, skipping duplicate join
+Session restoration: Updated participant socket ID
+Sending session-restored message to client, room: apypmh nickname: hello
+WebSocket connection established
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'apypmh',
+  nickname: 'Help',
+  sessionId: 'session_1757312366381_d0u4a2j'
+}
+Handling join-room for: apypmh Help
+JOIN ROOM: Looking for room: apypmh with nickname: Help sessionId: session_1757312366381_d0u4a2j
+JOIN ROOM: Found room: {
+  id: 'apypmh',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:49:00.850Z,
+  createdAt: 2025-09-08T06:19:01.502Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'apypmh',
+  sessionId: 'session_1757312366381_d0u4a2j',
+  nickname: 'Help'
+}
+Ban check result: false
+JOIN ROOM: Updating existing participant socket ID
+Received WebSocket message: { type: 'send-message', content: 'hello' }
+Broadcasting new message from hello to room apypmh
+Broadcasting to room: apypmh data type: new-message
+🔍 Checking push subscriptions for room: apypmh
+📊 Total sessions: 1
+🔗 Connected session IDs: [ 'session_1757301401379_32xsbhm', 'session_1757312366381_d0u4a2j' ]
+🏠 Sessions in room: [
+  {
+    sessionId: 'session_1757301401379_32xsbhm',
+    nickname: 'hello',
+    hasPushSub: true,
+    isConnected: true,
+    isAppVisible: undefined
+  }
+]
+📱 Sessions needing push notifications (disconnected OR backgrounded): 0
+❌ No push subscriptions to send for room: apypmh
+Broadcasted to 3 clients in room apypmh
+Received WebSocket message: { type: 'app-visibility', visible: false }
+❌ Session not found for visibility update: session_1757312366381_d0u4a2j
+WebSocket closing for session: session_1757312366381_d0u4a2j
+Received WebSocket message: { type: 'send-message', content: 'hello' }
+Broadcasting new message from hello to room apypmh
+Broadcasting to room: apypmh data type: new-message
+🔍 Checking push subscriptions for room: apypmh
+📊 Total sessions: 1
+🔗 Connected session IDs: [ 'session_1757301401379_32xsbhm' ]
+🏠 Sessions in room: [
+  {
+    sessionId: 'session_1757301401379_32xsbhm',
+    nickname: 'hello',
+    hasPushSub: true,
+    isConnected: true,
+    isAppVisible: undefined
+  }
+]
+📱 Sessions needing push notifications (disconnected OR backgrounded): 0
+❌ No push subscriptions to send for room: apypmh
+Broadcasted to 2 clients in room apypmh
+WebSocket connection established
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'apypmh',
+  nickname: 'Help',
+  sessionId: 'session_1757312366381_d0u4a2j'
+}
+Handling join-room for: apypmh Help
+JOIN ROOM: Looking for room: apypmh with nickname: Help sessionId: session_1757312366381_d0u4a2j
+JOIN ROOM: Found room: {
+  id: 'apypmh',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:49:00.850Z,
+  createdAt: 2025-09-08T06:19:01.502Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'apypmh',
+  sessionId: 'session_1757312366381_d0u4a2j',
+  nickname: 'Help'
+}
+Ban check result: false
+JOIN ROOM: Updating existing participant socket ID
+WebSocket connection established
+Received WebSocket message: { type: 'init-session', sessionId: 'session_1757312366381_d0u4a2j' }
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'apypmh',
+  nickname: 'Help',
+  sessionId: 'session_1757312366381_d0u4a2j'
+}
+Handling join-room for: apypmh Help
+JOIN ROOM: Looking for room: apypmh with nickname: Help sessionId: session_1757312366381_d0u4a2j
+Session restoration: Restored session from database participant
+handleInitSession: sessionId: session_1757312366381_d0u4a2j session found: true
+JOIN ROOM: Found room: {
+  id: 'apypmh',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:49:00.850Z,
+  createdAt: 2025-09-08T06:19:01.502Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'apypmh',
+  sessionId: 'session_1757312366381_d0u4a2j',
+  nickname: 'Help'
+}
+Ban check result: false
+JOIN ROOM: User already in room via session restoration, skipping duplicate join
+Session restoration: Updated participant socket ID
+Sending session-restored message to client, room: apypmh nickname: Help
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'heartbeat-ack' }
