@@ -119,19 +119,50 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       }
       
       console.log('📱 Subscribing to push notifications...');
+      console.log('📱 iOS Check - User agent:', navigator.userAgent);
+      console.log('📱 iOS Check - Standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
+      console.log('📱 iOS Check - Push manager exists:', !!registration.pushManager);
+      console.log('📱 iOS Check - Notification permission:', Notification.permission);
       
-      // Subscribe to push notifications with detailed error handling
+      // Subscribe to push notifications with detailed iOS debugging
       let subscription;
       try {
+        console.log('📱 Starting push subscription with options:', {
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey ? 'present' : 'missing'
+        });
+        
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey
         });
-        console.log('✅ Push subscription created successfully:', subscription);
+        
+        console.log('✅ Push subscription created successfully');
+        console.log('📱 Subscription endpoint:', subscription.endpoint);
+        console.log('📱 Subscription keys present:', !!subscription.getKey);
+        
       } catch (error) {
-        console.log('❌ Push subscription failed:', error);
+        console.error('❌ Push subscription failed with error:', error);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+        
         if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-          console.log('📱 iOS push subscription error - this might be a Safari limitation');
+          console.error('📱 iOS SPECIFIC ERROR - Push subscription failed');
+          console.error('📱 This could be due to:');
+          console.error('📱 1. Safari version incompatibility');
+          console.error('📱 2. PWA not properly installed');
+          console.error('📱 3. iOS notifications not enabled at system level');
+          console.error('📱 4. VAPID key format issue on iOS');
+          
+          // Try to get more specific error info
+          if (error.name === 'NotSupportedError') {
+            console.error('📱 NotSupportedError: Push is not supported on this iOS version/setup');
+          } else if (error.name === 'NotAllowedError') {
+            console.error('📱 NotAllowedError: User denied push permission or not in standalone mode');
+          } else if (error.name === 'AbortError') {
+            console.error('📱 AbortError: Subscription request was aborted');
+          }
         }
         return;
       }
