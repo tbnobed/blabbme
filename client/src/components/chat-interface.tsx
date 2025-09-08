@@ -207,20 +207,58 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   // Request notification permission on mount
   useEffect(() => {
     const requestPermissions = async () => {
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          await setupPushNotifications();
+      try {
+        console.log('🔔 Starting notification permission request...');
+        if (!('Notification' in window)) {
+          console.log('❌ Notifications not supported');
+          return;
         }
+        
+        console.log('🔔 Current permission:', Notification.permission);
+        const permission = await Notification.requestPermission();
+        console.log('🔔 Permission result:', permission);
+        
+        if (permission === 'granted') {
+          console.log('✅ Permission granted, setting up push notifications...');
+          await setupPushNotifications();
+          
+          // Retry after 2 seconds if first attempt failed (mobile browsers can be flaky)
+          setTimeout(async () => {
+            console.log('🔄 Retrying push notification setup...');
+            try {
+              await setupPushNotifications();
+            } catch (retryError) {
+              console.error('❌ Retry also failed:', retryError);
+            }
+          }, 2000);
+        } else {
+          console.log('❌ Permission denied or dismissed');
+        }
+      } catch (error) {
+        console.error('❌ Permission request failed:', error);
       }
     };
     
     requestPermissions();
   }, []);
 
-  // Setup WebSocket message handling and visibility tracking
+  // Force push registration when socket connects (mobile backup)
   useEffect(() => {
     if (!socket) return;
+    
+    // Force retry push notifications when socket is ready (mobile browsers need this)
+    const retryPushSetup = async () => {
+      if (Notification.permission === 'granted') {
+        console.log('🔄 Socket connected - force retrying push setup...');
+        try {
+          await setupPushNotifications();
+        } catch (error) {
+          console.error('❌ Socket retry failed:', error);
+        }
+      }
+    };
+    
+    setTimeout(retryPushSetup, 1000); // Retry after socket is stable
 
     // Send current visibility state when socket connects
     const sendVisibilityState = () => {
