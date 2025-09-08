@@ -516,12 +516,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
               variant: "destructive",
             });
             
-            // If room not found, redirect to home page after showing error
+            // If room not found, clear session and redirect to home page
             if (data.message && data.message.includes('Room not found')) {
-              console.log('Room not found - redirecting to home page');
+              console.log('🏠 Room expired/not found - clearing session and redirecting to home');
+              
+              // Clear the expired room from session
+              updateSession(); // Call without parameters to clear roomId and nickname
+              
+              // Use the proper leave room function to handle routing
               setTimeout(() => {
-                window.location.href = '/';
-              }, 2000);
+                onLeaveRoom();
+              }, 1000);
             }
             break;
         }
