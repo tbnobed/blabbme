@@ -1,0 +1,114 @@
+]
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: s4e03v
+Broadcasted to 4 clients in room s4e03v
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+WebSocket closing for session: session_1757302398009_62zsdsg
+WebSocket closed but session exists, keeping participant in room
+WebSocket closing for session: session_1757302398009_62zsdsg
+WebSocket closed but session exists, keeping participant in room
+WebSocket connection established
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 's4e03v',
+  nickname: 'Cell',
+  sessionId: 'session_1757302398009_62zsdsg'
+}
+Handling join-room for: s4e03v Cell
+JOIN ROOM: Looking for room: s4e03v with nickname: Cell sessionId: session_1757302398009_62zsdsg
+JOIN ROOM: Found room: {
+  id: 's4e03v',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T04:50:17.226Z,
+  createdAt: 2025-09-08T04:20:17.773Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 's4e03v',
+  sessionId: 'session_1757302398009_62zsdsg',
+  nickname: 'Cell'
+}
+Ban check result: false
+WebSocket connection established
+JOIN ROOM: Updating existing participant socket ID
+Received WebSocket message: { type: 'init-session', sessionId: 'session_1757302398009_62zsdsg' }
+handleInitSession: sessionId: session_1757302398009_62zsdsg session found: true
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 's4e03v',
+  nickname: 'Cell',
+  sessionId: 'session_1757302398009_62zsdsg'
+}
+Handling join-room for: s4e03v Cell
+JOIN ROOM: Looking for room: s4e03v with nickname: Cell sessionId: session_1757302398009_62zsdsg
+JOIN ROOM: Found room: {
+  id: 's4e03v',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T04:50:17.226Z,
+  createdAt: 2025-09-08T04:20:17.773Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 's4e03v',
+  sessionId: 'session_1757302398009_62zsdsg',
+  nickname: 'Cell'
+}
+Ban check result: false
+JOIN ROOM: User already in room via session restoration, skipping duplicate join
+Session restoration: Updated participant socket ID
+Sending session-restored message to client, room: s4e03v nickname: Cell
+Received WebSocket message: { type: 'send-message', content: 'He' }
+Broadcasting new message from Cell to room s4e03v
+Broadcasting to room: s4e03v data type: new-message
+🔍 Checking push subscriptions for room: s4e03v
+📊 Total sessions: 2
+🔗 Connected session IDs: [ 'session_1757301401379_32xsbhm', 'session_1757302398009_62zsdsg' ]
+🏠 Sessions in room: [
+  {
+    sessionId: 'session_1757301401379_32xsbhm',
+    nickname: 'obed',
+    hasPushSub: true,
+    isConnected: true
+  },
+  {
+    sessionId: 'session_1757302398009_62zsdsg',
+    nickname: 'Cell',
+    hasPushSub: true,
+    isConnected: true
+  }
+]
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: s4e03v
+Broadcasted to 4 clients in room s4e03v
+Received WebSocket message: { type: 'send-message', content: '321' }
+Broadcasting new message from obed to room s4e03v
+Broadcasting to room: s4e03v data type: new-message
+🔍 Checking push subscriptions for room: s4e03v
+📊 Total sessions: 2
+🔗 Connected session IDs: [ 'session_1757301401379_32xsbhm', 'session_1757302398009_62zsdsg' ]
+🏠 Sessions in room: [
+  {
+    sessionId: 'session_1757301401379_32xsbhm',
+    nickname: 'obed',
+    hasPushSub: true,
+    isConnected: true
+  },
+  {
+    sessionId: 'session_1757302398009_62zsdsg',
+    nickname: 'Cell',
+    hasPushSub: true,
+    isConnected: true
+  }
+]
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: s4e03v
+Broadcasted to 4 clients in room s4e03v
+WebSocket closing for session: session_1757302398009_62zsdsg
+WebSocket closed but session exists, keeping participant in room
+WebSocket closing for session: session_1757302398009_62zsdsg
+WebSocket closed but session exists, keeping participant in room

@@ -234,8 +234,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       if (document.visibilityState === 'visible') {
         console.log('👀 App foregrounded - notifying server');
         // Tell server we're in foreground (visible)
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
             type: 'app-visibility',
             visible: true
           }));
@@ -243,8 +243,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       } else {
         console.log('🏠 App backgrounded - notifying server for push notifications');
         // Tell server we're in background (hidden) for push notifications
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
             type: 'app-visibility',
             visible: false
           }));
@@ -258,7 +258,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [socket]); // Add socket dependency so visibility handler has access to current socket
 
   // Function to play notification sound
   const playNotificationSound = () => {
