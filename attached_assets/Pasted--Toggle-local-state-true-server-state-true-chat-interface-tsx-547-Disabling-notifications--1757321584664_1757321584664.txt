@@ -1,0 +1,45 @@
+🔄 Toggle: local state = true server state = true
+chat-interface.tsx:547 🔕 Disabling notifications...
+chat-interface.tsx:557 🔄 Getting service worker registration...
+chat-interface.tsx:592 ❌ Failed to unsubscribe: Error: Service worker timeout
+    at chat-interface.tsx:561:39
+toggleNotifications @ chat-interface.tsx:592
+await in toggleNotifications
+onClick @ chat-interface.tsx:952
+await in onClick
+callCallback2 @ chunk-WERSD76P.js?v=d8f639e5:3674
+invokeGuardedCallbackDev @ chunk-WERSD76P.js?v=d8f639e5:3699
+invokeGuardedCallback @ chunk-WERSD76P.js?v=d8f639e5:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-WERSD76P.js?v=d8f639e5:3736
+executeDispatch @ chunk-WERSD76P.js?v=d8f639e5:7014
+processDispatchQueueItemsInOrder @ chunk-WERSD76P.js?v=d8f639e5:7034
+processDispatchQueue @ chunk-WERSD76P.js?v=d8f639e5:7043
+dispatchEventsForPlugins @ chunk-WERSD76P.js?v=d8f639e5:7051
+(anonymous) @ chunk-WERSD76P.js?v=d8f639e5:7174
+batchedUpdates$1 @ chunk-WERSD76P.js?v=d8f639e5:18913
+batchedUpdates @ chunk-WERSD76P.js?v=d8f639e5:3579
+dispatchEventForPluginEventSystem @ chunk-WERSD76P.js?v=d8f639e5:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-WERSD76P.js?v=d8f639e5:5478
+dispatchEvent @ chunk-WERSD76P.js?v=d8f639e5:5472
+dispatchDiscreteEvent @ chunk-WERSD76P.js?v=d8f639e5:5449Understand this error
+chat-interface.tsx:593 ❌ Error stack: Error: Service worker timeout
+    at https://83e5726b-28e5-44eb-a885-aea990a2f02d-00-1lhg7rloux7l2.worf.replit.dev/src/components/chat-interface.tsx?t=1757321532945:439:56
+toggleNotifications @ chat-interface.tsx:593
+await in toggleNotifications
+onClick @ chat-interface.tsx:952
+await in onClick
+callCallback2 @ chunk-WERSD76P.js?v=d8f639e5:3674
+invokeGuardedCallbackDev @ chunk-WERSD76P.js?v=d8f639e5:3699
+invokeGuardedCallback @ chunk-WERSD76P.js?v=d8f639e5:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-WERSD76P.js?v=d8f639e5:3736
+executeDispatch @ chunk-WERSD76P.js?v=d8f639e5:7014
+processDispatchQueueItemsInOrder @ chunk-WERSD76P.js?v=d8f639e5:7034
+processDispatchQueue @ chunk-WERSD76P.js?v=d8f639e5:7043
+dispatchEventsForPlugins @ chunk-WERSD76P.js?v=d8f639e5:7051
+(anonymous) @ chunk-WERSD76P.js?v=d8f639e5:7174
+batchedUpdates$1 @ chunk-WERSD76P.js?v=d8f639e5:18913
+batchedUpdates @ chunk-WERSD76P.js?v=d8f639e5:3579
+dispatchEventForPluginEventSystem @ chunk-WERSD76P.js?v=d8f639e5:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-WERSD76P.js?v=d8f639e5:5478
+dispatchEvent @ chunk-WERSD76P.js?v=d8f639e5:5472
+dispatchDiscreteEvent @ chunk-WERSD76P.js?v=d8f639e5:5449Understand this error
