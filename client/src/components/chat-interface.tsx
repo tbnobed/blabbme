@@ -293,11 +293,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   // Comprehensive push registration system for mobile devices
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !roomId) return; // Don't register if not in a room
     
     // Register push notifications for this specific room
     const registerForRoom = async () => {
-      if (Notification.permission === 'granted' && roomId) {
+      if (Notification.permission === 'granted') {
         console.log('🏠 Registering push notifications for room:', roomId);
         
         // First unregister from any previous rooms
