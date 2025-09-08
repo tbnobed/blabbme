@@ -384,7 +384,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   // Function to play notification sound
   const playNotificationSound = () => {
-    if (!soundEnabled) return;
+    console.log('🔊 playNotificationSound called - soundEnabled:', soundEnabled);
+    if (!soundEnabled) {
+      console.log('🔇 Sound is disabled, skipping');
+      return;
+    }
+    console.log('🔊 Playing notification sound...');
     
     try {
       // Create a simple notification sound using Web Audio API
@@ -443,6 +448,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('Attempting to show service worker notification');
         navigator.serviceWorker.ready.then(registration => {
           console.log('Service worker ready, showing notification');
+          console.log('🔊 Browser notification soundEnabled state:', soundEnabled);
           const notificationOptions: any = {
             body: message,
             icon: icon || '/icon-192.png',
