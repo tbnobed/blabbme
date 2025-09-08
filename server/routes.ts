@@ -1242,8 +1242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('JOIN ROOM: Room not found or not active');
       const errorMessage = { type: 'error', message: 'Room not found' };
       console.log('🚨 SENDING ERROR MESSAGE:', errorMessage);
-      ws.send(JSON.stringify(errorMessage));
-      console.log('🚨 ERROR MESSAGE SENT');
+      console.log('🚨 WebSocket state:', ws.readyState, 'OPEN=' + WebSocket.OPEN);
+      
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(errorMessage));
+        console.log('🚨 ERROR MESSAGE SENT SUCCESSFULLY');
+      } else {
+        console.log('🚨 WEBSOCKET CLOSED - Cannot send error message! State:', ws.readyState);
+      }
       return;
     }
 

@@ -502,6 +502,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             break;
             
           case 'error':
+            console.log('🚨 CLIENT RECEIVED ERROR MESSAGE:', data);
             // Handle server errors (like room not found)
             toast({
               title: "Room Error",
@@ -512,12 +513,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             // If room not found, clear session and redirect to home page
             if (data.message && data.message.includes('Room not found')) {
               console.log('🏠 Room expired/not found - clearing session and redirecting to home');
+              console.log('🏠 Calling updateSession() to clear roomId and nickname');
               
               // Clear the expired room from session
               updateSession(); // Call without parameters to clear roomId and nickname
               
+              console.log('🏠 Setting timeout to call onLeaveRoom()');
               // Use the proper leave room function to handle routing
               setTimeout(() => {
+                console.log('🏠 EXECUTING onLeaveRoom() now');
                 onLeaveRoom();
               }, 1000);
             }
