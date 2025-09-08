@@ -1242,22 +1242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Sending session-restored message to client, room:', session.roomId, 'nickname:', session.nickname);
           ws.send(JSON.stringify(restorationData));
           
-          // Send welcome message for session restoration too (to trigger push registration)
-          console.log('🕒 Setting up welcome message timeout for session restoration');
-          setTimeout(() => {
-            console.log('⏰ Welcome message timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
-            if (ws.readyState === WebSocket.OPEN) {
-              console.log('🎉 Sending welcome message after session restoration for:', session.nickname);
-              ws.send(JSON.stringify({
-                type: 'welcome-message',
-                message: `Welcome back to ${room.name}, ${session.nickname}! 👋`,
-                roomId: session.roomId,
-                nickname: session.nickname
-              }));
-            } else {
-              console.log('❌ WebSocket closed, cannot send welcome message. State:', ws.readyState);
-            }
-          }, 1000); // 1 second delay to ensure client is ready
+          // Send welcome message IMMEDIATELY after session restoration (no delay)
+          console.log('🎉 Sending immediate welcome message after session restoration for:', session.nickname);
+          ws.send(JSON.stringify({
+            type: 'welcome-message',
+            message: `Welcome back to ${room.name}, ${session.nickname}! 👋`,
+            roomId: session.roomId,
+            nickname: session.nickname
+          }));
           return;
         }
       }
@@ -1333,22 +1325,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (socketInfo?.roomId === roomId && socketInfo?.nickname === nickname) {
       console.log('JOIN ROOM: User already in room via session restoration, skipping duplicate join');
       
-      // Send welcome message for session restoration to trigger push registration
-      console.log('🕒 Setting up welcome message timeout for duplicate join detection path');
-      setTimeout(() => {
-        console.log('⏰ Duplicate join welcome timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
-        if (ws.readyState === WebSocket.OPEN) {
-          console.log('🎉 Sending welcome message for session restoration via duplicate join detection');
-          ws.send(JSON.stringify({
-            type: 'welcome-message',
-            message: `Welcome back to ${room.name}, ${nickname}! 👋`,
-            roomId,
-            nickname
-          }));
-        } else {
-          console.log('❌ WebSocket closed during duplicate join, cannot send welcome message. State:', ws.readyState);
-        }
-      }, 1000); // 1 second delay to ensure client is ready
+      // Send welcome message IMMEDIATELY for session restoration (no delay)
+      console.log('🎉 Sending immediate welcome message for duplicate join detection path');
+      ws.send(JSON.stringify({
+        type: 'welcome-message',
+        message: `Welcome back to ${room.name}, ${nickname}! 👋`,
+        roomId,
+        nickname
+      }));
       
       return;
     }
