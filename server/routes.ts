@@ -1210,6 +1210,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('Session restoration: Updated participant socket ID');
           }
           
+          // CRITICAL: Update session data in memory for this connection
+          socketData.set(ws, { 
+            roomId: session.roomId, 
+            nickname: session.nickname, 
+            sessionId 
+          });
+          
+          // CRITICAL: Ensure session has current room data for push registration
+          session.roomId = session.roomId; // Ensure it's properly set
+          session.nickname = session.nickname;
+          session.lastActivity = new Date();
+          
           const messages = await storage.getMessagesByRoom(session.roomId);
           const updatedParticipants = await storage.getParticipantsByRoom(session.roomId);
           
