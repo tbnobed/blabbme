@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as QRCode from "qrcode";
 import { Filter } from "bad-words";
 import webpush from "web-push";
+import { healthMonitor } from "./health-monitor";
 
 const filter = new Filter();
 
@@ -398,6 +399,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/session", sessionLimiter);
   app.use("/api/rooms", sessionLimiter);
 
+  // Production Health Monitoring Endpoints - Critical for hundreds of users
+  app.get('/api/health', async (req, res) => {
+    try {
+      const health = await healthMonitor.getSystemHealth();
+      res.json(health);
+    } catch (error) {
+      console.error('Health endpoint error:', error);
+      res.status(500).json({ error: 'Health check failed' });
+    }
+  });
+  
+  // Detailed health metrics for production monitoring
+  app.get('/api/health/detailed', async (req, res) => {
+    try {
+      const health = await healthMonitor.getSystemHealth();
+      res.json({
+        health,
+        system: {
+          activeConnections: socketData.size,
+          activeSessions: userSessions.size,
+          nodeVersion: process.version,
+          platform: process.platform,
+          arch: process.arch
+        },
+        websockets: {
+          totalConnections: socketData.size,
+          connectionsByRoom: Array.from(socketData.entries()).reduce((acc, [ws, data]) => {
+            if (data.roomId) {
+              acc[data.roomId] = (acc[data.roomId] || 0) + 1;
+            }
+            return acc;
+          }, {} as Record<string, number>)
+        }
+      });
+    } catch (error) {
+      console.error('Detailed health endpoint error:', error);
+      res.status(500).json({ error: 'Detailed health check failed' });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -481,6 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/rooms", async (req, res) => {
+    healthMonitor.incrementMetric('room_creation_requests');
     try {
       console.log("Creating room with data:", req.body);
       
@@ -497,9 +539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const room = await storage.createRoom(roomData);
       console.log("Created room:", room);
+      healthMonitor.incrementMetric('rooms_created');
       res.json(room);
     } catch (error) {
       console.error("Room creation error:", error);
+      healthMonitor.incrementMetric('room_creation_errors');
       res.status(400).json({ message: "Invalid room data", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
