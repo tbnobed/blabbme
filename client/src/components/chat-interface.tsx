@@ -437,6 +437,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             setRoom(data.room || null);
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
+            
+            // CRITICAL: Register push notifications when actually joining a room
+            if (data.room?.id) {
+              console.log('📱 Triggering push registration for WebSocket room join:', data.room.id);
+              setTimeout(() => registerPushForRoom(data.room.id), 1000);
+            }
             break;
             
           case 'new-message':
