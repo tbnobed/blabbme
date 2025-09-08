@@ -1043,8 +1043,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('message', async (data) => {
+      let message;
       try {
-        const message = JSON.parse(data.toString());
+        message = JSON.parse(data.toString());
         console.log('Received WebSocket message:', message);
         const socketInfo = socketData.get(ws);
 
@@ -1173,6 +1174,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.lastActivity = new Date();
       
       // If user was in a room, check if they can reconnect (not banned)
+      console.log('🔍 INIT SESSION: Checking restoration conditions:', { 
+        sessionId, 
+        hasRoomId: !!session.roomId, 
+        hasNickname: !!session.nickname,
+        roomId: session.roomId,
+        nickname: session.nickname 
+      });
       if (session.roomId && session.nickname) {
         const room = await storage.getRoom(session.roomId);
         if (room && room.isActive) {
@@ -1197,6 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (!existingParticipant) {
             // Add participant back to the room
+            console.log('🔧 ADDING PARTICIPANT:', { roomId: session.roomId, nickname: session.nickname, sessionId });
             await storage.addParticipant({
               roomId: session.roomId,
               nickname: session.nickname,
@@ -1206,6 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Update existing participant's socket ID for reconnection
             await storage.removeParticipant(session.roomId, existingParticipant.socketId);
+            console.log('🔧 UPDATING PARTICIPANT:', { roomId: session.roomId, nickname: session.nickname, sessionId });
             await storage.addParticipant({
               roomId: session.roomId,
               nickname: session.nickname,
