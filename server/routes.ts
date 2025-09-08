@@ -1070,17 +1070,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           case 'app-visibility':
             // Handle app visibility for push notification targeting
-            const visibilitySocketInfo = socketData.get(ws);
-            if (visibilitySocketInfo?.sessionId) {
-              const session = userSessions.get(visibilitySocketInfo.sessionId);
+            let visibilitySocketInfo = socketData.get(ws);
+            let sessionId = visibilitySocketInfo?.sessionId;
+            
+            // If no socket info, try to find session ID from message or other sources
+            if (!sessionId && message.sessionId) {
+              sessionId = message.sessionId;
+              console.log(`🔄 Using sessionId from message: ${sessionId}`);
+            }
+            
+            if (sessionId) {
+              const session = userSessions.get(sessionId);
               if (session) {
                 (session as any).isAppVisible = message.visible;
-                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${(session as any).isAppVisible})`);
+                console.log(`📱 App visibility for ${sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${(session as any).isAppVisible})`);
+                
+                // Update socket data if it exists
+                if (visibilitySocketInfo) {
+                  visibilitySocketInfo.sessionId = sessionId;
+                }
               } else {
-                console.log(`❌ Session not found for visibility update: ${visibilitySocketInfo.sessionId}`);
+                console.log(`❌ Session not found for visibility update: ${sessionId}`);
               }
             } else {
-              console.log(`❌ No socket info found for visibility message`);
+              console.log(`❌ No session info found for visibility message`);
             }
             break;
         }
@@ -1499,15 +1512,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (session.roomId === roomId) {
           const hasPushSub = !!session.pushSubscription;
           const isConnected = connectedSessionIds.has(session.sessionId);
-          const isAppBackgrounded = (session as any).isAppVisible === false;
+          const currentVisibility = (session as any).isAppVisible;
+          const isAppBackgrounded = currentVisibility === false;
           
-          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, backgrounded=${isAppBackgrounded}`);
+          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, visibility=${currentVisibility}, backgrounded=${isAppBackgrounded}`);
           
           if (hasPushSub) {
             // Send push if user is disconnected OR if connected but app is backgrounded
             if (!isConnected || isAppBackgrounded) {
-              console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${(session as any).isAppVisible}`);
+              console.log(`✅ 📤 SENDING PUSH to session ${session.sessionId}: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}`);
               disconnectedSessions.push(session);
+            } else {
+              console.log(`❌ No push needed for ${session.sessionId}: connected=${isConnected}, visible=${currentVisibility}`);
             }
           } else {
             console.log(`❌ Session ${session.sessionId} has no push subscription`);
