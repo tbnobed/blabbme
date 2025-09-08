@@ -538,31 +538,45 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     
     if (actuallyEnabled) {
       console.log('🔕 Disabling notifications...');
+      
+      // Immediately set states to prevent notifications during unsubscribe
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
       
       // Unsubscribe from push notifications
       try {
         if ('serviceWorker' in navigator) {
+          console.log('🔄 Getting service worker registration...');
           const registration = await navigator.serviceWorker.ready;
+          console.log('🔄 Getting current push subscription...');
           const subscription = await registration.pushManager.getSubscription();
+          
           if (subscription) {
-            await subscription.unsubscribe();
-            console.log('🔕 Unsubscribed from push notifications');
+            console.log('🔄 Unsubscribing from push manager...');
+            const unsubscribeResult = await subscription.unsubscribe();
+            console.log('🔕 Push manager unsubscribe result:', unsubscribeResult);
             
             // Also notify server to remove subscription
+            console.log('🔄 Notifying server to remove subscription...');
             const response = await fetch('/api/push-unsubscribe', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include'
             });
+            
             if (response.ok) {
-              console.log('✅ Server subscription removed');
+              console.log('✅ Server subscription removed successfully');
+            } else {
+              const errorText = await response.text();
+              console.error('❌ Server unsubscribe failed:', response.status, errorText);
             }
+          } else {
+            console.log('ℹ️  No push subscription found to unsubscribe');
           }
         }
       } catch (error) {
         console.error('❌ Failed to unsubscribe:', error);
+        console.error('❌ Error stack:', error.stack);
       }
       
       toast({

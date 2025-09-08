@@ -1,0 +1,34 @@
+🔘 Toggle clicked - checking server state first...
+chat-interface.tsx:492 🔍 Checking server subscription status via cookies...
+chat-interface.tsx:495 📡 Making API call to: /api/push-status
+chat-interface.tsx:500 📡 Response status: 200 OK
+chat-interface.tsx:504 📡 Response content-type: application/json; charset=utf-8
+chat-interface.tsx:508 📋 Server subscription status: true
+chat-interface.tsx:914 🔘 Server has subscription: true
+chat-interface.tsx:915 🔘 Local enabled state: true
+chat-interface.tsx:492 🔍 Checking server subscription status via cookies...
+chat-interface.tsx:495 📡 Making API call to: /api/push-status
+install-prompt.tsx:96 === 5 Second Check ===
+install-prompt.tsx:97 Deferred prompt available: false
+install-prompt.tsx:98 All criteria met: true
+install-prompt.tsx:101 ❌ No beforeinstallprompt event received
+install-prompt.tsx:102 Chrome requires user engagement - try visiting the site multiple times
+install-prompt.tsx:107 PWA criteria met but no install prompt - showing manual instructions
+chat-interface.tsx:500 📡 Response status: 200 OK
+chat-interface.tsx:504 📡 Response content-type: application/json; charset=utf-8
+chat-interface.tsx:508 📋 Server subscription status: true
+chat-interface.tsx:534 🔄 Toggle: local state = true server state = true
+chat-interface.tsx:540 🔕 Disabling notifications...
+chat-interface.tsx:634 Chat interface received message: pong {type: 'pong'}
+chat-interface.tsx:634 Chat interface received message: new-message {type: 'new-message', message: {…}}
+chat-interface.tsx:678 Triggering notification for new message from: Gggg
+chat-interface.tsx:393 showNotification called: {title: 'Gggg in Chat Room', message: 'Hh', notificationsEnabled: true, hasFocus: false, isStandalone: false}
+chat-interface.tsx:417 Attempting to show service worker notification
+sw.js:19 Push received: PushEvent {isTrusted: true, data: PushMessageData, type: 'push', target: ServiceWorkerGlobalScope, currentTarget: ServiceWorkerGlobalScope, …}
+chat-interface.tsx:216 ❌ Failed to setup push notifications: Error: Service worker timeout
+    at chat-interface.tsx:99:60
+chat-interface.tsx:825 ✅ Push notifications ready for room: 18a4ff
+chat-interface.tsx:634 Chat interface received message: server-heartbeat {type: 'server-heartbeat'}
+chat-interface.tsx:216 ❌ Failed to setup push notifications: Error: Service worker timeout
+    at chat-interface.tsx:99:60
+chat-interface.tsx:273 ✅ Push notifications setup completed successfully
