@@ -1382,11 +1382,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 Checking push subscriptions for room:', roomId);
       console.log('📊 Total sessions:', userSessions.size);
       console.log('🔗 Connected session IDs:', Array.from(connectedSessionIds));
-      console.log('⏰ Current time:', new Date().toISOString());
-      console.log('⏰ Two minutes ago:', new Date(twoMinutesAgo).toISOString());
       
       // Clean up old disconnected sessions (older than 2 minutes)
       const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
+      console.log('⏰ Current time:', new Date().toISOString());
+      console.log('⏰ Two minutes ago:', new Date(twoMinutesAgo).toISOString());
       const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
       
       // Remove old disconnected sessions
