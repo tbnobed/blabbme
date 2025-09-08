@@ -290,6 +290,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unsubscribe from push notifications
+  app.post('/api/push-unsubscribe', sessionLimiter, (req, res) => {
+    const sessionId = req.session?.sessionId;
+    
+    if (!sessionId) {
+      return res.status(401).json({ error: 'No session found' });
+    }
+
+    const session = userSessions.get(sessionId);
+    if (session) {
+      session.pushSubscription = null;
+      console.log('🔕 Push subscription removed for session:', sessionId, 'in room:', session.roomId);
+      res.json({ success: true });
+    } else {
+      console.log('❌ Push unsubscribe failed - session not found:', sessionId);
+      res.status(404).json({ error: 'Session not found' });
+    }
+  });
+
   // Debug route to check paths
   app.get('/debug/pwa', (req, res) => {
     const manifestPath = path.join(clientPublicPath, 'manifest.json');

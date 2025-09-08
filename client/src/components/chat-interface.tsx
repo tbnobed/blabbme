@@ -474,6 +474,31 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     if (notificationsEnabled) {
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
+      
+      // Unsubscribe from push notifications
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+            console.log('🔕 Unsubscribed from push notifications');
+            
+            // Also notify server to remove subscription
+            const response = await fetch('/api/push-unsubscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include'
+            });
+            if (response.ok) {
+              console.log('✅ Server subscription removed');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to unsubscribe:', error);
+      }
+      
       toast({
         title: "Notifications disabled",
         description: "You won't receive message alerts",
@@ -728,8 +753,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     const setupForRoom = async () => {
       // Always try to setup push notifications when joining a room if notifications are enabled
       try {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          console.log('✅ Permission granted, setting up push for room:', roomId);
+        if ('Notification' in window && Notification.permission === 'granted' && notificationsEnabled) {
+          console.log('✅ Permission granted AND notifications enabled, setting up push for room:', roomId);
           await setupPushNotifications();
           console.log('✅ Push notifications ready for room:', roomId);
           
