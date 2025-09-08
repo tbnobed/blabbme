@@ -304,10 +304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const session = userSessions.get(sessionId);
     if (session) {
-      // Only register push notifications if user is actually in a room
+      // CRITICAL: Only allow push registration if user is currently in a room
       if (!session.roomId) {
-        console.log('❌ Push subscription rejected - user not in any room. Session:', sessionId);
-        return res.status(400).json({ error: 'Cannot register push notifications - user not in a room' });
+        console.log('❌ Push registration BLOCKED - user not in any room. Session:', sessionId);
+        console.log('🏠 User must be in a room to register for notifications');
+        return res.status(400).json({ error: 'Must be in a room to register for push notifications' });
       }
       
       session.pushSubscription = subscription;
