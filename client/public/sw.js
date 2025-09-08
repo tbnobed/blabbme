@@ -1,5 +1,5 @@
 // Service Worker for PWA functionality and push notifications
-const CACHE_NAME = 'blabbme-v1';
+const CACHE_NAME = 'blabbme-v2'; // Force service worker update
 const urlsToCache = [
   '/',
   '/index.html',
