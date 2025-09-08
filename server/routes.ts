@@ -1306,11 +1306,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Debug the messageData structure
+      console.log('📱 Push notification payload data:', messageData);
+      
       const payload = JSON.stringify({
-        title: `New message in ${messageData.roomName || 'chat room'}`,
-        body: `${messageData.nickname}: ${messageData.message}`,
+        title: `New message in chat room`,
+        body: `${messageData.message?.nickname || 'Someone'}: ${messageData.message?.content || 'New message'}`,
         roomId: roomId,
-        timestamp: messageData.timestamp
+        timestamp: messageData.message?.timestamp || Date.now()
       });
 
       // Send to all disconnected users with push subscriptions
