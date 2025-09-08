@@ -268,18 +268,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('🔔 Permission result:', permission);
         
         if (permission === 'granted') {
-          console.log('✅ Permission granted, setting up push notifications...');
-          await setupPushNotifications();
-          
-          // Retry after 2 seconds if first attempt failed (mobile browsers can be flaky)
-          setTimeout(async () => {
-            console.log('🔄 Retrying push notification setup...');
-            try {
-              await setupPushNotifications();
-            } catch (retryError) {
-              console.error('❌ Retry also failed:', retryError);
-            }
-          }, 2000);
+          console.log('✅ Permission granted - will register when joining room');
         } else {
           console.log('❌ Permission denied or dismissed');
         }
@@ -442,10 +431,10 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
             
-            // CRITICAL: Register push notifications when actually joining a room
+            // CRITICAL: Register push notifications IMMEDIATELY when joining a room
             if (data.room?.id) {
-              console.log('📱 Triggering push registration for WebSocket room join:', data.room.id);
-              setTimeout(() => registerPushForRoom(data.room.id), 1000);
+              console.log('📱 Triggering IMMEDIATE push registration for room:', data.room.id);
+              registerPushForRoom(data.room.id);
             }
             break;
             
