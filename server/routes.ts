@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Unsubscribe from push notifications
   app.post('/api/push-unsubscribe', sessionLimiter, (req, res) => {
-    const sessionId = req.session?.sessionId;
+    const sessionId = req.cookies.chat_session;
     
     if (!sessionId) {
       return res.status(401).json({ error: 'No session found' });
