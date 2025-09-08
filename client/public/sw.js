@@ -48,6 +48,19 @@ self.addEventListener('push', (event) => {
   console.log('🔔 Event data exists:', !!event.data);
   console.log('🔔 User agent:', navigator.userAgent);
   console.log('🔔 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
+  console.log('🔔 Timestamp:', new Date().toISOString());
+  
+  // Force show a notification even without data to test iOS handling
+  if (!event.data) {
+    console.log('🔔 No data received, showing test notification');
+    event.waitUntil(
+      self.registration.showNotification('Test Push', {
+        body: 'Push received but no data',
+        tag: 'test-push'
+      })
+    );
+    return;
+  }
   
   // Simple, iOS-compatible notification
   let title = 'Blabb.me';
