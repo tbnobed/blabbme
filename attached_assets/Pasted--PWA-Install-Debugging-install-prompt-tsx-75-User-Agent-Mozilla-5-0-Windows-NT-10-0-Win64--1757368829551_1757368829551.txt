@@ -1,0 +1,78 @@
+=== PWA Install Debugging ===
+install-prompt.tsx:75 User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+install-prompt.tsx:77 Is Chrome: true
+install-prompt.tsx:78 Is Edge: false
+install-prompt.tsx:79 Display mode: browser
+install-prompt.tsx:80 Already installed: false
+install-prompt.tsx:17 beforeinstallprompt event fired
+install-prompt.tsx:85 === Chrome Install Check ===
+install-prompt.tsx:87 Chrome detected - showing install instructions
+@radix-ui_react-dialog.js?v=1b73b258:1412 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=1b73b258:1412Understand this warning
+install-prompt.tsx:95 === 5 Second Check ===
+install-prompt.tsx:96 Deferred prompt available: false
+install-prompt.tsx:97 All criteria met: true
+install-prompt.tsx:100 ❌ No beforeinstallprompt event received
+install-prompt.tsx:101 Chrome requires user engagement - try visiting the site multiple times
+install-prompt.tsx:106 PWA criteria met but no install prompt - showing manual instructions
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: true socket: false nickname:  isLoading: true
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: false nickname: Obed2 isLoading: true
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: false nickname: Obed2 isLoading: false
+chat-interface.tsx:291 🔄 Force updating service worker...
+chat-interface.tsx:308 🔔 Starting notification permission request...
+chat-interface.tsx:314 🔔 Current permission: granted
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: false nickname: Obed2 isLoading: false
+chat-interface.tsx:316 🔔 Permission result: granted
+chat-interface.tsx:319 ✅ Permission granted - will register when joining room
+use-socket.ts:24 WebSocket connected
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+chat.tsx:66 Sending join-room message: {roomId: 'vqfrj3', nickname: 'Obed2', sessionId: 'session_1757368354772_0vv2j9r'}
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+chat.tsx:44 Found existing session for room: vqfrj3 nickname: Obed2
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+2chat-interface.tsx:441 📱 Sending visibility state: visible
+use-socket.ts:24 WebSocket connected
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+chat.tsx:66 Sending join-room message: {roomId: 'vqfrj3', nickname: 'Obed2', sessionId: 'session_1757368354772_0vv2j9r'}
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+chat.tsx:44 Found existing session for room: vqfrj3 nickname: Obed2
+chat.tsx:22 Chat page loaded with roomId: vqfrj3
+chat.tsx:125 showNicknameModal: false socket: true nickname: Obed2 isLoading: false
+chat-interface.tsx:468 📱 MOBILE: Chat interface received message: session-initialized {type: 'session-initialized', sessionId: 'session_1757368354772_0vv2j9r'}
+chat-interface.tsx:469 📱 MOBILE: WebSocket readyState: 1
+2chat-interface.tsx:441 📱 Sending visibility state: visible
+chat-interface.tsx:468 📱 MOBILE: Chat interface received message: room-joined {type: 'room-joined', room: {…}, messages: Array(5), participants: Array(3)}
+chat-interface.tsx:469 📱 MOBILE: WebSocket readyState: 1
+chat-interface.tsx:482 🔥 CLIENT: Received room join/restore data: {type: 'room-joined', room: {…}, messages: Array(5), participants: Array(3)}
+chat-interface.tsx:468 📱 MOBILE: Chat interface received message: welcome-message {type: 'welcome-message', message: 'Welcome to Quick Chat Room, Obed2! 🎉', roomId: 'vqfrj3', nickname: 'Obed2'}
+chat-interface.tsx:469 📱 MOBILE: WebSocket readyState: 1
+chat-interface.tsx:489 🎉 CLIENT: Received welcome message - triggering push registration
+chat-interface.tsx:490 🔍 CLIENT: Welcome message data: {"type":"welcome-message","message":"Welcome to Quick Chat Room, Obed2! 🎉","roomId":"vqfrj3","nickname":"Obed2"}
+chat-interface.tsx:503 📱 Welcome message: Triggering push registration for room: vqfrj3
+chat-interface.tsx:504 🔍 CLIENT: About to call registerPushForRoom with: vqfrj3
+chat-interface.tsx:505 🔍 CLIENT: Notification permission before call: granted
+chat-interface.tsx:514 ⏳ DELAY: Waiting 1000ms for session to update before push registration
+chat-interface.tsx:441 📱 Sending visibility state: visible
+chat-interface.tsx:516 🚀 DELAY COMPLETE: Now calling registerPushForRoom after session update
+chat-interface.tsx:517 🔍 DELAY: About to call registerPushForRoom with roomId: vqfrj3
+chat-interface.tsx:518 🔍 DELAY: Current Notification.permission: granted
+chat-interface.tsx:333 🔍 REGISTER PUSH: Starting for room: vqfrj3 permission: granted
+chat-interface.tsx:335 🏠 Registering push notifications for JOINED room: vqfrj3
+chat-interface.tsx:346 🔄 Same room - skipping unsubscribe
+chat-interface.tsx:113 🚀 Starting push notification setup...
+chat-interface.tsx:120 ✅ Service worker supported
+chat-interface.tsx:123 ⏳ Waiting for service worker ready...
+chat-interface.tsx:441 📱 Sending visibility state: hidden
+chat-interface.tsx:468 📱 MOBILE: Chat interface received message: server-heartbeat {type: 'server-heartbeat'}
+chat-interface.tsx:469 📱 MOBILE: WebSocket readyState: 1
+chat-interface.tsx:468 📱 MOBILE: Chat interface received message: pong {type: 'pong'}
+chat-interface.tsx:469 📱 MOBILE: WebSocket readyState: 1
