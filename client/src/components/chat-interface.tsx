@@ -119,9 +119,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       }
       console.log('✅ Service worker supported');
 
-      // Step 2: Wait for service worker
+      // Step 2: Wait for service worker with timeout
       console.log('⏳ Waiting for service worker ready...');
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Service worker ready timeout after 5 seconds')), 5000)
+        )
+      ]) as ServiceWorkerRegistration;
       console.log('✅ Service worker ready:', !!registration);
       
       // Step 3: Check push manager
