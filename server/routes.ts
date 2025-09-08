@@ -1033,6 +1033,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
+    // Transfer push subscription from any old sessions with same nickname in same room
+    if (sessionId && nickname && roomId) {
+      for (const [oldSessionId, oldSession] of userSessions.entries()) {
+        if (oldSessionId !== sessionId && 
+            oldSession.roomId === roomId && 
+            oldSession.nickname === nickname && 
+            oldSession.pushSubscription) {
+          
+          console.log('🔄 Transferring push subscription from old session:', oldSessionId, 'to new session:', sessionId);
+          
+          // Get or create current session
+          let currentSession = userSessions.get(sessionId);
+          if (!currentSession) {
+            currentSession = {
+              sessionId,
+              roomId,
+              nickname,
+              lastActivity: new Date(),
+            };
+            userSessions.set(sessionId, currentSession);
+          }
+          
+          // Transfer push subscription
+          currentSession.pushSubscription = oldSession.pushSubscription;
+          console.log('✅ Push subscription transferred successfully');
+          
+          // Clean up old session
+          userSessions.delete(oldSessionId);
+          console.log('🗑️ Removed old session:', oldSessionId);
+          break;
+        }
+      }
+    }
+
     // Check if this is a session restoration (user already in room)
     const socketInfo = socketData.get(ws);
     if (socketInfo?.roomId === roomId && socketInfo?.nickname === nickname) {
