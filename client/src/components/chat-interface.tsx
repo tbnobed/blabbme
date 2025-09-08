@@ -414,7 +414,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Chat interface received message:', data.type, data);
+        console.log('📱 MOBILE: Chat interface received message:', data.type, data);
+        console.log('📱 MOBILE: WebSocket readyState:', socket?.readyState);
 
         // Handle server heartbeat
         if (data.type === 'server-heartbeat') {
