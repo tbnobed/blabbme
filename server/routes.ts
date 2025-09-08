@@ -1494,10 +1494,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Send push notifications to disconnected users if this is a message
     if (data.type === 'new-message') {
-      // Small delay to ensure visibility states are captured before push check
+      // Delay to ensure visibility states are captured before push check
       setTimeout(() => {
+        console.log('⏰ Delayed push check starting after visibility updates...');
         sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
-      }, 200); // 200ms delay to capture any recent visibility changes
+      }, 500); // 500ms delay to capture any recent visibility changes
     }
     
     console.log('Broadcasted to', broadcastCount, 'clients in room', roomId);
@@ -1515,10 +1516,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (session.roomId === roomId) {
           const hasPushSub = !!session.pushSubscription;
           const isConnected = connectedSessionIds.has(session.sessionId);
-          const currentVisibility = (session as any).isAppVisible;
-          const isAppBackgrounded = currentVisibility === false;
           
-          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, visibility=${currentVisibility}, backgrounded=${isAppBackgrounded}`);
+          // Get fresh visibility state from connected WebSocket if available
+          let isAppVisible = (session as any).isAppVisible;
+          const socketInfo = Array.from(socketData.values()).find(s => s.sessionId === session.sessionId);
+          if (socketInfo && isConnected) {
+            // If connected, trust the most recent visibility state we have
+            isAppVisible = (session as any).isAppVisible;
+          }
+          
+          const isAppBackgrounded = isAppVisible === false;
+          
+          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, visibility=${isAppVisible}, backgrounded=${isAppBackgrounded}`);
           
           if (hasPushSub) {
             // Send push if user is disconnected OR if connected but app is backgrounded
@@ -1526,7 +1535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`✅ 📤 SENDING PUSH to session ${session.sessionId}: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}`);
               disconnectedSessions.push(session);
             } else {
-              console.log(`❌ No push needed for ${session.sessionId}: connected=${isConnected}, visible=${currentVisibility}`);
+              console.log(`❌ No push needed for ${session.sessionId}: connected=${isConnected}, visible=${isAppVisible}`);
             }
           } else {
             console.log(`❌ Session ${session.sessionId} has no push subscription`);
