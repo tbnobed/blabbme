@@ -470,18 +470,47 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         description: "You won't receive message alerts",
       });
     } else {
+      console.log('🔔 Starting notification permission request...');
       const permission = await Notification.requestPermission();
+      console.log('🔔 Permission result:', permission);
+      
       if (permission === 'granted') {
-        setNotificationsEnabled(true);
-        localStorage.setItem('notificationsEnabled', 'true');
+        console.log('🔔 Permission granted, starting push setup...');
         toast({
           title: "Notifications enabled",
           description: "Setting up push notifications...",
         });
         
-        // Setup push notifications immediately
-        await setupPushNotifications();
+        try {
+          // Setup push notifications first, only enable if successful
+          await setupPushNotifications();
+          
+          // Only set enabled state if push setup succeeded
+          setNotificationsEnabled(true);
+          localStorage.setItem('notificationsEnabled', 'true');
+          console.log('✅ Push setup completed successfully');
+          
+          toast({
+            title: "Push Notifications Ready",
+            description: "You'll get alerts when the app is in the background",
+            className: "bg-green-50 border-green-200 text-green-800",
+          });
+          
+        } catch (error) {
+          console.error('❌ Push setup failed:', error);
+          
+          // Reset notification state on failure
+          setNotificationsEnabled(false);
+          localStorage.setItem('notificationsEnabled', 'false');
+          
+          toast({
+            title: "Push Setup Failed",
+            description: `iOS Push Error: ${error.message}`,
+            variant: "destructive",
+          });
+        }
       } else {
+        console.log('❌ Notification permission denied');
         toast({
           title: "Notifications blocked",
           description: "Please enable notifications in your browser settings",
