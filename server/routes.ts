@@ -1332,6 +1332,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const socketInfo = socketData.get(ws);
     if (socketInfo?.roomId === roomId && socketInfo?.nickname === nickname) {
       console.log('JOIN ROOM: User already in room via session restoration, skipping duplicate join');
+      
+      // Send welcome message for session restoration to trigger push registration
+      console.log('🕒 Setting up welcome message timeout for duplicate join detection path');
+      setTimeout(() => {
+        console.log('⏰ Duplicate join welcome timeout fired, checking WebSocket state:', ws.readyState, 'OPEN=', WebSocket.OPEN);
+        if (ws.readyState === WebSocket.OPEN) {
+          console.log('🎉 Sending welcome message for session restoration via duplicate join detection');
+          ws.send(JSON.stringify({
+            type: 'welcome-message',
+            message: `Welcome back to ${room.name}, ${nickname}! 👋`,
+            roomId,
+            nickname
+          }));
+        } else {
+          console.log('❌ WebSocket closed during duplicate join, cannot send welcome message. State:', ws.readyState);
+        }
+      }, 1000); // 1 second delay to ensure client is ready
+      
       return;
     }
 
