@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
+import QRModal from '@/components/qr-modal';
 
 interface Message {
   id: number;
@@ -847,32 +848,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       </div>
 
       {/* QR Modal */}
-      {showQRModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-center">Share Room</h3>
-            {qrCode && (
-              <div className="flex flex-col items-center space-y-4">
-                <img src={qrCode} alt="QR Code" className="w-48 h-48" />
-                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                  Scan this QR code to join the room
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 text-center break-all">
-                  {`${window.location.origin}/room/${roomId}`}
-                </p>
-              </div>
-            )}
-            <Button
-              onClick={() => {
-                setShowQRModal(false);
-                setQrCode(null);
-              }}
-              className="w-full mt-4"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
+      {room && (
+        <QRModal 
+          isOpen={showQRModal} 
+          onClose={() => {
+            setShowQRModal(false);
+            setQrCode(null);
+          }} 
+          room={room} 
+        />
       )}
     </div>
   );
