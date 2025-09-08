@@ -1281,6 +1281,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('🔍 Checking push subscriptions for room:', roomId);
       console.log('📊 Total sessions:', userSessions.size);
+      console.log('🔗 Connected session IDs:', Array.from(connectedSessionIds));
+      
+      // Debug all sessions in this room
+      const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
+      console.log('🏠 Sessions in room:', roomSessions.map(s => ({
+        sessionId: s.sessionId,
+        nickname: s.nickname,
+        hasPushSub: !!s.pushSubscription,
+        isConnected: connectedSessionIds.has(s.sessionId)
+      })));
+      
       console.log('📱 Disconnected sessions with push:', disconnectedSessions.length);
       
       if (disconnectedSessions.length === 0) {
