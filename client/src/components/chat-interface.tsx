@@ -504,11 +504,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
               
               // Show user feedback
-              addToast({
-                type: 'info',
+              toast({
                 title: 'Setting up notifications...',
                 description: 'Configuring push notifications for this chat room',
-                duration: 2000,
               });
               
               // Add delay to ensure server session is updated before HTTP push registration request
@@ -517,19 +515,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
                 console.log('🚀 DELAY COMPLETE: Now calling registerPushForRoom after session update');
                 registerPushForRoom(data.roomId).then(() => {
                   console.log('✅ CLIENT: registerPushForRoom call completed');
-                  addToast({
-                    type: 'success',
+                  toast({
                     title: 'Notifications enabled!',
                     description: 'You\'ll receive notifications when the app is in the background',
-                    duration: 3000,
                   });
                 }).catch((error) => {
                   console.error('❌ CLIENT: registerPushForRoom failed:', error);
-                  addToast({
-                    type: 'error',
+                  toast({
                     title: 'Notification setup failed',
                     description: 'Push notifications could not be enabled',
-                    duration: 4000,
+                    variant: 'destructive',
                   });
                 });
               }, 1000);

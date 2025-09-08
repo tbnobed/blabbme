@@ -1,0 +1,87 @@
+JOIN ROOM: Found room: {
+  id: 'vqfrj3',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T22:14:25.611Z,
+  createdAt: 2025-09-08T21:44:25.796Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'vqfrj3',
+  sessionId: 'session_1757368262673_amo13oe',
+  nickname: 'Cell77'
+}
+WebSocket connection established
+Ban check result: false
+Received WebSocket message: { type: 'init-session', sessionId: 'session_1757368262673_amo13oe' }
+handleInitSession: sessionId: session_1757368262673_amo13oe session found: true
+🔍 INIT SESSION: Checking restoration conditions: {
+  sessionId: 'session_1757368262673_amo13oe',
+  hasRoomId: false,
+  hasNickname: false,
+  roomId: undefined,
+  nickname: undefined
+}
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'vqfrj3',
+  nickname: 'Cell77',
+  sessionId: 'session_1757368262673_amo13oe'
+}
+Handling join-room for: vqfrj3 Cell77
+JOIN ROOM: Looking for room: vqfrj3 with nickname: Cell77 sessionId: session_1757368262673_amo13oe
+🔧 BEFORE session update: {
+  sessionId: 'session_1757368262673_amo13oe',
+  oldRoomId: undefined,
+  oldNickname: undefined
+}
+✅ AFTER session update: {
+  sessionId: 'session_1757368262673_amo13oe',
+  newRoomId: 'vqfrj3',
+  newNickname: 'Cell77'
+}
+Broadcasting to room: vqfrj3 data type: user-joined
+Broadcasted to 3 clients in room vqfrj3
+Received WebSocket message: { type: 'app-visibility', visible: true }
+📱 App visibility for session_1757368262673_amo13oe: foreground (set to: true)
+🎉 Sending immediate welcome message for new room join: Cell77
+Received WebSocket message: { type: 'app-visibility', visible: true }
+📱 App visibility for session_1757368262673_amo13oe: foreground (set to: true)
+JOIN ROOM: Found room: {
+  id: 'vqfrj3',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T22:14:25.611Z,
+  createdAt: 2025-09-08T21:44:25.796Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'vqfrj3',
+  sessionId: 'session_1757368262673_amo13oe',
+  nickname: 'Cell77'
+}
+Ban check result: false
+JOIN ROOM: Updating existing participant socket ID
+🔧 BEFORE session update: {
+  sessionId: 'session_1757368262673_amo13oe',
+  oldRoomId: 'vqfrj3',
+  oldNickname: 'Cell77'
+}
+✅ AFTER session update: {
+  sessionId: 'session_1757368262673_amo13oe',
+  newRoomId: 'vqfrj3',
+  newNickname: 'Cell77'
+}
+🎉 Sending immediate welcome message for new room join: Cell77
+Received WebSocket message: { type: 'app-visibility', visible: true }
+📱 App visibility for session_1757368262673_amo13oe: foreground (set to: true)
+🧹 Starting expired rooms cleanup at 2025-09-08T21:51:40.688Z
+🧹 Found 0 expired rooms to clean up
+🧹 Cleanup completed: 0 rooms processed
+🧹 Expired rooms cleanup completed
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'heartbeat-ack' }
