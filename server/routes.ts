@@ -1492,8 +1492,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // CRITICAL: Remove ALL participant data from database to prevent session restoration
       console.log('🧹 EXPLICIT LEAVE: Removing all participant data for session:', socketInfo.sessionId);
       try {
-        await storage.removeParticipantBySession(socketInfo.roomId, socketInfo.sessionId);
-        console.log('🧹 Database participant data cleared - no auto-rejoin possible');
+        // Find and remove all participants with this session ID from all rooms
+        const allRooms = await storage.getAllActiveRooms();
+        let removedCount = 0;
+        
+        for (const room of allRooms) {
+          const participants = await storage.getParticipantsByRoom(room.id);
+          for (const participant of participants) {
+            if (participant.socketId.includes(socketInfo.sessionId)) {
+              await storage.removeParticipant(room.id, participant.socketId);
+              removedCount++;
+              console.log('🧹 Removed participant from room:', room.id, 'socketId:', participant.socketId);
+            }
+          }
+        }
+        
+        console.log('🧹 Database participant data cleared - removed', removedCount, 'entries - no auto-rejoin possible');
       } catch (error) {
         console.log('🧹 Error clearing participant data:', error);
       }
