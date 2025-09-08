@@ -1240,6 +1240,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!room || !room.isActive) {
       console.log('JOIN ROOM: Room not found or not active');
+      
+      // CRITICAL: Clear server-side session data to prevent infinite rejoin loop
+      if (sessionId) {
+        console.log('🧹 Clearing expired room from server session:', sessionId);
+        const session = userSessions.get(sessionId);
+        if (session) {
+          session.roomId = undefined;
+          session.nickname = undefined;
+          console.log('🧹 Server session cleared - no more auto-rejoin');
+        } else {
+          console.log('🧹 No server session found to clear');
+        }
+      }
+      
       const errorMessage = { type: 'error', message: 'Room not found' };
       console.log('🚨 SENDING ERROR MESSAGE:', errorMessage);
       console.log('🚨 WebSocket state:', ws.readyState, 'OPEN=' + WebSocket.OPEN);
