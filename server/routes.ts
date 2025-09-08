@@ -1363,9 +1363,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (sessionId && userSessions.has(sessionId)) {
       const session = userSessions.get(sessionId)!;
+      console.log('🔧 BEFORE session update:', { sessionId, oldRoomId: session.roomId, oldNickname: session.nickname });
       session.roomId = roomId;
       session.nickname = nickname;
       session.lastActivity = new Date();
+      console.log('✅ AFTER session update:', { sessionId, newRoomId: session.roomId, newNickname: session.nickname });
+    } else {
+      console.log('❌ Session not found for update:', { sessionId, sessionExists: userSessions.has(sessionId) });
     }
 
     // Only notify if this is a new participant (not a reconnection)
