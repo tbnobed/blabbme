@@ -482,13 +482,31 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const checkServerSubscriptionStatus = async () => {
     try {
       const currentSession = localStorage.getItem('sessionId');
-      if (!currentSession) return false;
+      console.log('🔍 Checking server status for session:', currentSession);
+      
+      if (!currentSession) {
+        console.log('❌ No sessionId found in localStorage');
+        return false;
+      }
 
-      const response = await fetch(`/api/push-status?sessionId=${currentSession}`);
+      const url = `/api/push-status?sessionId=${currentSession}`;
+      console.log('📡 Making API call to:', url);
+      
+      const response = await fetch(url);
+      console.log('📡 Response status:', response.status, response.statusText);
+      
       if (response.ok) {
-        const data = await response.json();
-        console.log('📋 Server subscription status:', data.hasSubscription);
-        return data.hasSubscription;
+        const contentType = response.headers.get('content-type');
+        console.log('📡 Response content-type:', contentType);
+        
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          console.log('📋 Server subscription status:', data.hasSubscription);
+          return data.hasSubscription;
+        } else {
+          console.error('❌ Server returned non-JSON response');
+          return false;
+        }
       }
     } catch (error) {
       console.error('❌ Failed to check server subscription status:', error);
