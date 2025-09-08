@@ -72,7 +72,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      // Wait for service worker to be truly ready with timeout
+      console.log('📱 Waiting for service worker to be ready...');
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker timeout')), 10000))
+      ]) as ServiceWorkerRegistration;
       console.log('✅ Service worker ready for push setup');
       
       // Get the public VAPID key
@@ -194,9 +199,26 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         
         // Setup push notifications after permission is granted
         if (permission === 'granted') {
-          console.log('✅ Permission granted, setting up push in 2 seconds...');
-          // Wait a bit for service worker to be ready
-          setTimeout(setupPushNotifications, 2000);
+          console.log('✅ Permission granted, setting up push notifications...');
+          // Try multiple times with increasing delays to ensure service worker is ready
+          const trySetupPush = async (attempt = 1) => {
+            console.log(`📱 Push setup attempt ${attempt}/3`);
+            try {
+              await setupPushNotifications();
+              console.log('✅ Push notifications setup completed successfully');
+            } catch (error) {
+              console.log(`❌ Push setup attempt ${attempt} failed:`, error);
+              if (attempt < 3) {
+                console.log(`⏳ Retrying push setup in ${attempt * 2} seconds...`);
+                setTimeout(() => trySetupPush(attempt + 1), attempt * 2000);
+              } else {
+                console.log('❌ All push setup attempts failed');
+              }
+            }
+          };
+          
+          // Start first attempt after a short delay
+          setTimeout(() => trySetupPush(), 1000);
         } else {
           console.log('❌ Notification permission denied or not granted');
           if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
