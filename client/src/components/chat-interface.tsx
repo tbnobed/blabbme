@@ -499,10 +499,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           // Setup push notifications first, only enable if successful
           await setupPushNotifications();
           
-          // Only set enabled state if push setup succeeded
+          // Force enable state after successful push setup
+          console.log('✅ Push setup completed successfully - enabling bell icon');
           setNotificationsEnabled(true);
           localStorage.setItem('notificationsEnabled', 'true');
-          console.log('✅ Push setup completed successfully');
+          
+          // Force a re-render to make sure UI updates
+          setTimeout(() => {
+            setNotificationsEnabled(true);
+          }, 100);
           
           toast({
             title: "Push Notifications Ready",
@@ -732,6 +737,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           console.log('✅ Permission granted, setting up push for room:', roomId);
           await setupPushNotifications();
           console.log('✅ Push notifications ready for room:', roomId);
+          
+          // iOS-specific: Force UI update on iPhone devices
+          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            console.log('📱 iOS detected - forcing notification UI update');
+            setNotificationsEnabled(true);
+            localStorage.setItem('notificationsEnabled', 'true');
+            // Force multiple re-renders for iOS
+            setTimeout(() => setNotificationsEnabled(true), 50);
+            setTimeout(() => setNotificationsEnabled(true), 200);
+            setTimeout(() => setNotificationsEnabled(true), 500);
+          }
         } else if ('Notification' in window && Notification.permission === 'default') {
           console.log('🔔 Requesting permission for room:', roomId);
           const permission = await Notification.requestPermission();
