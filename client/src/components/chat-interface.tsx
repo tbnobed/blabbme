@@ -268,20 +268,25 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestNotificationPermission();
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Auto-setup push notifications if already enabled
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [socket]); // Remove notificationsEnabled dependency to prevent loops
+
+  // Separate effect for auto-setting up push notifications - only runs once
+  useEffect(() => {
+    // Auto-setup push notifications if already enabled (only run once on mount)
     if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
       console.log('🔔 Auto-setting up push notifications (already enabled)');
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setupPushNotifications().catch(error => {
           console.error('Failed to auto-setup push notifications:', error);
         });
       }, 2000); // Delay to ensure everything is ready
+      
+      return () => clearTimeout(timeoutId);
     }
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [socket, notificationsEnabled]); // Add notificationsEnabled dependency
+  }, []); // Empty dependency array - only run once on mount
 
   // Function to play notification sound
   const playNotificationSound = () => {
