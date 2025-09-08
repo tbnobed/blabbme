@@ -1,0 +1,63 @@
+🔍 Checking push subscriptions for room: qoq20j
+📊 Total sessions: 2
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: qoq20j
+Broadcasted to 6 clients in room qoq20j
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'send-message', content: 'hello' }
+Broadcasting new message from replit to room qoq20j
+Broadcasting to room: qoq20j data type: new-message
+🔍 Checking push subscriptions for room: qoq20j
+📊 Total sessions: 2
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: qoq20j
+Broadcasted to 6 clients in room qoq20j
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+WebSocket closed but session exists, keeping participant in room
+WebSocket closed but session exists, keeping participant in room
+Received WebSocket message: { type: 'send-message', content: 'hello' }
+Broadcasting new message from replit to room qoq20j
+Broadcasting to room: qoq20j data type: new-message
+🔍 Checking push subscriptions for room: qoq20j
+📊 Total sessions: 2
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: qoq20j
+Broadcasted to 4 clients in room qoq20j
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'send-message', content: 'Hello' }
+Broadcasting new message from Cell to room qoq20j
+Broadcasting to room: qoq20j data type: new-message
+🔍 Checking push subscriptions for room: qoq20j
+📊 Total sessions: 2
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: qoq20j
+Broadcasted to 4 clients in room qoq20j
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'send-message', content: 'Hello' }
+Broadcasting new message from Cell to room qoq20j
+Broadcasting to room: qoq20j data type: new-message
+🔍 Checking push subscriptions for room: qoq20j
+📊 Total sessions: 2
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: qoq20j
+Broadcasted to 4 clients in room qoq20j
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'heartbeat-ack' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }
