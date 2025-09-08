@@ -1,31 +1,30 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { MessageCircle, Share, LogOut, Send, Bell, BellOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import QRModal from "./qr-modal";
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 interface Message {
   id: number;
   nickname: string;
   content: string;
-  timestamp: Date;
-  isFiltered?: boolean;
+  timestamp: string;
+  isFiltered: boolean;
 }
 
 interface Participant {
-  id: number;
   nickname: string;
   socketId: string;
-  joinedAt: Date;
 }
 
 interface Room {
   id: string;
   name: string;
-  participantCount?: number;
-  maxParticipants?: number;
+  createdBy: string;
+  maxParticipants: number;
+  expiresAt?: string;
+  createdAt: string;
+  isActive: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -42,347 +41,69 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('notificationsEnabled');
-    if (saved === 'true') return true;
-    if (saved === 'false') return false;
-    return 'Notification' in window && Notification.permission === 'granted';
-  });
-
-
+  
+  // Sound toggle - simplified (no notification toggle)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
     const saved = localStorage.getItem('soundEnabled');
     return saved !== 'false'; // Default to true
   });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isTogglingRef = useRef(false);  // Prevent notifications during toggle process
   const { toast } = useToast();
+  const [isSettingUpPush, setIsSettingUpPush] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Setup push notifications
-  const [isSettingUpPush, setIsSettingUpPush] = useState(false);
-  
-  const setupPushNotifications = async (forceSetup = false) => {
-    if (isSettingUpPush) {
-      console.log('⚠️ Push setup already in progress, skipping...');
-      return;
-    }
+  // Simple push notification setup - always enabled
+  const setupPushNotifications = async () => {
+    if (isSettingUpPush) return;
     
     setIsSettingUpPush(true);
     try {
-      console.log('🔔 Starting push notification setup...');
-      console.log('📱 Notifications enabled:', notificationsEnabled);
-      console.log('📱 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
-      console.log('📱 Is standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
-      console.log('📱 User agent:', navigator.userAgent);
-      console.log('📱 Service worker support:', 'serviceWorker' in navigator);
-      console.log('📱 Push manager support:', 'PushManager' in window);
-      
-      if (!notificationsEnabled && !forceSetup) {
-        console.log('❌ Notifications not enabled, skipping push setup');
-        return;
-      }
-      
-      if (forceSetup) {
-        console.log('🔄 Force setup enabled - proceeding with push setup regardless of current state');
-      }
-
       if (!('serviceWorker' in navigator)) {
         console.log('❌ Service worker not supported');
         return;
       }
 
-      // Wait for service worker to be truly ready with longer timeout
-      console.log('📱 Waiting for service worker to be ready...');
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker timeout')), 30000))
-      ]) as ServiceWorkerRegistration;
-      console.log('✅ Service worker ready for push setup');
+      const registration = await navigator.serviceWorker.ready;
       
-      // Get the public VAPID key
-      const response = await fetch('/api/vapid-public-key');
-      const { publicKey } = await response.json();
-      
-      // Check if push manager is available (crucial for iOS)
-      if (!registration.pushManager) {
-        console.log('❌ Push manager not available');
-        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-          console.log('📱 iOS: Push requires PWA to be installed (added to home screen)');
-        }
-        return;
-      }
-      
-      console.log('✅ Push manager available');
-      console.log('📱 VAPID public key:', publicKey);
-      
-      // Convert VAPID key with error handling
-      let applicationServerKey;
-      try {
-        applicationServerKey = urlBase64ToUint8Array(publicKey);
-        console.log('✅ VAPID key converted successfully');
-      } catch (error) {
-        console.log('❌ VAPID key conversion failed:', error);
-        return;
-      }
-      
-      console.log('📱 Subscribing to push notifications...');
-      console.log('📱 iOS Check - User agent:', navigator.userAgent);
-      console.log('📱 iOS Check - Standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
-      console.log('📱 iOS Check - Push manager exists:', !!registration.pushManager);
-      console.log('📱 iOS Check - Notification permission:', Notification.permission);
-      
-      // Subscribe to push notifications with detailed iOS debugging
-      let subscription;
-      try {
-        console.log('📱 Starting push subscription with options:', {
-          userVisibleOnly: true,
-          applicationServerKey: applicationServerKey ? 'present' : 'missing'
-        });
-        
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey
-        });
-        
-        console.log('✅ Push subscription created successfully');
-        console.log('📱 Subscription endpoint:', subscription.endpoint);
-        console.log('📱 Subscription keys present:', !!subscription.getKey);
-        
-      } catch (error) {
-        console.error('❌ Push subscription failed with error:', error);
-        console.error('❌ Error name:', error.name);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
-        
-        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-          console.error('📱 iOS SPECIFIC ERROR - Push subscription failed');
-          console.error('📱 This could be due to:');
-          console.error('📱 1. Safari version incompatibility');
-          console.error('📱 2. PWA not properly installed');
-          console.error('📱 3. iOS notifications not enabled at system level');
-          console.error('📱 4. VAPID key format issue on iOS');
-          
-          // Try to get more specific error info
-          if (error.name === 'NotSupportedError') {
-            console.error('📱 NotSupportedError: Push is not supported on this iOS version/setup');
-          } else if (error.name === 'NotAllowedError') {
-            console.error('📱 NotAllowedError: User denied push permission or not in standalone mode');
-          } else if (error.name === 'AbortError') {
-            console.error('📱 AbortError: Subscription request was aborted');
-          }
-        }
+      if (!('PushManager' in window)) {
+        console.log('❌ Push notifications not supported');
         return;
       }
 
-      // Get current session ID
-      const sessionResponse = await fetch('/api/session/current');
-      const sessionData = await sessionResponse.json();
+      // Get VAPID public key
+      const vapidResponse = await fetch('/api/vapid-public-key');
+      const { publicKey } = await vapidResponse.json();
       
-      if (sessionData.sessionId) {
-        console.log('📱 Sending subscription to server...');
-        console.log('📱 Session ID for registration:', sessionData.sessionId);
-        console.log('📱 Subscription endpoint:', subscription.endpoint);
-        
-        // Send subscription to server - server expects sessionId and subscription
-        const subscribeResponse = await fetch('/api/push-subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sessionId: sessionData.sessionId,
-            subscription: subscription.toJSON()
-          }),
-          credentials: 'include' // Important for session-based auth
-        });
-        
-        console.log('📱 Server response status:', subscribeResponse.status);
-        
-        if (subscribeResponse.ok) {
-          const responseData = await subscribeResponse.json();
-          console.log('✅ Server response data:', responseData);
-          console.log('✅ Push notifications set up successfully for room:', roomId);
-          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            console.log('📱 iOS: Push notifications should now work when app is backgrounded');
-          }
-        } else {
-          const errorText = await subscribeResponse.text();
-          console.error('❌ Server registration failed:', subscribeResponse.status, errorText);
-          throw new Error(`Server registration failed: ${subscribeResponse.status} - ${errorText}`);
-        }
-      }
+      // Subscribe to push notifications
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey
+      });
+
+      // Send subscription to server
+      await fetch('/api/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          hasSubscription: true
+        })
+      });
+
+      console.log('✅ Push notifications set up successfully');
     } catch (error) {
-      console.log('❌ Failed to setup push notifications:', error);
-      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-        console.log('📱 iOS debugging - error details:', {
-          errorName: error.name,
-          errorMessage: error.message,
-          isStandalone: window.matchMedia('(display-mode: standalone)').matches,
-          serviceWorkerSupport: 'serviceWorker' in navigator,
-          pushManagerSupport: 'PushManager' in window,
-          notificationPermission: Notification.permission
-        });
-      }
+      console.log('❌ Push notification setup failed:', error);
     } finally {
       setIsSettingUpPush(false);
     }
   };
 
-  // Helper function to convert VAPID key
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  // Request notification permission when component mounts
-  useEffect(() => {
-    const requestNotificationPermission = async () => {
-      if ('Notification' in window) {
-        console.log('🔔 Setting up notifications for chat...');
-        console.log('📱 User agent:', navigator.userAgent);
-        console.log('📱 Is iOS:', /iPhone|iPad|iPod/.test(navigator.userAgent));
-        console.log('📱 Is Safari:', /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent));
-        console.log('📱 Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
-        console.log('📱 PWA installed:', window.matchMedia('(display-mode: standalone)').matches);
-        
-        const permission = await Notification.requestPermission();
-        const enabled = permission === 'granted';
-        setNotificationsEnabled(enabled);
-        localStorage.setItem('notificationsEnabled', enabled.toString());
-        console.log('🔔 Notification permission:', permission);
-        
-        // Setup push notifications after permission is granted
-        if (permission === 'granted') {
-          console.log('✅ Permission granted, setting up push notifications...');
-          // Try multiple times with increasing delays to ensure service worker is ready
-          const trySetupPush = async (attempt = 1) => {
-            console.log(`📱 Push setup attempt ${attempt}/3`);
-            try {
-              await setupPushNotifications();
-              console.log('✅ Push notifications setup completed successfully');
-            } catch (error) {
-              console.log(`❌ Push setup attempt ${attempt} failed:`, error);
-              if (attempt < 3) {
-                console.log(`⏳ Retrying push setup in ${attempt * 2} seconds...`);
-                setTimeout(() => trySetupPush(attempt + 1), attempt * 2000);
-              } else {
-                console.log('❌ All push setup attempts failed');
-              }
-            }
-          };
-          
-          // Start first attempt after a short delay
-          setTimeout(() => trySetupPush(), 1000);
-        } else {
-          console.log('❌ Notification permission denied or not granted');
-          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            console.log('📱 iOS detected - notifications require PWA to be added to home screen first');
-          }
-        }
-      }
-    };
-
-    // Handle visibility changes for better PWA behavior
-    const handleVisibilityChange = () => {
-      console.log('📱 Visibility changed:', document.hidden, document.visibilityState);
-      if (document.visibilityState === 'visible') {
-        console.log('👀 App foregrounded - notifying server');
-        // Tell server we're in foreground (visible)
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'app-visibility',
-            visible: true
-          }));
-        }
-      } else {
-        console.log('🏠 App backgrounded - notifying server for push notifications');
-        // Tell server we're in background (hidden) for push notifications
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'app-visibility',
-            visible: false
-          }));
-        }
-      }
-    };
-
-    requestNotificationPermission();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [socket]); // Remove notificationsEnabled dependency to prevent loops
-
-  // Sync with server state on app load and whenever we need to check
-  const syncWithServer = async () => {
-    // Don't sync if we're in the middle of a toggle operation
-    if (isTogglingRef.current) {
-      console.log('🚫 Skipping sync - toggle in progress');
-      return notificationsEnabled;
-    }
-    
-    console.log('🔄 Syncing with server - checking subscription status...');
-    
-    // Always check server state first
-    const serverHasSubscription = await checkServerSubscriptionStatus();
-    const currentPermission = 'Notification' in window ? Notification.permission : 'default';
-    
-    console.log('📋 Server subscription status:', serverHasSubscription);
-    console.log('🔔 Current notification permission:', currentPermission);
-    console.log('🔔 Local enabled state:', notificationsEnabled);
-    
-    // Only sync if there's a real mismatch AND we're not in a recent toggle
-    if (serverHasSubscription !== notificationsEnabled) {
-      // Check if user recently disabled - respect their choice for 30 seconds
-      const lastToggle = localStorage.getItem('lastToggleTime');
-      const timeSinceToggle = lastToggle ? Date.now() - parseInt(lastToggle) : Infinity;
-      
-      if (timeSinceToggle < 30000) {  // 30 seconds
-        console.log('🛡️  Recent toggle detected - not overriding user preference');
-        return notificationsEnabled;
-      }
-      
-      console.log('⚠️  Server state differs from local! Syncing to server:', serverHasSubscription);
-      setNotificationsEnabled(serverHasSubscription);
-      localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
-    }
-    
-    return serverHasSubscription;
-  };
-
-  // Run sync on mount and also when visibility changes
-  useEffect(() => {
-    console.log('🔄 Component mounted - running initial sync');
-    syncWithServer();
-    
-    // Also sync when app comes back to foreground
-    const handleFocus = () => {
-      console.log('🔄 App focused - syncing with server');
-      setTimeout(() => syncWithServer(), 500); // Small delay to let things settle
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []); // Run once on mount
-
-  // Function to play notification sound
+  // Simple notification sound function
   const playNotificationSound = () => {
     console.log('🔊 playNotificationSound called - soundEnabled:', soundEnabled);
     if (!soundEnabled) {
@@ -392,7 +113,6 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     console.log('🔊 Playing notification sound...');
     
     try {
-      // Create a simple notification sound using Web Audio API
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -413,42 +133,18 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
   };
 
-  // Function to show browser notification (enhanced for PWA)
+  // Simple notification display function
   const showNotification = (title: string, message: string, icon?: string) => {
-    console.log('showNotification called:', { title, message, notificationsEnabled, hasFocus: document.hasFocus(), isStandalone: window.matchMedia('(display-mode: standalone)').matches });
-    
-    // Block notifications during toggle process to prevent race conditions
-    if (isTogglingRef.current) {
-      console.log('🚫 Notifications blocked - toggle in progress');
-      return;
-    }
-    
-    if (!notificationsEnabled) {
-      console.log('Notifications disabled, skipping');
-      return;
-    }
-
-    // For PWA (standalone mode), always show notifications
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const shouldShowNotification = isStandalone || !document.hasFocus() || document.hidden;
     
-    // Always play sound for background notifications
-    if (!document.hasFocus() || document.hidden) {
-      playNotificationSound();
-    }
-    
     if (!shouldShowNotification) {
-      console.log('Tab is focused and not in standalone mode, skipping notification');
       return;
     }
 
     try {
-      // Try to use service worker for better PWA support
       if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
-        console.log('Attempting to show service worker notification');
         navigator.serviceWorker.ready.then(registration => {
-          console.log('Service worker ready, showing notification');
-          console.log('🔊 Browser notification soundEnabled state:', soundEnabled);
           const notificationOptions: any = {
             body: message,
             icon: icon || '/icon-192.png',
@@ -459,243 +155,42 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             data: {
               url: window.location.href,
               timestamp: Date.now(),
-              roomId: window.location.pathname.split('/').pop()
-            },
-            actions: [
-              {
-                action: 'open',
-                title: 'Open Chat'
-              }
-            ]
+              roomId: roomId
+            }
           };
           
-          // Add vibration for mobile devices
-          if (soundEnabled && 'vibrate' in navigator) {
-            notificationOptions.vibrate = [100, 50, 100];
-          }
-          
           return registration.showNotification(title, notificationOptions);
-        }).then(() => {
-          console.log('Service worker notification shown successfully');
-        }).catch((error) => {
-          console.log('Service worker notification failed:', error);
-          // Fallback to regular notification
-          showRegularNotification(title, message, icon);
         });
       } else {
-        console.log('Service worker not available, using regular notification');
-        showRegularNotification(title, message, icon);
+        // Fallback to regular notification
+        if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body: message,
+            icon: icon || '/icon-192.png',
+            silent: !soundEnabled
+          });
+        }
       }
     } catch (error) {
       console.log('Notification error:', error);
-      showRegularNotification(title, message, icon);
     }
   };
 
-  // Fallback regular notification function
-  const showRegularNotification = (title: string, message: string, icon?: string) => {
-    try {
-      const notification = new Notification(title, {
-        body: message,
-        icon: icon || '/icon-192.png',
-        tag: 'blabb-message',
-        requireInteraction: false,
-        silent: !soundEnabled,
-      });
-
-      // Auto-close notification after 5 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
-
-      // Focus window when notification is clicked
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-    } catch (error) {
-      console.log('Regular notification error:', error);
-    }
-  };
-
-  // Check server's actual push subscription status
-  const checkServerSubscriptionStatus = async () => {
-    try {
-      console.log('🔍 Checking server subscription status via cookies...');
-      
-      const url = '/api/push-status';
-      console.log('📡 Making API call to:', url);
-      
-      const response = await fetch(url, {
-        credentials: 'include' // Include cookies for session identification
-      });
-      console.log('📡 Response status:', response.status, response.statusText);
-      
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        console.log('📡 Response content-type:', contentType);
-        
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          console.log('📋 Server subscription status:', data.hasSubscription);
-          return data.hasSubscription;
-        } else {
-          console.error('❌ Server returned non-JSON response');
-          return false;
+  // Request notification permission on mount
+  useEffect(() => {
+    const requestPermissions = async () => {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          await setupPushNotifications();
         }
       }
-    } catch (error) {
-      console.error('❌ Failed to check server subscription status:', error);
-    }
-    return false;
-  };
-
-  // Toggle notification permission
-  const toggleNotifications = async () => {
-    if (!('Notification' in window)) {
-      toast({
-        title: "Notifications not supported",
-        description: "Your browser doesn't support notifications",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check server state to determine current actual state
-    const serverHasSubscription = await checkServerSubscriptionStatus();
-    console.log('🔄 Toggle: local state =', notificationsEnabled, 'server state =', serverHasSubscription);
-
-    // Use server state as source of truth for current state
-    const actuallyEnabled = serverHasSubscription;
+    };
     
-    if (actuallyEnabled) {
-      console.log('🔕 Disabling notifications...');
-      
-      // Immediately block notifications to prevent race conditions
-      isTogglingRef.current = true;
-      setNotificationsEnabled(false);
-      localStorage.setItem('notificationsEnabled', 'false');
-      localStorage.setItem('lastToggleTime', Date.now().toString());
-      
-      // Always try to unsubscribe from server first (most important)
-      console.log('🔄 Notifying server to remove subscription...');
-      try {
-        const response = await fetch('/api/push-unsubscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          console.log('✅ Server subscription removed successfully');
-          // Force state to stay disabled - don't let any sync logic override this
-          setTimeout(() => {
-            console.log('🔒 Enforcing disabled state after server success');
-            setNotificationsEnabled(false);
-            localStorage.setItem('notificationsEnabled', 'false');
-          }, 100);
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Server unsubscribe failed:', response.status, errorText);
-        }
-      } catch (serverError) {
-        console.error('❌ Server unsubscribe error:', serverError);
-      }
+    requestPermissions();
+  }, []);
 
-      // Then try to unsubscribe from browser (best effort)
-      try {
-        if ('serviceWorker' in navigator) {
-          console.log('🔄 Getting service worker registration...');
-          const registration = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Service worker timeout')), 5000)
-            )
-          ]) as ServiceWorkerRegistration;
-          
-          console.log('🔄 Getting current push subscription...');
-          const subscription = await registration.pushManager.getSubscription();
-          
-          if (subscription) {
-            console.log('🔄 Unsubscribing from push manager...');
-            const unsubscribeResult = await subscription.unsubscribe();
-            console.log('🔕 Push manager unsubscribe result:', unsubscribeResult);
-          } else {
-            console.log('ℹ️  No push subscription found to unsubscribe');
-          }
-        }
-      } catch (error) {
-        console.error('❌ Browser unsubscribe failed (but server unsubscribe succeeded):', error);
-        console.log('ℹ️  This is okay - server will not send more notifications');
-      }
-      
-      toast({
-        title: "Notifications disabled",
-        description: "You won't receive message alerts",
-      });
-    } else {
-      console.log('🔔 Starting notification permission request...');
-      const permission = await Notification.requestPermission();
-      console.log('🔔 Permission result:', permission);
-      
-      if (permission === 'granted') {
-        console.log('🔔 Permission granted, starting push setup...');
-        toast({
-          title: "Notifications enabled",
-          description: "Setting up push notifications...",
-        });
-        
-        try {
-          // Setup push notifications first, only enable if successful
-          await setupPushNotifications(true);  // Force setup regardless of current state
-          
-          // Force enable state after successful push setup
-          console.log('✅ Push setup completed successfully - enabling bell icon');
-          setNotificationsEnabled(true);
-          localStorage.setItem('notificationsEnabled', 'true');
-          localStorage.setItem('lastToggleTime', Date.now().toString());
-          
-          // Force a re-render to make sure UI updates
-          setTimeout(() => {
-            setNotificationsEnabled(true);
-          }, 100);
-          
-          toast({
-            title: "Push Notifications Ready",
-            description: "You'll get alerts when the app is in the background",
-            className: "bg-green-50 border-green-200 text-green-800",
-          });
-          
-        } catch (error) {
-          console.error('❌ Push setup failed:', error);
-          
-          // Reset notification state on failure
-          setNotificationsEnabled(false);
-          localStorage.setItem('notificationsEnabled', 'false');
-          
-          toast({
-            title: "Push Setup Failed",
-            description: `iOS Push Error: ${error.message}`,
-            variant: "destructive",
-          });
-        }
-      } else {
-        console.log('❌ Notification permission denied');
-        toast({
-          title: "Notifications blocked",
-          description: "Please enable notifications in your browser settings",
-          variant: "destructive",
-        });
-      }
-    }
-    
-    // Reset toggle flag after a delay to prevent sync logic interference
-    setTimeout(() => {
-      isTogglingRef.current = false;
-      console.log('🔓 Toggle process completed - unblocking notifications');
-    }, 500);
-  };
-
+  // Setup WebSocket message handling
   useEffect(() => {
     if (!socket) return;
 
@@ -704,165 +199,98 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         const data = JSON.parse(event.data);
         console.log('Chat interface received message:', data.type, data);
 
-        // Handle server heartbeat here since useSocket no longer handles them
+        // Handle server heartbeat
         if (data.type === 'server-heartbeat') {
-          try {
-            // Send back a response to confirm connection is alive
-            if (socket && socket.readyState === WebSocket.OPEN) {
-              socket.send(JSON.stringify({ type: 'heartbeat-ack' }));
-            }
-          } catch (heartbeatError) {
-            console.error('Error sending heartbeat:', heartbeatError);
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'heartbeat-ack' }));
           }
-          return; // Don't process heartbeat further
+          return;
         }
 
         switch (data.type) {
           case 'room-joined':
           case 'session-restored':
-            try {
-              console.log('Room data received:', data.type, data);
-              setRoom(data.room || null);
-              setMessages(data.messages || []);
-              setParticipants(data.participants || []);
-            } catch (roomError) {
-              console.error('Error handling room data:', roomError);
-            }
+            setRoom(data.room || null);
+            setMessages(data.messages || []);
+            setParticipants(data.participants || []);
             break;
+            
           case 'new-message':
-            try {
-              if (data.message) {
-                setMessages(prev => [...prev, data.message]);
+            if (data.message) {
+              setMessages(prev => [...prev, data.message]);
+              
+              // Show notification for new messages from other users
+              if (data.message.nickname !== nickname) {
+                const messagePreview = data.message.content.length > 50 
+                  ? data.message.content.substring(0, 50) + '...'
+                  : data.message.content;
                 
-                // Show notification for new messages from other users
-                if (data.message.nickname !== nickname) {
-                  const messagePreview = data.message.content.length > 50 
-                    ? data.message.content.substring(0, 50) + '...'
-                    : data.message.content;
-                  
-                  // Always play sound for new messages (regardless of tab focus)
-                  playNotificationSound();
-                  
-                  // Show browser notification if enabled
-                  console.log('Triggering notification for new message from:', data.message.nickname);
-                  showNotification(
-                    `${data.message.nickname} in ${room?.name || 'Chat Room'}`,
-                    messagePreview
-                  );
-                }
+                // Always play sound for new messages (regardless of tab focus)
+                playNotificationSound();
+                
+                // Show browser notification
+                showNotification(
+                  `${data.message.nickname} in ${room?.name || 'Chat Room'}`,
+                  messagePreview
+                );
               }
-            } catch (messageError) {
-              console.error('Error adding new message:', messageError);
             }
             break;
+            
           case 'user-joined':
-            try {
-              toast({
-                title: "User joined",
-                description: `${data.nickname || 'Someone'} joined the chat`,
-              });
-              if (data.participant) {
-                setParticipants(prev => [...prev, data.participant]);
-              }
-            } catch (joinError) {
-              console.error('Error handling user join:', joinError);
+            toast({
+              title: "User joined",
+              description: `${data.nickname || 'Someone'} joined the chat`,
+            });
+            if (data.participant) {
+              setParticipants(prev => [...prev, data.participant]);
             }
             break;
+            
           case 'user-left':
-            try {
-              const leftMessage = data.reason === 'kicked' 
-                ? `${data.nickname || 'User'} was removed from the room`
-                : `${data.nickname || 'User'} left the chat`;
-              toast({
-                title: data.reason === 'kicked' ? "User kicked" : "User left",
-                description: leftMessage,
-              });
-              if (data.nickname) {
-                setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
-              }
-            } catch (leftError) {
-              console.error('Error handling user leave:', leftError);
-            }
+            const leftMessage = data.reason === 'kicked' 
+              ? `${data.nickname || 'User'} was removed from the room`
+              : `${data.nickname || 'User'} left the chat`;
+              
+            toast({
+              title: data.reason === 'kicked' ? "User removed" : "User left",
+              description: leftMessage,
+            });
+            
+            setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
             break;
-          case 'kicked':
-            try {
-              // User was kicked from the room
-              toast({
-                title: "Removed from room",
-                description: data.message || "You have been removed from the room",
-                variant: "destructive",
-              });
-              // Navigate back to home page after showing the message
-              setTimeout(() => {
-                onLeaveRoom();
-              }, 2000);
-            } catch (kickError) {
-              console.error('Error handling kick:', kickError);
-              // Ensure we still leave the room even if toast fails
-              onLeaveRoom();
-            }
-            break;
+            
           case 'warning':
-            try {
-              setWarning(data.message || "");
-              setTimeout(() => setWarning(""), 5000);
-            } catch (warningError) {
-              console.error('Error handling warning:', warningError);
-            }
+            setWarning(data.message || 'You have received a warning for inappropriate content.');
+            setTimeout(() => setWarning(''), 5000);
             break;
-          case 'user-banned':
-            try {
-              // Show ban notification to room
-              toast({
-                title: "User banned",
-                description: `${data.nickname || 'User'} has been temporarily banned (${data.duration || '10 minutes'}) - ${data.reason || 'Content violation'}`,
-                variant: "destructive",
-              });
-              if (data.nickname) {
-                setParticipants(prev => prev.filter(p => p.nickname !== data.nickname));
-              }
-            } catch (banError) {
-              console.error('Error handling user ban notification:', banError);
-            }
+            
+          case 'kicked':
+            toast({
+              title: "Removed from room",
+              description: data.message || 'You have been removed from this room.',
+              variant: "destructive",
+            });
+            setTimeout(() => onLeaveRoom(), 2000);
             break;
-          case 'error':
-            try {
-              toast({
-                title: "Error",
-                description: data.message || "An error occurred",
-                variant: "destructive",
-              });
-              if (data.message === "Room not found") {
-                onLeaveRoom();
-              }
-            } catch (errorError) {
-              console.error('Error handling error message:', errorError);
-            }
+            
+          case 'participants-update':
+            setParticipants(data.participants || []);
             break;
         }
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-        // Don't crash the UI on WebSocket errors
-        toast({
-          title: "Connection issue",
-          description: "There was a problem with the real-time connection.",
-          variant: "destructive",
-        });
+        console.error('Error handling message:', error);
       }
     };
 
     socket.addEventListener('message', handleMessage);
     
-    // Handle unexpected connection close - just log, don't show disruptive toasts
     const handleClose = () => {
       console.log('WebSocket connection closed - will reconnect automatically');
-      // Don't show toast - PWA reconnection is normal behavior
     };
     
     const handleError = (event: Event) => {
       console.log('WebSocket error occurred:', event);
-      // Don't show error toasts - they interfere with push notifications
-      // Users will notice if messages don't send/receive
     };
     
     socket.addEventListener('close', handleClose);
@@ -873,264 +301,196 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       socket.removeEventListener('close', handleClose);
       socket.removeEventListener('error', handleError);
     };
-  }, [socket, toast, onLeaveRoom]);
+  }, [socket, nickname, room, toast, onLeaveRoom]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Setup notifications when joining a room
-  useEffect(() => {
-    if (!roomId || !notificationsEnabled) return;
-    
-    console.log('🔔 Room joined, setting up push notifications for room:', roomId);
-    
-    const setupForRoom = async () => {
-      // Always try to setup push notifications when joining a room if notifications are enabled
-      try {
-        if ('Notification' in window && Notification.permission === 'granted' && notificationsEnabled) {
-          console.log('✅ Permission granted AND notifications enabled, setting up push for room:', roomId);
-          await setupPushNotifications();
-          console.log('✅ Push notifications ready for room:', roomId);
-          
-          // iOS-specific: Force UI update on iPhone devices
-          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            console.log('📱 iOS detected - forcing notification UI update');
-            setNotificationsEnabled(true);
-            localStorage.setItem('notificationsEnabled', 'true');
-            // Force multiple re-renders for iOS
-            setTimeout(() => setNotificationsEnabled(true), 50);
-            setTimeout(() => setNotificationsEnabled(true), 200);
-            setTimeout(() => setNotificationsEnabled(true), 500);
-          }
-        } else if ('Notification' in window && Notification.permission === 'default') {
-          console.log('🔔 Requesting permission for room:', roomId);
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            console.log('✅ Permission granted, setting up push for room:', roomId);
-            await setupPushNotifications(true);  // Force setup when getting new permission
-            localStorage.setItem('notificationsEnabled', 'true');
-          } else {
-            console.log('❌ Permission denied');
-            setNotificationsEnabled(false);
-            localStorage.setItem('notificationsEnabled', 'false');
-          }
-        }
-      } catch (error) {
-        console.error('❌ Failed to setup push for room:', error);
-      }
-    };
-    
-    setupForRoom();
-  }, [roomId, notificationsEnabled]);
-
-
-  const sendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendMessage = () => {
     if (!messageInput.trim() || !socket) return;
 
     socket.send(JSON.stringify({
       type: 'send-message',
-      content: messageInput.trim(),
+      content: messageInput.trim()
     }));
 
-    setMessageInput("");
+    setMessageInput('');
   };
 
-  const getInitial = (name: string) => {
-    return name.charAt(0).toUpperCase();
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
   };
 
-  const formatTime = (timestamp: Date | string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const generateQRCode = async () => {
+    try {
+      const url = `${window.location.origin}/room/${roomId}`;
+      const qrCodeDataURL = await QRCode.toDataURL(url, {
+        width: 256,
+        margin: 1,
+      });
+      return qrCodeDataURL;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      return null;
+    }
   };
 
-  if (!room) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Connecting to room...</p>
-        </div>
-      </div>
-    );
-  }
+  const [qrCode, setQrCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (showQRModal && !qrCode) {
+      generateQRCode().then(setQrCode);
+    }
+  }, [showQRModal, qrCode]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Chat Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <MessageCircle className="text-white h-4 w-4" />
-          </div>
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-semibold text-gray-900">Room: {room.name || roomId}</h2>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {room?.name || 'Chat Room'}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {participants.length} participant{participants.length !== 1 ? 's' : ''}
-              {room.maxParticipants && ` / ${room.maxParticipants}`}
             </p>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              console.log('🔘 Toggle clicked - checking server state first...');
-              const serverState = await checkServerSubscriptionStatus();
-              console.log('🔘 Server has subscription:', serverState);
-              console.log('🔘 Local enabled state:', notificationsEnabled);
-              if (serverState !== notificationsEnabled) {
-                console.log('🔘 MISMATCH! Fixing toggle state to match server');
-                setNotificationsEnabled(serverState);
-                localStorage.setItem('notificationsEnabled', serverState.toString());
-              }
-              toggleNotifications();
-            }}
-            className={`text-xs px-2 py-1 ${
-              notificationsEnabled 
-                ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
-                : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
-            }`}
-          >
-            {notificationsEnabled ? '🔔 ON' : '🔕 OFF'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const newSoundEnabled = !soundEnabled;
-              setSoundEnabled(newSoundEnabled);
-              localStorage.setItem('soundEnabled', newSoundEnabled.toString());
-              console.log('🔊 Sound toggled:', newSoundEnabled ? 'enabled' : 'disabled');
-            }}
-            className={`${
-              soundEnabled 
-                ? 'text-primary hover:text-primary/80' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            title={soundEnabled ? 'Disable sound' : 'Enable sound'}
-          >
-            {soundEnabled ? '🔊' : '🔇'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowQRModal(true)}
-            className="text-gray-500 hover:text-gray-700"
-            title="Share room"
-          >
-            <Share className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onLeaveRoom}
-            className="text-gray-500 hover:text-gray-700"
-            title="Leave room"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isOwnMessage = message.nickname === nickname;
-          const isSystemMessage = message.nickname === 'system';
-
-          if (isSystemMessage) {
-            return (
-              <div key={message.id} className="text-center">
-                <div className="inline-block bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm message-system">
-                  {message.content}
-                </div>
-              </div>
-            );
-          }
-
-          return (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-3 ${
-                isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const newSoundEnabled = !soundEnabled;
+                setSoundEnabled(newSoundEnabled);
+                localStorage.setItem('soundEnabled', newSoundEnabled.toString());
+                console.log('🔊 Sound toggled:', newSoundEnabled ? 'enabled' : 'disabled');
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                soundEnabled 
+                  ? 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
               }`}
             >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  isOwnMessage ? 'bg-primary' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`text-sm font-medium ${
-                    isOwnMessage ? 'text-white' : 'text-gray-600'
-                  }`}
-                >
-                  {getInitial(message.nickname)}
-                </span>
+              {soundEnabled ? '🔊 ON' : '🔇 OFF'}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowQRModal(true)}
+              className="text-xs"
+            >
+              📱 Share
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLeaveRoom}
+              className="text-xs text-red-600 hover:text-red-800"
+            >
+              Leave Room
+            </Button>
+          </div>
+        </div>
+        
+        {/* Warning message */}
+        {warning && (
+          <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800 text-sm">
+            ⚠️ {warning}
+          </div>
+        )}
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${
+              message.nickname === nickname ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <div
+              className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                message.nickname === nickname
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+              }`}
+            >
+              {message.nickname !== nickname && (
+                <div className="text-xs font-semibold mb-1 text-gray-600 dark:text-gray-300">
+                  {message.nickname}
+                </div>
+              )}
+              <div className={`text-sm ${message.isFiltered ? 'italic text-gray-500' : ''}`}>
+                {message.content}
               </div>
-              <div className={`flex-1 ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
-                <div
-                  className={`flex items-center space-x-2 mb-1 ${
-                    isOwnMessage ? 'justify-end' : ''
-                  }`}
-                >
-                  <span className="text-sm font-medium text-gray-900">
-                    {isOwnMessage ? 'You' : message.nickname}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {formatTime(message.timestamp)}
-                  </span>
-                </div>
-                <div
-                  className={`px-3 py-2 rounded-lg max-w-xs inline-block text-left ${
-                    isOwnMessage
-                      ? 'bg-primary text-white message-own'
-                      : 'bg-gray-100 text-gray-900 message-other'
-                  }`}
-                >
-                  {message.content}
-                </div>
+              <div className={`text-xs mt-1 opacity-70 ${
+                message.nickname === nickname ? 'text-blue-100' : 'text-gray-500'
+              }`}>
+                {new Date(message.timestamp).toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Warning message */}
-      {warning && (
-        <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200">
-          <p className="text-sm text-yellow-800">{warning}</p>
-        </div>
-      )}
-
-      {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <form onSubmit={sendMessage} className="flex space-x-2">
+      {/* Input */}
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex gap-2">
           <Input
-            type="text"
-            placeholder="Type your message..."
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message..."
             className="flex-1"
             maxLength={500}
           />
-          <Button type="submit" className="bg-primary hover:bg-primary/90">
-            <Send className="h-4 w-4" />
+          <Button onClick={sendMessage} disabled={!messageInput.trim()}>
+            Send
           </Button>
-        </form>
+        </div>
       </div>
 
       {/* QR Modal */}
-      <QRModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
-        room={room}
-      />
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-center">Share Room</h3>
+            {qrCode && (
+              <div className="flex flex-col items-center space-y-4">
+                <img src={qrCode} alt="QR Code" className="w-48 h-48" />
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Scan this QR code to join the room
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 text-center break-all">
+                  {`${window.location.origin}/room/${roomId}`}
+                </p>
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                setShowQRModal(false);
+                setQrCode(null);
+              }}
+              className="w-full mt-4"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
