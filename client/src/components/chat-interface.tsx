@@ -489,18 +489,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   // Check server's actual push subscription status
   const checkServerSubscriptionStatus = async () => {
     try {
-      const currentSession = localStorage.getItem('sessionId');
-      console.log('🔍 Checking server status for session:', currentSession);
+      console.log('🔍 Checking server subscription status via cookies...');
       
-      if (!currentSession) {
-        console.log('❌ No sessionId found in localStorage');
-        return false;
-      }
-
-      const url = `/api/push-status?sessionId=${currentSession}`;
+      const url = '/api/push-status';
       console.log('📡 Making API call to:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include' // Include cookies for session identification
+      });
       console.log('📡 Response status:', response.status, response.statusText);
       
       if (response.ok) {
