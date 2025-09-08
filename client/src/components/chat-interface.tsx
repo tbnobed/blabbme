@@ -486,6 +486,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             
           case 'welcome-message':
             console.log('🎉 CLIENT: Received welcome message - triggering push registration');
+            console.log('🔍 CLIENT: Welcome message data:', JSON.stringify(data));
+            
             // Display welcome message to user
             if (data.message) {
               toast({
@@ -498,7 +500,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             // CRITICAL: Use welcome message as reliable trigger for push registration
             if (data.roomId) {
               console.log('📱 Welcome message: Triggering push registration for room:', data.roomId);
-              registerPushForRoom(data.roomId);
+              console.log('🔍 CLIENT: About to call registerPushForRoom with:', data.roomId);
+              console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
+              
+              try {
+                await registerPushForRoom(data.roomId);
+                console.log('✅ CLIENT: registerPushForRoom call completed');
+              } catch (error) {
+                console.error('❌ CLIENT: registerPushForRoom failed:', error);
+              }
+            } else {
+              console.error('❌ CLIENT: No roomId in welcome message data:', data);
             }
             break;
             
