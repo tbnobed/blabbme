@@ -291,14 +291,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestPermissions();
   }, []);
 
-  // Comprehensive push registration system for mobile devices
+  // Push registration ONLY when actively joining a room via WebSocket
   useEffect(() => {
-    if (!socket || !roomId) return; // Don't register if not in a room
+    if (!socket || !roomId || !room) return; // Only register when we have active room data
     
     // Register push notifications for this specific room
     const registerForRoom = async () => {
       if (Notification.permission === 'granted') {
-        console.log('🏠 Registering push notifications for room:', roomId);
+        console.log('🏠 Registering push notifications for ACTIVE room:', roomId);
         
         // First unregister from any previous rooms
         try {
@@ -335,7 +335,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     };
     
     setTimeout(registerForRoom, 1000); // Register after socket is stable
-  }, [socket, roomId]);
+  }, [socket, roomId, room]);
 
   // App resume/background detection for push re-registration
   useEffect(() => {
