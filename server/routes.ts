@@ -896,10 +896,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cleanup expired rooms every 5 minutes
-  setInterval(async () => {
-    await storage.cleanupExpiredRooms();
-  }, 5 * 60 * 1000);
+  // Cleanup expired rooms every 5 minutes - TEMPORARILY DISABLED FOR DEBUGGING
+  // setInterval(async () => {
+  //   await storage.cleanupExpiredRooms();
+  // }, 5 * 60 * 1000);
 
 
 
