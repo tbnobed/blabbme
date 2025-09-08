@@ -1441,6 +1441,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.roomId = undefined;
       session.nickname = undefined;
       session.lastActivity = new Date();
+      
+      // CRITICAL: Clear push subscription when explicitly leaving room
+      if (session.pushSubscription) {
+        console.log('🔕 Clearing push subscription for user leaving room:', socketInfo.roomId);
+        session.pushSubscription = undefined;
+      }
 
       // Notify room about participant leaving only for explicit leaves
       const participants = await storage.getParticipantsByRoom(socketInfo.roomId);

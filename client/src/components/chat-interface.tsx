@@ -139,7 +139,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       console.log('✅ Server response:', result);
       console.log('🎉 Push notifications set up successfully!');
     } catch (error) {
-      console.error('💥 Push notification setup failed at step:', error.message);
+      console.error('💥 Push notification setup failed at step:', error instanceof Error ? error.message : 'Unknown error');
       console.error('💥 Full error:', error);
     } finally {
       setIsSettingUpPush(false);
@@ -299,6 +299,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     const registerForRoom = async () => {
       if (Notification.permission === 'granted' && roomId) {
         console.log('🏠 Registering push notifications for room:', roomId);
+        
+        // First unregister from any previous rooms
+        try {
+          await fetch('/api/push-unsubscribe', { method: 'POST' });
+          console.log('🔕 Unregistered from previous room');
+        } catch (error) {
+          console.log('🔕 No previous subscription to unregister');
+        }
+        
         try {
           await setupPushNotifications();
           

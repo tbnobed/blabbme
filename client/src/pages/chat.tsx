@@ -89,7 +89,15 @@ export default function Chat({ params }: ChatPageProps) {
     }
   };
 
-  const handleLeaveRoom = () => {
+  const handleLeaveRoom = async () => {
+    // First, unsubscribe from push notifications for this room
+    try {
+      await fetch('/api/push-unsubscribe', { method: 'POST' });
+      console.log('🔕 Unsubscribed from push notifications on room leave');
+    } catch (error) {
+      console.error('❌ Failed to unsubscribe from push notifications:', error);
+    }
+    
     if (socket) {
       // Send explicit leave message
       socket.send(JSON.stringify({ 
