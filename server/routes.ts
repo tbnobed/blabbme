@@ -1494,15 +1494,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This includes: disconnected users OR connected users with app backgrounded
       const disconnectedSessions: UserSession[] = [];
       
+      console.log('🔍 Checking all sessions for push notifications...');
       userSessions.forEach((session) => {
-        if (session.roomId === roomId && session.pushSubscription) {
+        if (session.roomId === roomId) {
+          const hasPushSub = !!session.pushSubscription;
           const isConnected = connectedSessionIds.has(session.sessionId);
           const isAppBackgrounded = (session as any).isAppVisible === false;
           
-          // Send push if user is disconnected OR if connected but app is backgrounded
-          if (!isConnected || isAppBackgrounded) {
-            console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${(session as any).isAppVisible}`);
-            disconnectedSessions.push(session);
+          console.log(`📱 Session ${session.sessionId} (${session.nickname}): hasPushSub=${hasPushSub}, connected=${isConnected}, backgrounded=${isAppBackgrounded}`);
+          
+          if (hasPushSub) {
+            // Send push if user is disconnected OR if connected but app is backgrounded
+            if (!isConnected || isAppBackgrounded) {
+              console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${(session as any).isAppVisible}`);
+              disconnectedSessions.push(session);
+            }
+          } else {
+            console.log(`❌ Session ${session.sessionId} has no push subscription`);
           }
         }
       });

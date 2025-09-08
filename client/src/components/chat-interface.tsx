@@ -307,7 +307,10 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       }
     };
     
-    setTimeout(retryPushSetup, 1000); // Retry after socket is stable
+    // Multiple aggressive retries for mobile reliability
+    setTimeout(retryPushSetup, 1000); // First retry  
+    setTimeout(retryPushSetup, 3000); // Second retry
+    setTimeout(retryPushSetup, 6000); // Third retry for stubborn devices
 
     // Send current visibility state when socket connects
     const sendVisibilityState = () => {
