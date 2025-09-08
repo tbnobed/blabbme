@@ -880,6 +880,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', async () => {
       const socketInfo = socketData.get(ws);
+      console.log('WebSocket closing for session:', socketInfo?.sessionId);
+      
+      // Immediately remove from socketData to prevent counting as connected
+      socketData.delete(ws);
       
       // Only remove participant if this is not a session that will be restored
       if (socketInfo?.roomId && socketInfo?.sessionId && userSessions.has(socketInfo.sessionId)) {
@@ -889,8 +893,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // No session or explicit disconnect - remove participant
         await handleLeaveRoom(ws, wss, false);
       }
-      
-      socketData.delete(ws);
     });
 
     // Send initial ping to establish keep-alive
@@ -1252,8 +1254,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } catch (error) {
             console.error('Error broadcasting to client:', error);
+            // Remove failed client from socketData
+            socketData.delete(client);
           }
         }
+      } else {
+        // Remove closed/closing connections from socketData
+        socketData.delete(client);
       }
     });
     
