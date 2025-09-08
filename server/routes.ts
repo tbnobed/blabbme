@@ -730,6 +730,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check push notification registrations
+  app.get("/api/admin/push-status/:roomId", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      
+      // Get all WebSocket connections
+      const connectedSessionIds = new Set<string>();
+      wss.clients.forEach((client) => {
+        const socketInfo = socketData.get(client);
+        if (socketInfo?.sessionId) {
+          connectedSessionIds.add(socketInfo.sessionId);
+        }
+      });
+      
+      const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
+      
+      const status = {
+        totalUserSessions: userSessions.size,
+        connectedClients: connectedSessionIds.size,
+        roomSessions: roomSessions.length,
+        sessionsWithPush: roomSessions.filter(s => s.pushSubscription).length,
+        connectedSessionIds: Array.from(connectedSessionIds),
+        sessionDetails: roomSessions.map(s => ({
+          sessionId: s.sessionId,
+          nickname: s.nickname,
+          roomId: s.roomId,
+          hasPushSub: !!s.pushSubscription,
+          isConnected: connectedSessionIds.has(s.sessionId),
+          pushEndpoint: s.pushSubscription?.endpoint?.substring(0, 50) + '...' || 'none',
+          isAppVisible: (s as any).isAppVisible
+        }))
+      };
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting push status:", error);
+      res.status(500).json({ message: "Failed to get push status" });
+    }
+  });
+
   // Manual cleanup endpoint for removing old sessions (admin only)
   app.delete("/api/admin/cleanup/:roomId", async (req, res) => {
     try {
