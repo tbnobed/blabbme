@@ -315,29 +315,44 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     };
   }, [socket]); // Remove notificationsEnabled dependency to prevent loops
 
-  // Separate effect for auto-setting up push notifications - only runs once
+  // Sync with server state on every app load
   useEffect(() => {
-    // Check notification permission and sync state
-    if ('Notification' in window) {
-      const currentPermission = Notification.permission;
-      console.log('🔔 Current notification permission:', currentPermission);
-      console.log('🔔 Current enabled state:', notificationsEnabled);
+    const syncWithServerOnLoad = async () => {
+      console.log('🔄 App loaded - checking server subscription status...');
       
-      if (notificationsEnabled && currentPermission === 'granted') {
-        console.log('🔔 Auto-setting up push notifications (already enabled)');
+      // Always check server state first
+      const serverHasSubscription = await checkServerSubscriptionStatus();
+      const currentPermission = 'Notification' in window ? Notification.permission : 'default';
+      
+      console.log('📋 Server subscription status:', serverHasSubscription);
+      console.log('🔔 Current notification permission:', currentPermission);
+      console.log('🔔 Local enabled state:', notificationsEnabled);
+      
+      // Sync local state with server state
+      if (serverHasSubscription !== notificationsEnabled) {
+        console.log('⚠️  Server state differs from local! Syncing to server:', serverHasSubscription);
+        setNotificationsEnabled(serverHasSubscription);
+        localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
+      }
+      
+      // Auto-setup push notifications if server says we're subscribed and permission is granted
+      if (serverHasSubscription && currentPermission === 'granted') {
+        console.log('🔔 Server shows subscription + permission granted - auto-setting up push');
         const timeoutId = setTimeout(() => {
           setupPushNotifications().catch(error => {
             console.error('Failed to auto-setup push notifications:', error);
           });
         }, 2000);
         return () => clearTimeout(timeoutId);
-      } else if (notificationsEnabled && currentPermission !== 'granted') {
-        console.log('🔔 Notifications were enabled but permission revoked, disabling');
+      } else if (serverHasSubscription && currentPermission !== 'granted') {
+        console.log('🔔 Server shows subscription but permission revoked - disabling');
         setNotificationsEnabled(false);
         localStorage.setItem('notificationsEnabled', 'false');
       }
-    }
-  }, []); // Empty dependency array - only run once on mount
+    };
+
+    syncWithServerOnLoad();
+  }, []); // Run once on mount to sync with server
 
   // Function to play notification sound
   const playNotificationSound = () => {
@@ -463,6 +478,24 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
   };
 
+  // Check server's actual push subscription status
+  const checkServerSubscriptionStatus = async () => {
+    try {
+      const currentSession = localStorage.getItem('sessionId');
+      if (!currentSession) return false;
+
+      const response = await fetch(`/api/push-status?sessionId=${currentSession}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📋 Server subscription status:', data.hasSubscription);
+        return data.hasSubscription;
+      }
+    } catch (error) {
+      console.error('❌ Failed to check server subscription status:', error);
+    }
+    return false;
+  };
+
   // Toggle notification permission
   const toggleNotifications = async () => {
     if (!('Notification' in window)) {
@@ -474,7 +507,18 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       return;
     }
 
-    if (notificationsEnabled) {
+    // First check what the server thinks our current state is
+    const serverHasSubscription = await checkServerSubscriptionStatus();
+    console.log('🔄 Toggle: local state =', notificationsEnabled, 'server state =', serverHasSubscription);
+
+    // If server state doesn't match local state, sync with server
+    if (serverHasSubscription !== notificationsEnabled) {
+      console.log('⚠️  States out of sync! Syncing to server state:', serverHasSubscription);
+      setNotificationsEnabled(serverHasSubscription);
+      localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
+    }
+
+    if (notificationsEnabled || serverHasSubscription) {
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
       

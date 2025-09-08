@@ -271,6 +271,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Check current push subscription status
+  app.get('/api/push-status', sessionLimiter, (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId required' });
+    }
+
+    const session = userSessions.get(sessionId);
+    const hasSubscription = !!(session?.pushSubscription);
+    
+    console.log('📋 Push status check for session:', sessionId, 'hasSubscription:', hasSubscription);
+    res.json({ hasSubscription });
+  });
+
   // Subscribe to push notifications
   app.post('/api/push-subscribe', sessionLimiter, (req, res) => {
     console.log('📨 Received push subscription request:', {
