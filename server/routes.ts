@@ -1275,12 +1275,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (session.roomId === roomId && 
             session.pushSubscription && 
             !connectedSessionIds.has(session.sessionId)) {
-          disconnectedSessions.add(session);
+          disconnectedSessions.push(session);
         }
       });
 
+      console.log('🔍 Checking push subscriptions for room:', roomId);
+      console.log('📊 Total sessions:', userSessions.size);
+      console.log('📱 Disconnected sessions with push:', disconnectedSessions.length);
+      
       if (disconnectedSessions.length === 0) {
-        console.log('No push subscriptions to send for room:', roomId);
+        console.log('❌ No push subscriptions to send for room:', roomId);
         return;
       }
 
