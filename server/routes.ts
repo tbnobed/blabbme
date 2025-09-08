@@ -325,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const session = userSessions.get(sessionId);
     if (session) {
-      session.pushSubscription = null;
+      session.pushSubscription = undefined;
       console.log('🔕 Push subscription removed for session:', sessionId, 'in room:', session.roomId);
       res.json({ success: true });
     } else {
@@ -642,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Count messages from last 24 hours
         const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const recentMessages = messages.filter(msg => new Date(msg.timestamp) > last24h);
+        const recentMessages = messages.filter(msg => msg.timestamp && new Date(msg.timestamp) > last24h);
         messagesLast24h += recentMessages.length;
       }
 
@@ -1530,7 +1530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('🔔 Attempting push to session:', session.sessionId);
           console.log('🔔 Push subscription endpoint:', session.pushSubscription?.endpoint?.substring(0, 50) + '...');
           
-          const result = await webpush.sendNotification(session.pushSubscription!, payload);
+          const result = await webpush.sendNotification(session.pushSubscription as any, payload);
           console.log('✅ Push notification sent to session:', session.sessionId);
           console.log('🔔 WebPush response:', result);
         } catch (error: any) {
