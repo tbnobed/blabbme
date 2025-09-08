@@ -878,8 +878,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const session = userSessions.get(visibilitySocketInfo.sessionId);
               if (session) {
                 session.isAppVisible = message.visible;
-                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'}`);
+                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${session.isAppVisible})`);
+              } else {
+                console.log(`❌ Session not found for visibility update: ${visibilitySocketInfo.sessionId}`);
               }
+            } else {
+              console.log(`❌ No socket info found for visibility message`);
             }
             break;
         }
@@ -1297,6 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Send push if user is disconnected OR if connected but app is backgrounded
           if (!isConnected || isAppBackgrounded) {
+            console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${session.isAppVisible}`);
             disconnectedSessions.push(session);
           }
         }

@@ -590,13 +590,18 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       });
     };
     
-    const handleError = () => {
-      console.log('WebSocket error occurred');
-      toast({
-        title: "Connection error",
-        description: "There was a problem with the chat connection.",
-        variant: "destructive",
-      });
+    const handleError = (event: Event) => {
+      console.log('WebSocket error occurred:', event);
+      // Only show error toast if it's a real connection issue, not temporary glitches
+      setTimeout(() => {
+        if (socket && socket.readyState === WebSocket.CLOSED) {
+          toast({
+            title: "Connection error",
+            description: "There was a problem with the chat connection.",
+            variant: "destructive",
+          });
+        }
+      }, 1000); // Wait 1 second before showing error
     };
     
     socket.addEventListener('close', handleClose);
