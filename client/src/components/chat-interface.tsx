@@ -713,23 +713,38 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     scrollToBottom();
   }, [messages]);
 
-  // Auto-setup notifications for new users when they join a room
+  // Auto-setup notifications when joining a room
   useEffect(() => {
-    if (!roomId || !notificationsEnabled) return;
+    if (!roomId) return;
     
-    const saved = localStorage.getItem('notificationsEnabled');
-    if (saved === null) { // New user, no previous preference
-      console.log('🔔 New user detected, auto-setting up notifications...');
+    const checkAndSetupNotifications = async () => {
+      // Check if user has granted permission already
+      if ('Notification' in window && Notification.permission === 'granted') {
+        console.log('✅ Permission already granted, ensuring notifications are enabled...');
+        setNotificationsEnabled(true);
+        localStorage.setItem('notificationsEnabled', 'true');
+        
+        // Set up push notifications if not already done
+        try {
+          await setupPushNotifications();
+          console.log('✅ Push notifications ensured for existing permission');
+        } catch (error) {
+          console.error('❌ Failed to setup push:', error);
+        }
+        return;
+      }
       
-      // Don't wait for user to click bell, set up automatically
-      const autoSetupNotifications = async () => {
-        if (!('Notification' in window)) return;
+      // For new users with no previous preference, auto-request permission
+      const saved = localStorage.getItem('notificationsEnabled');
+      if (saved === null && notificationsEnabled) {
+        console.log('🔔 New user detected, auto-requesting permission...');
         
         try {
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             console.log('✅ Auto-setup: Permission granted, setting up push notifications...');
             await setupPushNotifications();
+            setNotificationsEnabled(true);
             localStorage.setItem('notificationsEnabled', 'true');
             console.log('✅ Auto-setup: Push notifications ready');
           } else {
@@ -742,11 +757,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           setNotificationsEnabled(false);
           localStorage.setItem('notificationsEnabled', 'false');
         }
-      };
-      
-      autoSetupNotifications();
-    }
-  }, [roomId, notificationsEnabled]);
+      }
+    };
+    
+    checkAndSetupNotifications();
+  }, [roomId]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
