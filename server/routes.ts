@@ -730,6 +730,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual cleanup endpoint for removing old sessions (admin only)
+  app.delete("/api/admin/cleanup/:roomId", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { olderThanMinutes = 0 } = req.query;
+      
+      const cutoffTime = Date.now() - (Number(olderThanMinutes) * 60 * 1000);
+      
+      // Get all WebSocket connections
+      const connectedSessionIds = new Set<string>();
+      wss.clients.forEach((client) => {
+        const socketInfo = socketData.get(client);
+        if (socketInfo?.sessionId) {
+          connectedSessionIds.add(socketInfo.sessionId);
+        }
+      });
+      
+      const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
+      const cleanedSessions: string[] = [];
+      
+      for (const session of roomSessions) {
+        if (!connectedSessionIds.has(session.sessionId)) {
+          const lastActivity = session.lastActivity || session.joinedAt || Date.now();
+          if (lastActivity < cutoffTime) {
+            console.log(`🗑️ Manual cleanup: removing session ${session.sessionId} (${session.nickname})`);
+            userSessions.delete(session.sessionId);
+            cleanedSessions.push(session.sessionId);
+            
+            // Remove from database participants as well
+            try {
+              const participants = await storage.getParticipantsByRoom(roomId);
+              const participantToRemove = participants.find(p => p.socketId.includes(session.sessionId));
+              if (participantToRemove) {
+                await storage.removeParticipant(roomId, participantToRemove.socketId);
+              }
+            } catch (error) {
+              console.error('Error removing participant during cleanup:', error);
+            }
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Cleaned up ${cleanedSessions.length} old sessions`, 
+        cleanedSessions,
+        totalSessionsRemaining: Array.from(userSessions.values()).filter(s => s.roomId === roomId).length
+      });
+    } catch (error) {
+      console.error("Error during manual cleanup:", error);
+      res.status(500).json({ message: "Failed to cleanup sessions" });
+    }
+  });
+  
   // Unban user from room (admin only)
   app.delete("/api/rooms/:roomId/bans/:nickname", async (req, res) => {
     try {
@@ -1329,6 +1382,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 Checking push subscriptions for room:', roomId);
       console.log('📊 Total sessions:', userSessions.size);
       console.log('🔗 Connected session IDs:', Array.from(connectedSessionIds));
+      console.log('⏰ Current time:', new Date().toISOString());
+      console.log('⏰ Two minutes ago:', new Date(twoMinutesAgo).toISOString());
       
       // Clean up old disconnected sessions (older than 2 minutes)
       const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
@@ -1337,8 +1392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove old disconnected sessions
       for (const session of roomSessions) {
         if (!connectedSessionIds.has(session.sessionId)) {
-          // Check if session has been disconnected for more than 5 minutes
+          // Check if session has been disconnected for more than 2 minutes
           const lastActivity = session.lastActivity || session.joinedAt || Date.now();
+          console.log(`🕐 Session ${session.sessionId} (${session.nickname}): lastActivity=${new Date(lastActivity).toISOString()}, disconnected for ${Math.floor((Date.now() - lastActivity) / 1000)}s`);
           if (lastActivity < twoMinutesAgo) {
             console.log(`🗑️ Cleaning up old session: ${session.sessionId} (${session.nickname})`);
             userSessions.delete(session.sessionId);
@@ -1398,9 +1454,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('❌ Push error status:', error.statusCode);
           console.error('❌ Push error body:', error.body);
           
-          // Remove invalid subscription
-          if (session.pushSubscription) {
-            console.log('🔕 Removing invalid push subscription for session:', session.sessionId);
+          // Check for specific error codes that indicate invalid/uninstalled subscriptions
+          const isInvalidSubscription = 
+            error.statusCode === 410 || // Gone - subscription is no longer valid
+            error.statusCode === 413 || // Payload too large
+            (error.statusCode === 400 && error.body?.includes('BadDeviceToken')) || // Invalid device token
+            (error.statusCode === 400 && error.body?.includes('Unregistered')) || // Unregistered
+            error.message?.includes('InvalidRegistration') ||
+            error.message?.includes('NotRegistered');
+            
+          if (isInvalidSubscription) {
+            console.log('🔕 Removing invalid/uninstalled push subscription for session:', session.sessionId);
+            session.pushSubscription = undefined;
+            // Also remove the session entirely if it's been invalid
+            userSessions.delete(session.sessionId);
+          } else {
+            // For other errors, just remove the subscription but keep the session
             session.pushSubscription = undefined;
           }
         }
