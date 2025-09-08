@@ -503,16 +503,36 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               console.log('🔍 CLIENT: About to call registerPushForRoom with:', data.roomId);
               console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
               
+              // Show user feedback
+              addToast({
+                type: 'info',
+                title: 'Setting up notifications...',
+                description: 'Configuring push notifications for this chat room',
+                duration: 2000,
+              });
+              
               // Add delay to ensure server session is updated before HTTP push registration request
-              console.log('⏳ DELAY: Waiting 500ms for session to update before push registration');
+              console.log('⏳ DELAY: Waiting 1000ms for session to update before push registration');
               setTimeout(() => {
                 console.log('🚀 DELAY COMPLETE: Now calling registerPushForRoom after session update');
                 registerPushForRoom(data.roomId).then(() => {
                   console.log('✅ CLIENT: registerPushForRoom call completed');
+                  addToast({
+                    type: 'success',
+                    title: 'Notifications enabled!',
+                    description: 'You\'ll receive notifications when the app is in the background',
+                    duration: 3000,
+                  });
                 }).catch((error) => {
                   console.error('❌ CLIENT: registerPushForRoom failed:', error);
+                  addToast({
+                    type: 'error',
+                    title: 'Notification setup failed',
+                    description: 'Push notifications could not be enabled',
+                    duration: 4000,
+                  });
                 });
-              }, 500);
+              }, 1000);
             } else {
               console.error('❌ CLIENT: No roomId in welcome message data:', data);
             }
