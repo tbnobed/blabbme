@@ -44,15 +44,46 @@ self.addEventListener('fetch', (event) => {
 
 // Push notification event
 self.addEventListener('push', (event) => {
+  console.log('🔔 Push event received in service worker:', event);
+  
+  let title = 'Blabb.me';
+  let body = 'New message in chat';
+  let data = {
+    dateOfArrival: Date.now(),
+    primaryKey: '1',
+    url: '/'
+  };
+  
+  // Parse JSON payload if available
+  if (event.data) {
+    try {
+      const payload = event.data.json();
+      console.log('📱 Parsed push payload:', payload);
+      
+      title = payload.title || title;
+      body = payload.body || body;
+      
+      if (payload.roomId) {
+        data.url = `/room/${payload.roomId}`;
+        data.roomId = payload.roomId;
+      }
+      
+      console.log('🎯 Showing notification:', { title, body, url: data.url });
+    } catch (error) {
+      console.error('❌ Error parsing push payload:', error);
+      // Fallback to text content
+      body = event.data.text() || body;
+    }
+  }
+
   const options = {
-    body: event.data ? event.data.text() : 'New message in chat',
+    body: body,
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: '1'
-    },
+    data: data,
+    tag: 'blabb-message', // Replace previous notifications
+    requireInteraction: true, // Keep notification visible until user interacts
     actions: [
       {
         action: 'open',
@@ -68,7 +99,13 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Blabb.me', options)
+    self.registration.showNotification(title, options)
+      .then(() => {
+        console.log('✅ Notification shown successfully');
+      })
+      .catch((error) => {
+        console.error('❌ Error showing notification:', error);
+      })
   );
 });
 

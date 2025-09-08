@@ -42,8 +42,19 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  // Initialize notification state from localStorage and current permission
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    // Check both localStorage preference and current permission status
+    const saved = localStorage.getItem('notificationsEnabled');
+    const currentPermission = 'Notification' in window ? Notification.permission : 'default';
+    return saved === 'true' && currentPermission === 'granted';
+  });
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('soundEnabled');
+    return saved !== 'false'; // Default to true
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -194,7 +205,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('📱 PWA installed:', window.matchMedia('(display-mode: standalone)').matches);
         
         const permission = await Notification.requestPermission();
-        setNotificationsEnabled(permission === 'granted');
+        const enabled = permission === 'granted';
+        setNotificationsEnabled(enabled);
+        localStorage.setItem('notificationsEnabled', enabled.toString());
         console.log('🔔 Notification permission:', permission);
         
         // Setup push notifications after permission is granted
@@ -255,10 +268,20 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestNotificationPermission();
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Auto-setup push notifications if already enabled
+    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+      console.log('🔔 Auto-setting up push notifications (already enabled)');
+      setTimeout(() => {
+        setupPushNotifications().catch(error => {
+          console.error('Failed to auto-setup push notifications:', error);
+        });
+      }, 2000); // Delay to ensure everything is ready
+    }
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [socket]); // Add socket dependency so visibility handler has access to current socket
+  }, [socket, notificationsEnabled]); // Add notificationsEnabled dependency
 
   // Function to play notification sound
   const playNotificationSound = () => {
@@ -397,6 +420,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     if (notificationsEnabled) {
       setNotificationsEnabled(false);
+      localStorage.setItem('notificationsEnabled', 'false');
       toast({
         title: "Notifications disabled",
         description: "You won't receive message alerts",
@@ -405,6 +429,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         setNotificationsEnabled(true);
+        localStorage.setItem('notificationsEnabled', 'true');
         toast({
           title: "Notifications enabled",
           description: "Setting up push notifications...",
@@ -581,27 +606,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
     socket.addEventListener('message', handleMessage);
     
-    // Handle unexpected connection close
+    // Handle unexpected connection close - just log, don't show disruptive toasts
     const handleClose = () => {
-      console.log('WebSocket connection closed unexpectedly');
-      toast({
-        title: "Connection lost",
-        description: "Reconnecting to chat...",
-      });
+      console.log('WebSocket connection closed - will reconnect automatically');
+      // Don't show toast - PWA reconnection is normal behavior
     };
     
     const handleError = (event: Event) => {
       console.log('WebSocket error occurred:', event);
-      // Only show error toast if it's a real connection issue, not temporary glitches
-      setTimeout(() => {
-        if (socket && socket.readyState === WebSocket.CLOSED) {
-          toast({
-            title: "Connection error",
-            description: "There was a problem with the chat connection.",
-            variant: "destructive",
-          });
-        }
-      }, 1000); // Wait 1 second before showing error
+      // Don't show error toasts - they interfere with push notifications
+      // Users will notice if messages don't send/receive
     };
     
     socket.addEventListener('close', handleClose);
