@@ -713,55 +713,56 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     scrollToBottom();
   }, [messages]);
 
-  // Auto-setup notifications when joining a room
+  // Setup notifications when joining a room
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !notificationsEnabled) return;
     
-    const checkAndSetupNotifications = async () => {
-      // Check if user has granted permission already
-      if ('Notification' in window && Notification.permission === 'granted') {
-        console.log('✅ Permission already granted, ensuring notifications are enabled...');
-        setNotificationsEnabled(true);
-        localStorage.setItem('notificationsEnabled', 'true');
-        
-        // Set up push notifications if not already done
-        try {
+    console.log('🔔 Room joined, setting up push notifications for room:', roomId);
+    
+    const setupForRoom = async () => {
+      // Always try to setup push notifications when joining a room if notifications are enabled
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          console.log('✅ Permission granted, setting up push for room:', roomId);
           await setupPushNotifications();
-          console.log('✅ Push notifications ensured for existing permission');
-        } catch (error) {
-          console.error('❌ Failed to setup push:', error);
-        }
-        return;
-      }
-      
-      // For new users with no previous preference, auto-request permission
-      const saved = localStorage.getItem('notificationsEnabled');
-      if (saved === null && notificationsEnabled) {
-        console.log('🔔 New user detected, auto-requesting permission...');
-        
-        try {
+          console.log('✅ Push notifications ready for room:', roomId);
+        } else if ('Notification' in window && Notification.permission === 'default') {
+          console.log('🔔 Requesting permission for room:', roomId);
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
-            console.log('✅ Auto-setup: Permission granted, setting up push notifications...');
+            console.log('✅ Permission granted, setting up push for room:', roomId);
             await setupPushNotifications();
-            setNotificationsEnabled(true);
             localStorage.setItem('notificationsEnabled', 'true');
-            console.log('✅ Auto-setup: Push notifications ready');
           } else {
-            console.log('❌ Auto-setup: Permission denied');
+            console.log('❌ Permission denied');
             setNotificationsEnabled(false);
             localStorage.setItem('notificationsEnabled', 'false');
           }
-        } catch (error) {
-          console.error('❌ Auto-setup failed:', error);
-          setNotificationsEnabled(false);
-          localStorage.setItem('notificationsEnabled', 'false');
         }
+      } catch (error) {
+        console.error('❌ Failed to setup push for room:', error);
       }
     };
     
-    checkAndSetupNotifications();
-  }, [roomId]);
+    setupForRoom();
+  }, [roomId, notificationsEnabled]);
+
+  // Sync notification state with browser permission on load
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const syncNotificationState = () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        setNotificationsEnabled(true);
+        localStorage.setItem('notificationsEnabled', 'true');
+      } else if (Notification.permission === 'denied') {
+        setNotificationsEnabled(false);
+        localStorage.setItem('notificationsEnabled', 'false');
+      }
+    };
+    
+    syncNotificationState();
+  }, []);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
