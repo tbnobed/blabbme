@@ -42,20 +42,35 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event - iOS Safari PWA compatible version  
+// Production-grade push notification handler with multiple fallback strategies
 self.addEventListener('push', (event) => {
-  console.log('🔔 PUSH EVENT TRIGGERED in service worker');
-  console.log('🔔 Timestamp:', new Date().toISOString());
+  console.log('🔔 PUSH EVENT TRIGGERED - Production Handler v3.0');
+  const timestamp = new Date().toISOString();
+  console.log('🔔 Timestamp:', timestamp);
   console.log('🔔 Event data exists:', !!event.data);
   
-  // Confirm delivery to server (this proves service worker got the push)
-  try {
-    fetch('/api/push-delivered/current', { method: 'POST' }).catch(e => 
-      console.log('📬 Delivery confirmation failed:', e)
-    );
-  } catch (e) {
-    console.log('📬 Fetch error:', e);
-  }
+  // CRITICAL: Confirm delivery to server with retry mechanism
+  const confirmDelivery = async (attempt = 1) => {
+    try {
+      const response = await fetch('/api/push-delivered/current', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timestamp, attempt })
+      });
+      if (response.ok) {
+        console.log(`✅ Delivery confirmed on attempt ${attempt}`);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (e) {
+      console.log(`📬 Delivery confirmation attempt ${attempt} failed:`, e);
+      if (attempt < 3) {
+        setTimeout(() => confirmDelivery(attempt + 1), 1000 * attempt);
+      }
+    }
+  };
+  
+  confirmDelivery();
   
   // Default notification for iOS Safari PWA
   let title = 'New Chat Message';
@@ -84,38 +99,58 @@ self.addEventListener('push', (event) => {
     console.log('🔔 No payload data - showing default notification');
   }
 
-  // iOS Safari PWA requires specific notification options
-  const options = {
+  // Production-grade notification with multiple fallback strategies
+  const baseOptions = {
     body: body,
-    tag: 'chat-message', // Prevents duplicate notifications
-    requireInteraction: true, // iOS needs this to show properly
-    silent: false, // Make sure it's not silent
-    // Don't include icon, badge, or complex data for iOS compatibility
+    tag: 'chat-message-' + Date.now(), // Unique tags prevent iOS grouping issues
+    requireInteraction: true, // iOS requirement
+    silent: false,
+    timestamp: Date.now()
   };
 
-  console.log('🔔 Showing notification:', title, options);
+  console.log('🔔 Production notification system:', title, baseOptions);
 
-  // Force show notification immediately - iOS Safari is very strict about timing
+  // Multi-tier fallback strategy for maximum reliability
+  const showNotificationWithFallbacks = async () => {
+    const strategies = [
+      // Strategy 1: Full notification with all options
+      () => self.registration.showNotification(title, baseOptions),
+      // Strategy 2: Minimal iOS-compatible notification
+      () => self.registration.showNotification(title, {
+        body: body,
+        requireInteraction: true
+      }),
+      // Strategy 3: Absolute fallback
+      () => self.registration.showNotification('New Message', {
+        body: 'Chat message received'
+      }),
+      // Strategy 4: Emergency fallback with just title
+      () => self.registration.showNotification('Blabb.me')
+    ];
+
+    for (let i = 0; i < strategies.length; i++) {
+      try {
+        console.log(`🔔 Attempting notification strategy ${i + 1}...`);
+        await strategies[i]();
+        console.log(`✅ NOTIFICATION SUCCESS on strategy ${i + 1}`);
+        return;
+      } catch (error) {
+        console.error(`❌ Strategy ${i + 1} failed:`, error);
+        if (i === strategies.length - 1) {
+          console.error('💥 ALL NOTIFICATION STRATEGIES FAILED');
+          throw error;
+        }
+      }
+    }
+  };
+
   event.waitUntil(
-    Promise.resolve()
+    showNotificationWithFallbacks()
       .then(() => {
-        console.log('🔔 About to call showNotification...');
-        return self.registration.showNotification(title, options);
+        console.log('🎉 PRODUCTION NOTIFICATION COMPLETED SUCCESSFULLY');
       })
-      .then(() => {
-        console.log('✅ NOTIFICATION DISPLAYED SUCCESSFULLY');
-      })
-      .catch((error) => {
-        console.error('❌ NOTIFICATION FAILED:', error);
-        // iOS fallback - absolutely minimal notification
-        return self.registration.showNotification('Chat Message', {
-          body: 'New message received',
-          requireInteraction: true
-        }).then(() => {
-          console.log('✅ FALLBACK NOTIFICATION SHOWN');
-        }).catch((fallbackError) => {
-          console.error('💥 EVEN FALLBACK FAILED:', fallbackError);
-        });
+      .catch((finalError) => {
+        console.error('💀 CRITICAL: All notification fallbacks exhausted:', finalError);
       })
   );
 });
