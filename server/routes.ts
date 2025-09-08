@@ -949,8 +949,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (visibilitySocketInfo?.sessionId) {
               const session = userSessions.get(visibilitySocketInfo.sessionId);
               if (session) {
-                session.isAppVisible = message.visible;
-                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${session.isAppVisible})`);
+                (session as any).isAppVisible = message.visible;
+                console.log(`📱 App visibility for ${visibilitySocketInfo.sessionId}: ${message.visible ? 'foreground' : 'background'} (set to: ${(session as any).isAppVisible})`);
               } else {
                 console.log(`❌ Session not found for visibility update: ${visibilitySocketInfo.sessionId}`);
               }
@@ -1369,31 +1369,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       userSessions.forEach((session) => {
         if (session.roomId === roomId && session.pushSubscription) {
           const isConnected = connectedSessionIds.has(session.sessionId);
-          const isAppBackgrounded = session.isAppVisible === false;
+          const isAppBackgrounded = (session as any).isAppVisible === false;
           
           // Send push if user is disconnected OR if connected but app is backgrounded
           if (!isConnected || isAppBackgrounded) {
-            console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${session.isAppVisible}`);
+            console.log(`✅ Adding session ${session.sessionId} to push list: disconnected=${!isConnected}, backgrounded=${isAppBackgrounded}, visible=${(session as any).isAppVisible}`);
             disconnectedSessions.push(session);
           }
         }
       });
 
+      // Clean up old disconnected sessions (older than 2 minutes)
+      const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
+      
       console.log('🔍 Checking push subscriptions for room:', roomId);
       console.log('📊 Total sessions:', userSessions.size);
       console.log('🔗 Connected session IDs:', Array.from(connectedSessionIds));
-      
-      // Clean up old disconnected sessions (older than 2 minutes)
-      const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
       console.log('⏰ Current time:', new Date().toISOString());
       console.log('⏰ Two minutes ago:', new Date(twoMinutesAgo).toISOString());
+      
       const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
       
       // Remove old disconnected sessions
       for (const session of roomSessions) {
         if (!connectedSessionIds.has(session.sessionId)) {
           // Check if session has been disconnected for more than 2 minutes
-          const lastActivity = session.lastActivity || session.joinedAt || Date.now();
+          const lastActivity = (session as any).lastActivity || (session as any).joinedAt || Date.now();
           console.log(`🕐 Session ${session.sessionId} (${session.nickname}): lastActivity=${new Date(lastActivity).toISOString()}, disconnected for ${Math.floor((Date.now() - lastActivity) / 1000)}s`);
           if (lastActivity < twoMinutesAgo) {
             console.log(`🗑️ Cleaning up old session: ${session.sessionId} (${session.nickname})`);
@@ -1419,7 +1420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nickname: s.nickname,
         hasPushSub: !!s.pushSubscription,
         isConnected: connectedSessionIds.has(s.sessionId),
-        isAppVisible: s.isAppVisible
+        isAppVisible: (s as any).isAppVisible
       })));
       
       console.log('📱 Sessions needing push notifications (disconnected OR backgrounded):', disconnectedSessions.length);
