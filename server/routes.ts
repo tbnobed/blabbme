@@ -303,11 +303,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const session = userSessions.get(sessionId);
+    console.log('🔍 Push registration attempt for session:', sessionId);
+    console.log('🔍 Session data:', session ? { roomId: session.roomId, nickname: session.nickname } : 'NOT FOUND');
+    
     if (session) {
       // CRITICAL: Only allow push registration if user is currently in a room
       if (!session.roomId) {
         console.log('❌ Push registration BLOCKED - user not in any room. Session:', sessionId);
         console.log('🏠 User must be in a room to register for notifications');
+        console.log('🔍 Session object exists but roomId is:', session.roomId);
         return res.status(400).json({ error: 'Must be in a room to register for push notifications' });
       }
       
@@ -1218,8 +1222,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           // CRITICAL: Ensure session has current room data for push registration
-          session.roomId = session.roomId; // Ensure it's properly set
-          session.nickname = session.nickname;
+          // The session.roomId should already be correct from the stored session
+          if (!session.roomId) {
+            console.log('🚨 ERROR: Session roomId is missing during restoration!', sessionId);
+          }
           session.lastActivity = new Date();
           
           const messages = await storage.getMessagesByRoom(session.roomId);
