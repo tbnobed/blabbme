@@ -905,7 +905,18 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           <Button
             variant="outline"
             size="sm"
-            onClick={toggleNotifications}
+            onClick={async () => {
+              console.log('🔘 Toggle clicked - checking server state first...');
+              const serverState = await checkServerSubscriptionStatus();
+              console.log('🔘 Server has subscription:', serverState);
+              console.log('🔘 Local enabled state:', notificationsEnabled);
+              if (serverState !== notificationsEnabled) {
+                console.log('🔘 MISMATCH! Fixing toggle state to match server');
+                setNotificationsEnabled(serverState);
+                localStorage.setItem('notificationsEnabled', serverState.toString());
+              }
+              toggleNotifications();
+            }}
             className={`text-xs px-2 py-1 ${
               notificationsEnabled 
                 ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
