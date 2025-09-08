@@ -1494,7 +1494,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Send push notifications to disconnected users if this is a message
     if (data.type === 'new-message') {
-      sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
+      // Small delay to ensure visibility states are captured before push check
+      setTimeout(() => {
+        sendPushNotificationsToRoom(roomId, data, connectedSessionIds);
+      }, 200); // 200ms delay to capture any recent visibility changes
     }
     
     console.log('Broadcasted to', broadcastCount, 'clients in room', roomId);
