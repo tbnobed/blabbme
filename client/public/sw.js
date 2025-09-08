@@ -45,6 +45,9 @@ self.addEventListener('fetch', (event) => {
 // Push notification event
 self.addEventListener('push', (event) => {
   console.log('🔔 Push event received in service worker:', event);
+  console.log('🔔 Event data available:', !!event.data);
+  console.log('🔔 Registration active:', !!self.registration);
+  console.log('🔔 Show notification available:', 'showNotification' in self.registration);
   
   let title = 'Blabb.me';
   let body = 'New message in chat';
@@ -98,13 +101,25 @@ self.addEventListener('push', (event) => {
     ]
   };
 
+  console.log('🎯 About to show notification with options:', options);
+  
   event.waitUntil(
     self.registration.showNotification(title, options)
       .then(() => {
         console.log('✅ Notification shown successfully');
+        console.log('📱 Notification title:', title);
+        console.log('📱 Notification body:', options.body);
       })
       .catch((error) => {
         console.error('❌ Error showing notification:', error);
+        console.error('❌ Error details:', error.name, error.message);
+        console.error('❌ Registration state:', self.registration.active);
+        
+        // Try a simple fallback notification
+        return self.registration.showNotification('Blabb.me', {
+          body: 'New message in chat',
+          icon: '/icon-192.png'
+        });
       })
   );
 });
