@@ -55,6 +55,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isSettingUpPush, setIsSettingUpPush] = useState(false);
+  const [pushRegisteredForRoom, setPushRegisteredForRoom] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -510,6 +511,10 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             setRoom(data.room || null);
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
+            // Reset push registration state when joining different room
+            if (data.room && pushRegisteredForRoom !== data.room.id) {
+              setPushRegisteredForRoom(null);
+            }
             break;
             
           case 'welcome-message':
@@ -526,7 +531,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             }
             
             // CRITICAL: Use welcome message as reliable trigger for push registration
-            if (data.roomId) {
+            // But only register once per room to avoid spam
+            if (data.roomId && pushRegisteredForRoom !== data.roomId) {
               console.log('📱 Welcome message: Triggering push registration for room:', data.roomId);
               console.log('🔍 CLIENT: About to call registerPushForRoom with:', data.roomId);
               console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
@@ -547,6 +553,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
                 try {
                   registerPushForRoom(data.roomId).then(() => {
                     console.log('✅ CLIENT: registerPushForRoom call completed successfully');
+                    setPushRegisteredForRoom(data.roomId); // Mark as registered
                     toast({
                       title: 'Notifications enabled!',
                       description: 'You\'ll receive notifications when the app is in the background',
@@ -568,6 +575,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
                   });
                 }
               }, 1000);
+            } else if (data.roomId && pushRegisteredForRoom === data.roomId) {
+              console.log('🔄 CLIENT: Push already registered for room:', data.roomId, '- skipping duplicate registration');
             } else {
               console.error('❌ CLIENT: No roomId in welcome message data:', data);
             }
