@@ -72,7 +72,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       });
       console.log('🔕 CLIENT: Push unsubscribe complete');
       
-      // Step 2: Send explicit leave-room message to server
+      // Step 2: Call HTTP endpoint to completely clear session and cookie
+      console.log('🧹 CLIENT: Calling HTTP leave-room endpoint for clean slate');
+      await fetch('/api/leave-room', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      console.log('🧹 CLIENT: HTTP leave-room complete - session cleared');
+      
+      // Step 3: Send explicit leave-room message to server
       if (socket && socket.readyState === WebSocket.OPEN) {
         console.log('🚨 CLIENT: Sending leave-room message to server');
         socket.send(JSON.stringify({
@@ -81,7 +89,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
         }));
       }
       
-      // Step 3: Clear client-side session state
+      // Step 4: Clear client-side session state
       console.log('🧹 CLIENT: Clearing client-side session state');
       updateSession(); // Clear roomId and nickname
       

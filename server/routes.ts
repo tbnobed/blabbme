@@ -596,6 +596,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leave room endpoint - clears session completely for clean slate
+  app.post("/api/leave-room", async (req, res) => {
+    try {
+      const sessionId = req.cookies.chat_session;
+      
+      if (sessionId && userSessions.has(sessionId)) {
+        console.log('🧹 HTTP LEAVE: Completely deleting session and clearing cookie:', sessionId);
+        
+        // Clear push subscription
+        const session = userSessions.get(sessionId);
+        if (session?.pushSubscription) {
+          console.log('🔕 Clearing push subscription for explicit leave');
+        }
+        
+        // Delete session from memory
+        userSessions.delete(sessionId);
+        
+        // Clear database participants 
+        const allRooms = await storage.getAllActiveRooms();
+        let removedCount = 0;
+        for (const room of allRooms) {
+          const participants = await storage.getParticipantsByRoom(room.id);
+          for (const participant of participants) {
+            if (participant.socketId.includes(sessionId)) {
+              await storage.removeParticipant(room.id, participant.socketId);
+              removedCount++;
+            }
+          }
+        }
+        console.log('🧹 HTTP LEAVE: Removed', removedCount, 'database entries');
+      }
+      
+      // Clear the HTTP cookie for clean slate
+      res.clearCookie('chat_session');
+      res.json({ success: true, message: "Left room and cleared session" });
+    } catch (error) {
+      console.error('❌ Leave room error:', error);
+      res.status(500).json({ error: "Failed to leave room" });
+    }
+  });
+
   // Session management endpoints
   app.post("/api/session/create", async (req, res) => {
     try {
@@ -1539,15 +1580,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Only clear session and broadcast if this was an explicit leave (not a disconnection/refresh)
     if (isExplicit && socketInfo.sessionId && userSessions.has(socketInfo.sessionId)) {
       const session = userSessions.get(socketInfo.sessionId)!;
-      session.roomId = undefined;
-      session.nickname = undefined;
-      session.lastActivity = new Date();
       
       // CRITICAL: Clear push subscription when explicitly leaving room
       if (session.pushSubscription) {
         console.log('🔕 Clearing push subscription for user leaving room:', socketInfo.roomId);
         session.pushSubscription = undefined;
       }
+      
+      // CRITICAL: Completely delete the session for clean slate
+      console.log('🧹 EXPLICIT LEAVE: Completely deleting session from memory:', socketInfo.sessionId);
+      userSessions.delete(socketInfo.sessionId);
 
       // CRITICAL: Remove ALL participant data from database to prevent session restoration
       console.log('🧹 EXPLICIT LEAVE: Removing all participant data for session:', socketInfo.sessionId);

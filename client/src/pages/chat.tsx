@@ -98,6 +98,18 @@ export default function Chat({ params }: ChatPageProps) {
       console.error('❌ Failed to unsubscribe from push notifications:', error);
     }
     
+    // Call HTTP endpoint to completely clear session and cookie
+    try {
+      console.log('🧹 CLIENT CHAT: Calling HTTP leave-room endpoint for clean slate');
+      await fetch('/api/leave-room', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      console.log('🧹 CLIENT CHAT: HTTP leave-room complete - session cleared');
+    } catch (error) {
+      console.log('🧹 CLIENT CHAT: HTTP leave-room failed:', error);
+    }
+    
     if (socket) {
       // Send explicit leave message
       socket.send(JSON.stringify({ 
