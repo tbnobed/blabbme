@@ -740,10 +740,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
                     ? data.message.content.substring(0, 50) + '...'
                     : data.message.content;
                   
-                  // Always play sound for new messages (when tab isn't focused)
-                  if (!document.hasFocus()) {
-                    playNotificationSound();
-                  }
+                  // Always play sound for new messages (regardless of tab focus)
+                  playNotificationSound();
                   
                   // Show browser notification if enabled
                   console.log('Triggering notification for new message from:', data.message.nickname);
