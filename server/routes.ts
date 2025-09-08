@@ -347,9 +347,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const session = userSessions.get(sessionId);
-      if (!session?.pushSubscription) {
-        console.log(`❌ No push subscription found for session: ${sessionId}`);
-        return res.status(400).json({ error: 'No push subscription found' });
+      if (!session) {
+        console.log(`❌ No session found for: ${sessionId}`);
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      if (!session.pushSubscription) {
+        console.log(`❌ No push subscription found for session: ${sessionId} in room: ${session.roomId}`);
+        console.log(`📋 Session exists but hasPushSub: false - need to register first`);
+        return res.status(400).json({ error: 'No push subscription found - device needs to register first' });
       }
 
       // Send a silent test notification
