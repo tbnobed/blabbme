@@ -896,10 +896,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cleanup expired rooms every 5 minutes - TEMPORARILY DISABLED FOR DEBUGGING
-  // setInterval(async () => {
-  //   await storage.cleanupExpiredRooms();
-  // }, 5 * 60 * 1000);
+  // Cleanup expired rooms every 5 minutes
+  setInterval(async () => {
+    try {
+      await storage.cleanupExpiredRooms();
+      console.log('🧹 Expired rooms cleanup completed');
+    } catch (error) {
+      console.error('❌ Error cleaning up expired rooms:', error);
+    }
+  }, 5 * 60 * 1000);
+
+  // Run immediate cleanup on startup to clear any existing expired rooms
+  setTimeout(async () => {
+    try {
+      console.log('🧹 Running initial expired rooms cleanup...');
+      await storage.cleanupExpiredRooms();
+      console.log('✅ Initial expired rooms cleanup completed');
+    } catch (error) {
+      console.error('❌ Error in initial cleanup:', error);
+    }
+  }, 5000); // Run after 5 seconds to ensure everything is initialized
 
 
 
