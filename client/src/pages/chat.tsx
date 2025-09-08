@@ -174,6 +174,7 @@ export default function Chat({ params }: ChatPageProps) {
       nickname={nickname}
       socket={socket}
       onLeaveRoom={handleLeaveRoom}
+      updateSession={updateSession}
     />
   );
 }

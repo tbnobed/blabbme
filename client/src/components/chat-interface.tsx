@@ -32,9 +32,10 @@ interface ChatInterfaceProps {
   nickname: string;
   socket: WebSocket | null;
   onLeaveRoom: () => void;
+  updateSession: (roomId?: string, nickname?: string) => void;
 }
 
-export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }: ChatInterfaceProps) {
+export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, updateSession }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [room, setRoom] = useState<Room | null>(null);
@@ -55,6 +56,44 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // CRITICAL: Proper leave room function with session cleanup
+  const handleLeaveRoom = async () => {
+    console.log('🚨 CLIENT: Starting explicit leave room process');
+    
+    try {
+      // Step 1: Unsubscribe from push notifications  
+      console.log('🔕 CLIENT: Unsubscribing from push notifications...');
+      await fetch('/api/push-unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      console.log('🔕 CLIENT: Push unsubscribe complete');
+      
+      // Step 2: Send explicit leave-room message to server
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        console.log('🚨 CLIENT: Sending leave-room message to server');
+        socket.send(JSON.stringify({
+          type: 'leave-room',
+          explicit: true
+        }));
+      }
+      
+      // Step 3: Clear client-side session state
+      console.log('🧹 CLIENT: Clearing client-side session state');
+      updateSession(); // Clear roomId and nickname
+      
+      // Step 4: Navigate to home page
+      console.log('🏠 CLIENT: Navigating to home page');
+      onLeaveRoom();
+      
+    } catch (error) {
+      console.error('🚨 CLIENT: Error during leave room:', error);
+      // Still try to navigate even if cleanup failed
+      onLeaveRoom();
+    }
   };
 
   // Mobile-compatible push notification setup with detailed logging
@@ -428,6 +467,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         switch (data.type) {
           case 'room-joined':
           case 'session-restored':
+            console.log('🔥 CLIENT: Received room join/restore data:', data);
             setRoom(data.room || null);
             setMessages(data.messages || []);
             setParticipants(data.participants || []);
@@ -643,7 +683,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             <Button
               variant="ghost"
               size="sm"
-              onClick={onLeaveRoom}
+              onClick={handleLeaveRoom}
               className="text-xs text-red-600 hover:text-red-800"
             >
               Leave Room
