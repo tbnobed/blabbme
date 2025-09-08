@@ -512,14 +512,10 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
             
             // If room not found, clear session and redirect to home page
             if (data.message && data.message.includes('Room not found')) {
-              console.log('🏠 Room expired/not found - clearing session and redirecting to home');
-              console.log('🏠 Calling updateSession() to clear roomId and nickname');
-              
-              // Clear the expired room from session
-              updateSession(); // Call without parameters to clear roomId and nickname
-              
+              console.log('🏠 Room expired/not found - server already cleared session, redirecting to home');
               console.log('🏠 Setting timeout to call onLeaveRoom()');
-              // Use the proper leave room function to handle routing
+              
+              // Server already cleared the session, just redirect to home
               setTimeout(() => {
                 console.log('🏠 EXECUTING onLeaveRoom() now');
                 onLeaveRoom();

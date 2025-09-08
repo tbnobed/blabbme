@@ -1241,16 +1241,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!room || !room.isActive) {
       console.log('JOIN ROOM: Room not found or not active');
       
-      // CRITICAL: Clear server-side session data to prevent infinite rejoin loop
+      // CRITICAL: Clear all traces to prevent infinite rejoin loop
       if (sessionId) {
         console.log('🧹 Clearing expired room from server session:', sessionId);
+        
+        // Clear memory session
         const session = userSessions.get(sessionId);
         if (session) {
           session.roomId = undefined;
           session.nickname = undefined;
-          console.log('🧹 Server session cleared - no more auto-rejoin');
-        } else {
-          console.log('🧹 No server session found to clear');
+          console.log('🧹 Server session cleared from memory');
+        }
+        
+        // CRITICAL: Also remove participant from database to prevent session restoration
+        try {
+          const allRooms = await storage.getAllActiveRooms();
+          for (const room of allRooms) {
+            await storage.removeParticipantBySession(room.id, sessionId);
+          }
+          console.log('🧹 Database participant data cleared - no more session restoration');
+        } catch (error) {
+          console.log('🧹 Error clearing database participant data:', error);
         }
       }
       
