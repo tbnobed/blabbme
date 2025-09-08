@@ -1360,12 +1360,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send to all disconnected users with push subscriptions
       const pushPromises = disconnectedSessions.map(async (session) => {
         try {
-          await webpush.sendNotification(session.pushSubscription!, payload);
-          console.log('Push notification sent to session:', session.sessionId);
-        } catch (error) {
-          console.error('Failed to send push notification:', error);
+          console.log('🔔 Attempting push to session:', session.sessionId);
+          console.log('🔔 Push subscription endpoint:', session.pushSubscription?.endpoint?.substring(0, 50) + '...');
+          
+          const result = await webpush.sendNotification(session.pushSubscription!, payload);
+          console.log('✅ Push notification sent to session:', session.sessionId);
+          console.log('🔔 WebPush response:', result);
+        } catch (error: any) {
+          console.error('❌ Failed to send push notification to session:', session.sessionId);
+          console.error('❌ Push error details:', error.message);
+          console.error('❌ Push error status:', error.statusCode);
+          console.error('❌ Push error body:', error.body);
+          
           // Remove invalid subscription
           if (session.pushSubscription) {
+            console.log('🔕 Removing invalid push subscription for session:', session.sessionId);
             session.pushSubscription = undefined;
           }
         }
