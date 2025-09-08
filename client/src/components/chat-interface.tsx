@@ -503,12 +503,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               console.log('🔍 CLIENT: About to call registerPushForRoom with:', data.roomId);
               console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
               
-              try {
-                await registerPushForRoom(data.roomId);
+              registerPushForRoom(data.roomId).then(() => {
                 console.log('✅ CLIENT: registerPushForRoom call completed');
-              } catch (error) {
+              }).catch((error) => {
                 console.error('❌ CLIENT: registerPushForRoom failed:', error);
-              }
+              });
             } else {
               console.error('❌ CLIENT: No roomId in welcome message data:', data);
             }
