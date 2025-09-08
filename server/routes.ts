@@ -1330,9 +1330,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📊 Total sessions:', userSessions.size);
       console.log('🔗 Connected session IDs:', Array.from(connectedSessionIds));
       
-      // Debug all sessions in this room
+      // Clean up old disconnected sessions (older than 2 minutes)
+      const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
       const roomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
-      console.log('🏠 Sessions in room:', roomSessions.map(s => ({
+      
+      // Remove old disconnected sessions
+      for (const session of roomSessions) {
+        if (!connectedSessionIds.has(session.sessionId)) {
+          // Check if session has been disconnected for more than 5 minutes
+          const lastActivity = session.lastActivity || session.joinedAt || Date.now();
+          if (lastActivity < twoMinutesAgo) {
+            console.log(`🗑️ Cleaning up old session: ${session.sessionId} (${session.nickname})`);
+            userSessions.delete(session.sessionId);
+            // Remove from database participants as well
+            try {
+              const participants = await storage.getParticipantsByRoom(roomId);
+              const participantToRemove = participants.find(p => p.socketId.includes(session.sessionId));
+              if (participantToRemove) {
+                await storage.removeParticipant(roomId, participantToRemove.socketId);
+              }
+            } catch (error) {
+              console.error('Error removing old participant:', error);
+            }
+          }
+        }
+      }
+      
+      // Get updated room sessions after cleanup
+      const activeRoomSessions = Array.from(userSessions.values()).filter(s => s.roomId === roomId);
+      console.log('🏠 Sessions in room:', activeRoomSessions.map(s => ({
         sessionId: s.sessionId,
         nickname: s.nickname,
         hasPushSub: !!s.pushSubscription,
