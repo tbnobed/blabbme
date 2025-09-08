@@ -235,10 +235,28 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     }
   };
 
-  // Request notification permission on mount
+  // Force service worker update and request notification permission
   useEffect(() => {
+    const forceServiceWorkerUpdate = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          console.log('🔄 Force updating service worker...');
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            await registration.update();
+            console.log('✅ Service worker updated');
+          }
+        } catch (error) {
+          console.log('❌ Service worker update failed:', error);
+        }
+      }
+    };
+    
     const requestPermissions = async () => {
       try {
+        // Force service worker update first
+        await forceServiceWorkerUpdate();
+        
         console.log('🔔 Starting notification permission request...');
         if (!('Notification' in window)) {
           console.log('❌ Notifications not supported');
