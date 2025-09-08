@@ -1240,7 +1240,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!room || !room.isActive) {
       console.log('JOIN ROOM: Room not found or not active');
-      ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+      const errorMessage = { type: 'error', message: 'Room not found' };
+      console.log('🚨 SENDING ERROR MESSAGE:', errorMessage);
+      ws.send(JSON.stringify(errorMessage));
+      console.log('🚨 ERROR MESSAGE SENT');
       return;
     }
 
