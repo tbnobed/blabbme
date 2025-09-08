@@ -503,11 +503,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               console.log('🔍 CLIENT: About to call registerPushForRoom with:', data.roomId);
               console.log('🔍 CLIENT: Notification permission before call:', Notification.permission);
               
-              registerPushForRoom(data.roomId).then(() => {
-                console.log('✅ CLIENT: registerPushForRoom call completed');
-              }).catch((error) => {
-                console.error('❌ CLIENT: registerPushForRoom failed:', error);
-              });
+              // Add delay to ensure server session is updated before HTTP push registration request
+              console.log('⏳ DELAY: Waiting 500ms for session to update before push registration');
+              setTimeout(() => {
+                console.log('🚀 DELAY COMPLETE: Now calling registerPushForRoom after session update');
+                registerPushForRoom(data.roomId).then(() => {
+                  console.log('✅ CLIENT: registerPushForRoom call completed');
+                }).catch((error) => {
+                  console.error('❌ CLIENT: registerPushForRoom failed:', error);
+                });
+              }, 500);
             } else {
               console.error('❌ CLIENT: No roomId in welcome message data:', data);
             }
