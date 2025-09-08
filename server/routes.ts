@@ -273,9 +273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Subscribe to push notifications
   app.post('/api/push-subscribe', sessionLimiter, (req, res) => {
+    console.log('📨 Received push subscription request:', {
+      sessionId: req.body?.sessionId,
+      hasSubscription: !!req.body?.subscription,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      origin: req.headers.origin
+    });
+    
     const { sessionId, subscription } = req.body;
     
     if (!sessionId || !subscription) {
+      console.log('❌ Push subscription failed - missing data:', { sessionId: !!sessionId, subscription: !!subscription });
       return res.status(400).json({ error: 'sessionId and subscription required' });
     }
 
@@ -283,9 +291,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (session) {
       session.pushSubscription = subscription;
       console.log('🔔 Push subscription registered for session:', sessionId, 'in room:', session.roomId);
+      console.log('📱 Subscription endpoint:', subscription.endpoint?.substring(0, 50) + '...');
       res.json({ success: true });
     } else {
       console.log('❌ Push subscription failed - session not found:', sessionId);
+      console.log('📋 Available sessions:', Array.from(userSessions.keys()));
       res.status(404).json({ error: 'Session not found' });
     }
   });
