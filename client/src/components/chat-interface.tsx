@@ -277,6 +277,23 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           case 'participants-update':
             setParticipants(data.participants || []);
             break;
+            
+          case 'error':
+            // Handle server errors (like room not found)
+            toast({
+              title: "Room Error",
+              description: data.message || 'An error occurred',
+              variant: "destructive",
+            });
+            
+            // If room not found, redirect to home page after showing error
+            if (data.message && data.message.includes('Room not found')) {
+              console.log('Room not found - redirecting to home page');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            }
+            break;
         }
       } catch (error) {
         console.error('Error handling message:', error);
