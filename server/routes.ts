@@ -1025,7 +1025,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
         }
       } catch (error) {
-        console.error('WebSocket message error:', error);
+        console.error('❌ WebSocket message error:', error);
+        console.error('❌ Raw message that failed:', message);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
         ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
       }
     });
