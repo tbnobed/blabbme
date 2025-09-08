@@ -187,21 +187,36 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('📱 Is Safari:', /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent));
         console.log('📱 Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
         console.log('📱 PWA installed:', window.matchMedia('(display-mode: standalone)').matches);
+        console.log('📱 Current permission state:', Notification.permission);
         
-        const permission = await Notification.requestPermission();
-        setNotificationsEnabled(permission === 'granted');
-        console.log('🔔 Notification permission:', permission);
-        
-        // Setup push notifications after permission is granted
-        if (permission === 'granted') {
-          console.log('✅ Permission granted, setting up push in 2 seconds...');
-          // Wait a bit for service worker to be ready
+        // Check if permission is already granted to avoid repeated requests
+        if (Notification.permission === 'granted') {
+          console.log('✅ Notifications already permitted, setting up push...');
+          setNotificationsEnabled(true);
           setTimeout(setupPushNotifications, 2000);
-        } else {
-          console.log('❌ Notification permission denied or not granted');
-          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            console.log('📱 iOS detected - notifications require PWA to be added to home screen first');
+          return;
+        }
+        
+        // Only request permission if not already denied
+        if (Notification.permission === 'default') {
+          console.log('🔔 Requesting notification permission...');
+          const permission = await Notification.requestPermission();
+          setNotificationsEnabled(permission === 'granted');
+          console.log('🔔 Notification permission result:', permission);
+          
+          // Setup push notifications after permission is granted
+          if (permission === 'granted') {
+            console.log('✅ Permission granted, setting up push in 2 seconds...');
+            setTimeout(setupPushNotifications, 2000);
+          } else {
+            console.log('❌ Notification permission denied or not granted');
+            if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+              console.log('📱 iOS detected - notifications require PWA to be added to home screen first');
+            }
           }
+        } else {
+          console.log('📱 Notification permission already denied, skipping request');
+          setNotificationsEnabled(false);
         }
       }
     };
