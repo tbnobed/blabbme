@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
 import QRModal from '@/components/qr-modal';
+import { Volume2, VolumeX, Share, LogOut } from 'lucide-react';
 
 interface Message {
   id: number;
@@ -761,7 +762,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
                   : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
               }`}
             >
-              {soundEnabled ? 'ON' : 'OFF'}
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
             
             <Button
@@ -770,7 +771,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               onClick={() => setShowQRModal(true)}
               className="text-xs"
             >
-              Share
+              <Share className="h-4 w-4" />
             </Button>
             
             <Button
@@ -779,7 +780,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               onClick={handleLeaveRoom}
               className="text-xs text-red-600 hover:text-red-800"
             >
-              Leave Room
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
