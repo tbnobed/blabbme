@@ -529,18 +529,15 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       return;
     }
 
-    // First check what the server thinks our current state is
+    // Check server state to determine current actual state
     const serverHasSubscription = await checkServerSubscriptionStatus();
     console.log('🔄 Toggle: local state =', notificationsEnabled, 'server state =', serverHasSubscription);
 
-    // If server state doesn't match local state, sync with server
-    if (serverHasSubscription !== notificationsEnabled) {
-      console.log('⚠️  States out of sync! Syncing to server state:', serverHasSubscription);
-      setNotificationsEnabled(serverHasSubscription);
-      localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
-    }
-
-    if (notificationsEnabled || serverHasSubscription) {
+    // Use server state as source of truth for current state
+    const actuallyEnabled = serverHasSubscription;
+    
+    if (actuallyEnabled) {
+      console.log('🔕 Disabling notifications...');
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
       
