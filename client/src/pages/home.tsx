@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { MessageCircle, Plus, Users, Zap, Shield, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useSession } from "@/hooks/use-session";
 import logoPath from "@assets/logo1_1752172738003.png";
 
 export default function Home() {
@@ -17,9 +18,23 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const { toast } = useToast();
+  const { session, isLoading } = useSession();
 
-  // Check for URL parameters to auto-create room
+  // Auto-rejoin stored room on app launch (BEFORE checking URL parameters)
   useEffect(() => {
+    if (!isLoading && session?.roomId && session?.nickname) {
+      console.log('🔄 Auto-rejoining stored room:', session.roomId, 'as', session.nickname);
+      setLocation(`/room/${session.roomId}?nickname=${encodeURIComponent(session.nickname)}`);
+      return; // Exit early - don't process URL parameters if auto-rejoining
+    }
+  }, [isLoading, session, setLocation]);
+
+  // Check for URL parameters to auto-create room (only if not auto-rejoining)
+  useEffect(() => {
+    if (isLoading || (session?.roomId && session?.nickname)) {
+      return; // Skip URL processing if still loading or auto-rejoining
+    }
+    
     const urlParams = new URLSearchParams(window.location.search);
     const createRoom = urlParams.get('create');
     const roomName = urlParams.get('name');
@@ -29,7 +44,7 @@ export default function Home() {
     if (createRoom === 'true') {
       handleUrlBasedRoomCreation(roomName, maxParticipants, nickname);
     }
-  }, []);
+  }, [isLoading, session]);
 
   // Environment variables for controlling landing page sections
   const showHeroDescription = import.meta.env.VITE_SHOW_HERO_DESCRIPTION !== 'false';
