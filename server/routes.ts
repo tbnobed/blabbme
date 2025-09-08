@@ -273,10 +273,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check current push subscription status
   app.get('/api/push-status', sessionLimiter, (req, res) => {
-    const sessionId = req.query.sessionId as string;
+    const sessionId = req.cookies.chat_session;
     
     if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId required' });
+      return res.status(400).json({ error: 'No session found' });
     }
 
     const session = userSessions.get(sessionId);
