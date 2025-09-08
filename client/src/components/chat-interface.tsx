@@ -291,51 +291,44 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestPermissions();
   }, []);
 
-  // Push registration ONLY when actively joining a room via WebSocket
-  useEffect(() => {
-    if (!socket || !roomId || !room) return; // Only register when we have active room data
-    
-    // Register push notifications for this specific room
-    const registerForRoom = async () => {
-      if (Notification.permission === 'granted') {
-        console.log('🏠 Registering push notifications for ACTIVE room:', roomId);
-        
-        // First unregister from any previous rooms
-        try {
-          await fetch('/api/push-unsubscribe', { method: 'POST' });
-          console.log('🔕 Unregistered from previous room');
-        } catch (error) {
-          console.log('🔕 No previous subscription to unregister');
-        }
-        
-        try {
-          await setupPushNotifications();
-          
-          // Verify registration with a test push after 2 seconds
-          setTimeout(async () => {
-            try {
-              console.log('🧪 Testing push notification registration...');
-              const response = await fetch(`/api/test-push-registration/${roomId}`, {
-                method: 'POST'
-              });
-              if (response.ok) {
-                console.log('✅ Push registration test successful');
-              } else {
-                console.log('❌ Push registration test failed, retrying...');
-                await setupPushNotifications();
-              }
-            } catch (error) {
-              console.error('❌ Push registration test error:', error);
-            }
-          }, 2000);
-        } catch (error) {
-          console.error('❌ Room push registration failed:', error);
-        }
+  // Helper function to register push notifications when actually joining a room
+  const registerPushForRoom = async (roomId: string) => {
+    if (Notification.permission === 'granted') {
+      console.log('🏠 Registering push notifications for JOINED room:', roomId);
+      
+      // First unregister from any previous rooms
+      try {
+        await fetch('/api/push-unsubscribe', { method: 'POST' });
+        console.log('🔕 Unregistered from previous room');
+      } catch (error) {
+        console.log('🔕 No previous subscription to unregister');
       }
-    };
-    
-    setTimeout(registerForRoom, 1000); // Register after socket is stable
-  }, [socket, roomId, room]);
+      
+      try {
+        await setupPushNotifications();
+        
+        // Verify registration with a test push after 2 seconds
+        setTimeout(async () => {
+          try {
+            console.log('🧪 Testing push notification registration...');
+            const response = await fetch(`/api/test-push-registration/${roomId}`, {
+              method: 'POST'
+            });
+            if (response.ok) {
+              console.log('✅ Push registration test successful');
+            } else {
+              console.log('❌ Push registration test failed, retrying...');
+              await setupPushNotifications();
+            }
+          } catch (error) {
+            console.error('❌ Push registration test error:', error);
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('❌ Room push registration failed:', error);
+      }
+    }
+  };
 
   // App resume/background detection for push re-registration
   useEffect(() => {
