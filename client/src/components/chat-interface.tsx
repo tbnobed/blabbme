@@ -328,6 +328,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   // Sync with server state on app load and whenever we need to check
   const syncWithServer = async () => {
+    // Don't sync if we're in the middle of a toggle operation
+    if (isTogglingRef.current) {
+      console.log('🚫 Skipping sync - toggle in progress');
+      return notificationsEnabled;
+    }
+    
     console.log('🔄 Syncing with server - checking subscription status...');
     
     // Always check server state first
@@ -338,8 +344,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     console.log('🔔 Current notification permission:', currentPermission);
     console.log('🔔 Local enabled state:', notificationsEnabled);
     
-    // Sync local state with server state
+    // Only sync if there's a real mismatch AND we're not in a recent toggle
     if (serverHasSubscription !== notificationsEnabled) {
+      // Check if user recently disabled - respect their choice for 30 seconds
+      const lastToggle = localStorage.getItem('lastToggleTime');
+      const timeSinceToggle = lastToggle ? Date.now() - parseInt(lastToggle) : Infinity;
+      
+      if (timeSinceToggle < 30000) {  // 30 seconds
+        console.log('🛡️  Recent toggle detected - not overriding user preference');
+        return notificationsEnabled;
+      }
+      
       console.log('⚠️  Server state differs from local! Syncing to server:', serverHasSubscription);
       setNotificationsEnabled(serverHasSubscription);
       localStorage.setItem('notificationsEnabled', serverHasSubscription.toString());
@@ -550,6 +565,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       isTogglingRef.current = true;
       setNotificationsEnabled(false);
       localStorage.setItem('notificationsEnabled', 'false');
+      localStorage.setItem('lastToggleTime', Date.now().toString());
       
       // Always try to unsubscribe from server first (most important)
       console.log('🔄 Notifying server to remove subscription...');
@@ -562,6 +578,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         
         if (response.ok) {
           console.log('✅ Server subscription removed successfully');
+          // Force state to stay disabled - don't let any sync logic override this
+          setTimeout(() => {
+            console.log('🔒 Enforcing disabled state after server success');
+            setNotificationsEnabled(false);
+            localStorage.setItem('notificationsEnabled', 'false');
+          }, 100);
         } else {
           const errorText = await response.text();
           console.error('❌ Server unsubscribe failed:', response.status, errorText);
@@ -621,6 +643,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           console.log('✅ Push setup completed successfully - enabling bell icon');
           setNotificationsEnabled(true);
           localStorage.setItem('notificationsEnabled', 'true');
+          localStorage.setItem('lastToggleTime', Date.now().toString());
           
           // Force a re-render to make sure UI updates
           setTimeout(() => {
@@ -656,8 +679,11 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       }
     }
     
-    // Reset toggle flag
-    isTogglingRef.current = false;
+    // Reset toggle flag after a delay to prevent sync logic interference
+    setTimeout(() => {
+      isTogglingRef.current = false;
+      console.log('🔓 Toggle process completed - unblocking notifications');
+    }, 500);
   };
 
   useEffect(() => {
