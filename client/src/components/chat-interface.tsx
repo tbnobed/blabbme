@@ -57,48 +57,72 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Simple push notification setup - always enabled
+  // Mobile-compatible push notification setup with detailed logging
   const setupPushNotifications = async () => {
     if (isSettingUpPush) return;
     
     setIsSettingUpPush(true);
     try {
+      console.log('🚀 Starting push notification setup...');
+      
+      // Step 1: Check service worker support
       if (!('serviceWorker' in navigator)) {
         console.log('❌ Service worker not supported');
         return;
       }
+      console.log('✅ Service worker supported');
 
+      // Step 2: Wait for service worker
+      console.log('⏳ Waiting for service worker ready...');
       const registration = await navigator.serviceWorker.ready;
+      console.log('✅ Service worker ready:', !!registration);
       
+      // Step 3: Check push manager
       if (!('PushManager' in window)) {
         console.log('❌ Push notifications not supported');
         return;
       }
+      console.log('✅ PushManager supported');
 
-      // Get VAPID public key
+      // Step 4: Get VAPID key
+      console.log('⏳ Fetching VAPID key...');
       const vapidResponse = await fetch('/api/vapid-public-key');
+      if (!vapidResponse.ok) {
+        throw new Error(`VAPID fetch failed: ${vapidResponse.status}`);
+      }
       const { publicKey } = await vapidResponse.json();
+      console.log('✅ VAPID key received:', publicKey.substring(0, 20) + '...');
       
-      // Convert VAPID key properly
+      // Step 5: Convert VAPID key
+      console.log('⏳ Converting VAPID key...');
       const convertedKey = urlBase64ToUint8Array(publicKey);
+      console.log('✅ VAPID key converted, length:', convertedKey.length);
       
-      // Subscribe to push notifications
+      // Step 6: Subscribe to push
+      console.log('⏳ Subscribing to push notifications...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
+      console.log('✅ Push subscription created:', !!subscription);
+      console.log('📱 Endpoint:', subscription.endpoint.substring(0, 50) + '...');
 
-      // Get current session ID
+      // Step 7: Get session ID
+      console.log('⏳ Getting session ID...');
       const sessionResponse = await fetch('/api/session/current');
+      if (!sessionResponse.ok) {
+        throw new Error(`Session fetch failed: ${sessionResponse.status}`);
+      }
       const sessionData = await sessionResponse.json();
+      console.log('✅ Session ID received:', sessionData.sessionId?.substring(0, 20) + '...');
       
       if (!sessionData.sessionId) {
-        console.log('❌ No session ID available for push registration');
-        return;
+        throw new Error('No session ID in response');
       }
 
-      // Send subscription to server with sessionId
-      await fetch('/api/push-subscribe', {
+      // Step 8: Send to server
+      console.log('⏳ Sending subscription to server...');
+      const subscribeResponse = await fetch('/api/push-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -106,10 +130,17 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           subscription: subscription.toJSON()
         })
       });
-
-      console.log('✅ Push notifications set up successfully');
+      
+      if (!subscribeResponse.ok) {
+        throw new Error(`Subscribe failed: ${subscribeResponse.status}`);
+      }
+      
+      const result = await subscribeResponse.json();
+      console.log('✅ Server response:', result);
+      console.log('🎉 Push notifications set up successfully!');
     } catch (error) {
-      console.log('❌ Push notification setup failed:', error);
+      console.error('💥 Push notification setup failed at step:', error.message);
+      console.error('💥 Full error:', error);
     } finally {
       setIsSettingUpPush(false);
     }
