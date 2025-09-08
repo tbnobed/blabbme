@@ -55,7 +55,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isSettingUpPush, setIsSettingUpPush] = useState(false);
-  const [pushRegisteredForRoom, setPushRegisteredForRoom] = useState<string | null>(null);
+  const [pushRegisteredForRoom, setPushRegisteredForRoom] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('pushRegisteredForRoom');
+  });
+  const [testPushSentForRoom, setTestPushSentForRoom] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('testPushSentForRoom');
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -377,23 +384,29 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       try {
         await setupPushNotifications();
         
-        // Verify registration with a test push after 2 seconds
-        setTimeout(async () => {
-          try {
-            console.log('🧪 Testing push notification registration...');
-            const response = await fetch(`/api/test-push-registration/${roomId}`, {
-              method: 'POST'
-            });
-            if (response.ok) {
-              console.log('✅ Push registration test successful');
-            } else {
-              console.log('❌ Push registration test failed, retrying...');
-              await setupPushNotifications();
+        // Verify registration with a test push after 2 seconds (but only once per room)
+        if (testPushSentForRoom !== roomId) {
+          setTimeout(async () => {
+            try {
+              console.log('🧪 Testing push notification registration...');
+              const response = await fetch(`/api/test-push-registration/${roomId}`, {
+                method: 'POST'
+              });
+              if (response.ok) {
+                console.log('✅ Push registration test successful');
+                setTestPushSentForRoom(roomId);
+                localStorage.setItem('testPushSentForRoom', roomId);
+              } else {
+                console.log('❌ Push registration test failed, retrying...');
+                await setupPushNotifications();
+              }
+            } catch (error) {
+              console.error('❌ Push registration test error:', error);
             }
-          } catch (error) {
-            console.error('❌ Push registration test error:', error);
-          }
-        }, 2000);
+          }, 2000);
+        } else {
+          console.log('🔄 Test push already sent for room:', roomId, '- skipping');
+        }
       } catch (error) {
         console.error('❌ Room push registration failed:', error);
       }
@@ -514,6 +527,9 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
             // Reset push registration state when joining different room
             if (data.room && pushRegisteredForRoom !== data.room.id) {
               setPushRegisteredForRoom(null);
+              localStorage.removeItem('pushRegisteredForRoom');
+              setTestPushSentForRoom(null);
+              localStorage.removeItem('testPushSentForRoom');
             }
             break;
             
@@ -554,6 +570,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
                   registerPushForRoom(data.roomId).then(() => {
                     console.log('✅ CLIENT: registerPushForRoom call completed successfully');
                     setPushRegisteredForRoom(data.roomId); // Mark as registered
+                    localStorage.setItem('pushRegisteredForRoom', data.roomId); // Persist to localStorage
                     toast({
                       title: 'Notifications enabled!',
                       description: 'You\'ll receive notifications when the app is in the background',
