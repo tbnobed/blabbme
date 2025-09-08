@@ -514,20 +514,32 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
               console.log('⏳ DELAY: Waiting 1000ms for session to update before push registration');
               setTimeout(() => {
                 console.log('🚀 DELAY COMPLETE: Now calling registerPushForRoom after session update');
-                registerPushForRoom(data.roomId).then(() => {
-                  console.log('✅ CLIENT: registerPushForRoom call completed');
-                  toast({
-                    title: 'Notifications enabled!',
-                    description: 'You\'ll receive notifications when the app is in the background',
+                console.log('🔍 DELAY: About to call registerPushForRoom with roomId:', data.roomId);
+                console.log('🔍 DELAY: Current Notification.permission:', Notification.permission);
+                
+                try {
+                  registerPushForRoom(data.roomId).then(() => {
+                    console.log('✅ CLIENT: registerPushForRoom call completed successfully');
+                    toast({
+                      title: 'Notifications enabled!',
+                      description: 'You\'ll receive notifications when the app is in the background',
+                    });
+                  }).catch((error) => {
+                    console.error('❌ CLIENT: registerPushForRoom failed in promise:', error);
+                    toast({
+                      title: 'Notification setup failed',
+                      description: 'Push notifications could not be enabled',
+                      variant: 'destructive',
+                    });
                   });
-                }).catch((error) => {
-                  console.error('❌ CLIENT: registerPushForRoom failed:', error);
+                } catch (error) {
+                  console.error('❌ CLIENT: registerPushForRoom failed synchronously:', error);
                   toast({
                     title: 'Notification setup failed',
                     description: 'Push notifications could not be enabled',
                     variant: 'destructive',
                   });
-                });
+                }
               }, 1000);
             } else {
               console.error('❌ CLIENT: No roomId in welcome message data:', data);
