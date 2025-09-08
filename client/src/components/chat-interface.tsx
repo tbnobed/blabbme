@@ -176,13 +176,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
         console.log('📱 Session ID for registration:', sessionData.sessionId);
         console.log('📱 Subscription endpoint:', subscription.endpoint);
         
-        // Send subscription to server - server expects the subscription directly
+        // Send subscription to server - server expects sessionId and subscription
         const subscribeResponse = await fetch('/api/push-subscribe', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(subscription.toJSON()),
+          body: JSON.stringify({
+            sessionId: sessionData.sessionId,
+            subscription: subscription.toJSON()
+          }),
           credentials: 'include' // Important for session-based auth
         });
         
