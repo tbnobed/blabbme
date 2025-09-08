@@ -1033,37 +1033,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    // Transfer push subscription from any old sessions with same nickname in same room
+    // Clean up any old disconnected sessions from this user to prevent duplicates
     if (sessionId && nickname && roomId) {
+      const sessionsToRemove = [];
       for (const [oldSessionId, oldSession] of userSessions.entries()) {
         if (oldSessionId !== sessionId && 
             oldSession.roomId === roomId && 
-            oldSession.nickname === nickname && 
-            oldSession.pushSubscription) {
+            oldSession.nickname && 
+            (oldSession.nickname === nickname || 
+             oldSession.nickname.startsWith(nickname.slice(0, -1)) || 
+             nickname.startsWith(oldSession.nickname.slice(0, -1)))) {
           
-          console.log('🔄 Transferring push subscription from old session:', oldSessionId, 'to new session:', sessionId);
+          // Check if this old session is actually disconnected
+          const oldSocketStillConnected = Array.from(socketData.entries())
+            .some(([socket, data]) => data.sessionId === oldSessionId);
           
-          // Get or create current session
-          let currentSession = userSessions.get(sessionId);
-          if (!currentSession) {
-            currentSession = {
-              sessionId,
-              roomId,
-              nickname,
-              lastActivity: new Date(),
-            };
-            userSessions.set(sessionId, currentSession);
+          if (!oldSocketStillConnected) {
+            console.log('🗑️ Removing old disconnected session:', oldSessionId, 'for user:', oldSession.nickname);
+            sessionsToRemove.push(oldSessionId);
           }
-          
-          // Transfer push subscription
-          currentSession.pushSubscription = oldSession.pushSubscription;
-          console.log('✅ Push subscription transferred successfully');
-          
-          // Clean up old session
-          userSessions.delete(oldSessionId);
-          console.log('🗑️ Removed old session:', oldSessionId);
-          break;
         }
+      }
+      
+      // Remove old sessions
+      for (const sessionId of sessionsToRemove) {
+        userSessions.delete(sessionId);
       }
     }
 

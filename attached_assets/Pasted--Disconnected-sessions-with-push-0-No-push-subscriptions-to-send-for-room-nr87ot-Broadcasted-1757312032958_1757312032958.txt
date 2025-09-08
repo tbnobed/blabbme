@@ -1,0 +1,58 @@
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: nr87ot
+Broadcasted to 3 clients in room nr87ot
+WebSocket connection established
+Received WebSocket message: { type: 'init-session', sessionId: 'session_1757301401379_32xsbhm' }
+handleInitSession: sessionId: session_1757301401379_32xsbhm session found: true
+Received WebSocket message: {
+  type: 'join-room',
+  roomId: 'nr87ot',
+  nickname: 'Desktop',
+  sessionId: 'session_1757301401379_32xsbhm'
+}
+Handling join-room for: nr87ot Desktop
+JOIN ROOM: Looking for room: nr87ot with nickname: Desktop sessionId: session_1757301401379_32xsbhm
+JOIN ROOM: Found room: {
+  id: 'nr87ot',
+  name: 'Quick Chat Room',
+  createdBy: 'anonymous',
+  maxParticipants: 10,
+  expiresAt: 2025-09-08T06:30:22.672Z,
+  createdAt: 2025-09-08T06:00:23.765Z,
+  isActive: true
+}
+Checking ban status for: {
+  roomId: 'nr87ot',
+  sessionId: 'session_1757301401379_32xsbhm',
+  nickname: 'Desktop'
+}
+Ban check result: false
+JOIN ROOM: User already in room via session restoration, skipping duplicate join
+Session restoration: Updated participant socket ID
+Sending session-restored message to client, room: nr87ot nickname: Desktop
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'send-message', content: 'hji' }
+Broadcasting new message from Desktop to room nr87ot
+Broadcasting to room: nr87ot data type: new-message
+🔍 Checking push subscriptions for room: nr87ot
+📊 Total sessions: 2
+🔗 Connected session IDs: [ 'session_1757301401379_32xsbhm', 'session_1757311352111_ubzbruw' ]
+🏠 Sessions in room: [
+  {
+    sessionId: 'session_1757301401379_32xsbhm',
+    nickname: 'Desktop',
+    hasPushSub: true,
+    isConnected: true
+  },
+  {
+    sessionId: 'session_1757311352111_ubzbruw',
+    nickname: 'Cell2',
+    hasPushSub: false,
+    isConnected: true
+  }
+]
+📱 Disconnected sessions with push: 0
+❌ No push subscriptions to send for room: nr87ot
+Broadcasted to 4 clients in room nr87ot
+Received WebSocket message: { type: 'ping' }
+Received WebSocket message: { type: 'ping' }

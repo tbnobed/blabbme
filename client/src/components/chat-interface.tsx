@@ -106,15 +106,30 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
       // Subscribe to push notifications with detailed error handling
       let subscription;
       try {
+        console.log('📱 Attempting to subscribe with options:', {
+          userVisibleOnly: true,
+          applicationServerKeyLength: applicationServerKey.length
+        });
+        
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey
         });
         console.log('✅ Push subscription created successfully:', subscription);
+        console.log('📱 Subscription endpoint:', subscription.endpoint);
+        console.log('📱 Subscription keys:', !!subscription.keys);
       } catch (error) {
         console.log('❌ Push subscription failed:', error);
+        console.log('❌ Error name:', error.name);
+        console.log('❌ Error message:', error.message);
         if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-          console.log('📱 iOS push subscription error - this might be a Safari limitation');
+          console.log('📱 iOS push subscription error details:', {
+            errorName: error.name,
+            errorMessage: error.message,
+            isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+            pushManagerSupport: !!registration.pushManager,
+            vapidKeyLength: applicationServerKey.length
+          });
         }
         return;
       }
@@ -180,6 +195,10 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   // Request notification permission when component mounts
   useEffect(() => {
     const requestNotificationPermission = async () => {
+      console.log('🔔 MOBILE DEBUG: Starting notification setup check...');
+      console.log('📱 MOBILE DEBUG: Window object exists:', typeof window !== 'undefined');
+      console.log('📱 MOBILE DEBUG: Notification in window:', 'Notification' in window);
+      
       if ('Notification' in window) {
         console.log('🔔 Setting up notifications for chat...');
         console.log('📱 User agent:', navigator.userAgent);
