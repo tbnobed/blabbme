@@ -296,12 +296,16 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     if (Notification.permission === 'granted') {
       console.log('🏠 Registering push notifications for JOINED room:', roomId);
       
-      // First unregister from any previous rooms
-      try {
-        await fetch('/api/push-unsubscribe', { method: 'POST' });
-        console.log('🔕 Unregistered from previous room');
-      } catch (error) {
-        console.log('🔕 No previous subscription to unregister');
+      // Only unregister if switching to a different room
+      if (room && room.id !== roomId) {
+        try {
+          await fetch('/api/push-unsubscribe', { method: 'POST' });
+          console.log('🔕 Unregistered from different room:', room.id);
+        } catch (error) {
+          console.log('🔕 No previous subscription to unregister');
+        }
+      } else {
+        console.log('🔄 Same room - skipping unsubscribe');
       }
       
       try {
