@@ -321,6 +321,7 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
 
   // Helper function to register push notifications when actually joining a room
   const registerPushForRoom = async (roomId: string) => {
+    console.log('🔍 REGISTER PUSH: Starting for room:', roomId, 'permission:', Notification.permission);
     if (Notification.permission === 'granted') {
       console.log('🏠 Registering push notifications for JOINED room:', roomId);
       
@@ -359,6 +360,8 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom, u
       } catch (error) {
         console.error('❌ Room push registration failed:', error);
       }
+    } else {
+      console.log('❌ REGISTER PUSH: Permission not granted. Current permission:', Notification.permission);
     }
   };
 
