@@ -350,13 +350,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRoom(id: string): Promise<boolean> {
+    console.log(`🧹 Deleting room ${id} and all associated data...`);
+    
     // Delete participants first
-    await db.delete(participants).where(eq(participants.roomId, id));
+    const participantResult = await db.delete(participants).where(eq(participants.roomId, id));
+    console.log(`🧹 Deleted ${participantResult.rowCount || 0} participants from room ${id}`);
+    
     // Delete messages
-    await db.delete(messages).where(eq(messages.roomId, id));
+    const messageResult = await db.delete(messages).where(eq(messages.roomId, id));
+    console.log(`🧹 Deleted ${messageResult.rowCount || 0} messages from room ${id}`);
+    
     // Delete room
-    const result = await db.delete(rooms).where(eq(rooms.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    const roomResult = await db.delete(rooms).where(eq(rooms.id, id));
+    const deleted = roomResult.rowCount !== null && roomResult.rowCount > 0;
+    console.log(`🧹 Room ${id} deletion ${deleted ? 'successful' : 'failed'}`);
+    
+    return deleted;
   }
 
   async getParticipantsByRoom(roomId: string): Promise<Participant[]> {
@@ -552,14 +561,24 @@ export class DatabaseStorage implements IStorage {
 
   async cleanupExpiredRooms(): Promise<void> {
     const now = new Date();
+    console.log(`🧹 Starting expired rooms cleanup at ${now.toISOString()}`);
+    
     const expiredRooms = await db
-      .select({ id: rooms.id })
+      .select({ id: rooms.id, name: rooms.name, expiresAt: rooms.expiresAt })
       .from(rooms)
       .where(and(eq(rooms.isActive, true), lt(rooms.expiresAt, now)));
+    
+    console.log(`🧹 Found ${expiredRooms.length} expired rooms to clean up`);
+    
+    if (expiredRooms.length > 0) {
+      console.log('🧹 Expired rooms:', expiredRooms.map(r => `${r.id} (${r.name}) expired at ${r.expiresAt?.toISOString()}`));
+    }
     
     for (const room of expiredRooms) {
       await this.deleteRoom(room.id);
     }
+    
+    console.log(`🧹 Cleanup completed: ${expiredRooms.length} rooms processed`);
   }
 
   private generateRoomId(): string {
