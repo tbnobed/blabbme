@@ -992,7 +992,12 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
+            onClick={() => {
+              const newSoundEnabled = !soundEnabled;
+              setSoundEnabled(newSoundEnabled);
+              localStorage.setItem('soundEnabled', newSoundEnabled.toString());
+              console.log('🔊 Sound toggled:', newSoundEnabled ? 'enabled' : 'disabled');
+            }}
             className={`${
               soundEnabled 
                 ? 'text-primary hover:text-primary/80' 
