@@ -42,14 +42,13 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  // Initialize notification state from localStorage - be more permissive
+  // Initialize notification state - auto-enable for new users
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
-    // If user previously enabled notifications, start as enabled
-    // We'll check actual permission in useEffect and adjust if needed
     const saved = localStorage.getItem('notificationsEnabled');
     console.log('🔔 Initializing notifications from localStorage:', saved);
-    return saved === 'true';
+    // Auto-enable for new users (no previous preference), respect existing choice
+    return saved !== 'false';
   });
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -713,6 +712,41 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-setup notifications for new users when they join a room
+  useEffect(() => {
+    if (!roomId || !notificationsEnabled) return;
+    
+    const saved = localStorage.getItem('notificationsEnabled');
+    if (saved === null) { // New user, no previous preference
+      console.log('🔔 New user detected, auto-setting up notifications...');
+      
+      // Don't wait for user to click bell, set up automatically
+      const autoSetupNotifications = async () => {
+        if (!('Notification' in window)) return;
+        
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            console.log('✅ Auto-setup: Permission granted, setting up push notifications...');
+            await setupPushNotifications();
+            localStorage.setItem('notificationsEnabled', 'true');
+            console.log('✅ Auto-setup: Push notifications ready');
+          } else {
+            console.log('❌ Auto-setup: Permission denied');
+            setNotificationsEnabled(false);
+            localStorage.setItem('notificationsEnabled', 'false');
+          }
+        } catch (error) {
+          console.error('❌ Auto-setup failed:', error);
+          setNotificationsEnabled(false);
+          localStorage.setItem('notificationsEnabled', 'false');
+        }
+      };
+      
+      autoSetupNotifications();
+    }
+  }, [roomId, notificationsEnabled]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
