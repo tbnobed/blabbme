@@ -42,13 +42,14 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
   const [messageInput, setMessageInput] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
   const [warning, setWarning] = useState("");
-  // Initialize notification state from localStorage and current permission
+  // Initialize notification state from localStorage - be more permissive
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window === 'undefined') return false;
-    // Check both localStorage preference and current permission status
+    // If user previously enabled notifications, start as enabled
+    // We'll check actual permission in useEffect and adjust if needed
     const saved = localStorage.getItem('notificationsEnabled');
-    const currentPermission = 'Notification' in window ? Notification.permission : 'default';
-    return saved === 'true' && currentPermission === 'granted';
+    console.log('🔔 Initializing notifications from localStorage:', saved);
+    return saved === 'true';
   });
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -275,16 +276,25 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
 
   // Separate effect for auto-setting up push notifications - only runs once
   useEffect(() => {
-    // Auto-setup push notifications if already enabled (only run once on mount)
-    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-      console.log('🔔 Auto-setting up push notifications (already enabled)');
-      const timeoutId = setTimeout(() => {
-        setupPushNotifications().catch(error => {
-          console.error('Failed to auto-setup push notifications:', error);
-        });
-      }, 2000); // Delay to ensure everything is ready
+    // Check notification permission and sync state
+    if ('Notification' in window) {
+      const currentPermission = Notification.permission;
+      console.log('🔔 Current notification permission:', currentPermission);
+      console.log('🔔 Current enabled state:', notificationsEnabled);
       
-      return () => clearTimeout(timeoutId);
+      if (notificationsEnabled && currentPermission === 'granted') {
+        console.log('🔔 Auto-setting up push notifications (already enabled)');
+        const timeoutId = setTimeout(() => {
+          setupPushNotifications().catch(error => {
+            console.error('Failed to auto-setup push notifications:', error);
+          });
+        }, 2000);
+        return () => clearTimeout(timeoutId);
+      } else if (notificationsEnabled && currentPermission !== 'granted') {
+        console.log('🔔 Notifications were enabled but permission revoked, disabling');
+        setNotificationsEnabled(false);
+        localStorage.setItem('notificationsEnabled', 'false');
+      }
     }
   }, []); // Empty dependency array - only run once on mount
 

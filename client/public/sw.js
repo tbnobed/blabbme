@@ -42,83 +42,43 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event
+// Push notification event - iOS compatible version
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push event received in service worker:', event);
-  console.log('🔔 Event data available:', !!event.data);
-  console.log('🔔 Registration active:', !!self.registration);
-  console.log('🔔 Show notification available:', 'showNotification' in self.registration);
+  console.log('🔔 Push event received');
   
-  let title = 'Blabb.me';
-  let body = 'New message in chat';
-  let data = {
-    dateOfArrival: Date.now(),
-    primaryKey: '1',
-    url: '/'
-  };
+  // Simple, iOS-compatible notification
+  let title = 'New Message';
+  let body = 'You have a new chat message';
   
-  // Parse JSON payload if available
+  // Try to parse payload but don't fail if it doesn't work
   if (event.data) {
     try {
       const payload = event.data.json();
-      console.log('📱 Parsed push payload:', payload);
-      
       title = payload.title || title;
       body = payload.body || body;
-      
-      if (payload.roomId) {
-        data.url = `/room/${payload.roomId}`;
-        data.roomId = payload.roomId;
-      }
-      
-      console.log('🎯 Showing notification:', { title, body, url: data.url });
     } catch (error) {
-      console.error('❌ Error parsing push payload:', error);
-      // Fallback to text content
-      body = event.data.text() || body;
+      // Fallback to simple text
+      try {
+        body = event.data.text() || body;
+      } catch (e) {
+        // Use default
+      }
     }
   }
 
+  // Minimal options for iOS compatibility
   const options = {
     body: body,
     icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    vibrate: [100, 50, 100],
-    data: data,
-    tag: 'blabb-message', // Replace previous notifications
-    requireInteraction: true, // Keep notification visible until user interacts
-    actions: [
-      {
-        action: 'open',
-        title: 'Open Chat',
-        icon: '/icon-192.png'
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icon-192.png'
-      }
-    ]
+    data: { url: '/' }
   };
 
-  console.log('🎯 About to show notification with options:', options);
-  
   event.waitUntil(
     self.registration.showNotification(title, options)
-      .then(() => {
-        console.log('✅ Notification shown successfully');
-        console.log('📱 Notification title:', title);
-        console.log('📱 Notification body:', options.body);
-      })
-      .catch((error) => {
-        console.error('❌ Error showing notification:', error);
-        console.error('❌ Error details:', error.name, error.message);
-        console.error('❌ Registration state:', self.registration.active);
-        
-        // Try a simple fallback notification
-        return self.registration.showNotification('Blabb.me', {
-          body: 'New message in chat',
-          icon: '/icon-192.png'
+      .catch(() => {
+        // Ultimate fallback
+        return self.registration.showNotification('New Message', {
+          body: 'You have a new message'
         });
       })
   );
