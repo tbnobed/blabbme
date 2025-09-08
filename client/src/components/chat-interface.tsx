@@ -291,23 +291,102 @@ export default function ChatInterface({ roomId, nickname, socket, onLeaveRoom }:
     requestPermissions();
   }, []);
 
-  // Force push registration when socket connects (mobile backup)
+  // Comprehensive push registration system for mobile devices
   useEffect(() => {
     if (!socket) return;
     
-    // Force retry push notifications when socket is ready (mobile browsers need this)
-    const retryPushSetup = async () => {
-      if (Notification.permission === 'granted') {
-        console.log('🔄 Socket connected - force retrying push setup...');
+    // Register push notifications for this specific room
+    const registerForRoom = async () => {
+      if (Notification.permission === 'granted' && roomId) {
+        console.log('🏠 Registering push notifications for room:', roomId);
         try {
           await setupPushNotifications();
+          
+          // Verify registration with a test push after 2 seconds
+          setTimeout(async () => {
+            try {
+              console.log('🧪 Testing push notification registration...');
+              const response = await fetch(`/api/test-push-registration/${roomId}`, {
+                method: 'POST'
+              });
+              if (response.ok) {
+                console.log('✅ Push registration test successful');
+              } else {
+                console.log('❌ Push registration test failed, retrying...');
+                await setupPushNotifications();
+              }
+            } catch (error) {
+              console.error('❌ Push registration test error:', error);
+            }
+          }, 2000);
         } catch (error) {
-          console.error('❌ Socket retry failed:', error);
+          console.error('❌ Room push registration failed:', error);
         }
       }
     };
     
-    setTimeout(retryPushSetup, 1000); // Retry after socket is stable
+    setTimeout(registerForRoom, 1000); // Register after socket is stable
+  }, [socket, roomId]);
+
+  // App resume/background detection for push re-registration
+  useEffect(() => {
+    let wasHidden = false;
+    
+    const handleAppResume = async () => {
+      const isVisible = !document.hidden;
+      
+      if (wasHidden && isVisible) {
+        // App is resuming from background
+        console.log('📱 App resuming from background - re-registering push notifications');
+        
+        if (Notification.permission === 'granted' && roomId && socket) {
+          try {
+            await setupPushNotifications();
+            console.log('✅ Push notifications re-registered on app resume');
+            
+            // Test the registration
+            setTimeout(async () => {
+              try {
+                const response = await fetch(`/api/test-push-registration/${roomId}`, {
+                  method: 'POST'
+                });
+                if (response.ok) {
+                  console.log('✅ App resume push test successful');
+                } else {
+                  console.log('❌ App resume push test failed');
+                }
+              } catch (error) {
+                console.error('❌ App resume push test error:', error);
+              }
+            }, 1000);
+          } catch (error) {
+            console.error('❌ Push re-registration on resume failed:', error);
+          }
+        }
+      }
+      
+      wasHidden = !isVisible;
+    };
+    
+    document.addEventListener('visibilitychange', handleAppResume);
+    
+    // Also listen for focus/blur events for better mobile detection
+    const handleFocus = () => handleAppResume();
+    const handleBlur = () => { wasHidden = true; };
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleAppResume);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [roomId, socket]);
+
+  // WebSocket connection and visibility tracking
+  useEffect(() => {
+    if (!socket) return;
 
     // Send current visibility state when socket connects
     const sendVisibilityState = () => {

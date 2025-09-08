@@ -334,6 +334,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test push notification registration for a specific room
+  app.post('/api/test-push-registration/:roomId', sessionLimiter, async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const sessionId = req.cookies.chat_session;
+      
+      console.log(`🧪 Testing push registration for room: ${roomId}, session: ${sessionId}`);
+      
+      if (!sessionId) {
+        return res.status(401).json({ error: 'No session found' });
+      }
+
+      const session = userSessions.get(sessionId);
+      if (!session?.pushSubscription) {
+        console.log(`❌ No push subscription found for session: ${sessionId}`);
+        return res.status(400).json({ error: 'No push subscription found' });
+      }
+
+      // Send a silent test notification
+      const payload = JSON.stringify({
+        title: 'Registration Test',
+        body: 'Push notifications are working!',
+        tag: 'test-notification',
+        data: { test: true, roomId }
+      });
+
+      const result = await webpush.sendNotification(session.pushSubscription as any, payload);
+      console.log(`✅ Test push sent successfully to session: ${sessionId} in room: ${roomId}`);
+      console.log(`🔔 Test push response:`, result);
+      
+      res.json({ 
+        success: true, 
+        message: 'Test push notification sent successfully',
+        sessionId,
+        roomId
+      });
+    } catch (error) {
+      console.error(`❌ Test push failed for room ${req.params.roomId}:`, error);
+      res.status(500).json({ error: 'Failed to send test push notification' });
+    }
+  });
+
   // Debug route to check paths
   app.get('/debug/pwa', (req, res) => {
     const manifestPath = path.join(clientPublicPath, 'manifest.json');
